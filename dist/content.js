@@ -845,7 +845,7 @@ window.ARCHIVE = {
       "record": "未来可以扩展为可交互的片段地图。当前仅呈现记录结构和概念，不收集位置、不调用地图服务，也不代表已完成的项目。"
     }
   ],
-  "version": "0.8",
+  "version": "1.1",
   "home": {
     "windowImage": "lake",
     "windowWork": "still-water",
