@@ -1,0 +1,118 @@
+/* v0.7-B home art direction: a quiet, layered night passage. All rules are home-scoped. */
+body[data-room=home]{background:#0a1b24;color:#e9e4d8;--muted:#a7b7b7;--line:#34505a}
+body[data-room=home]:before{opacity:.045;mix-blend-mode:screen}
+body[data-room=home] main{min-height:0;background:#0a1b24}
+
+/* Header: keep the cat mark and navigation; remove edition copy from the entrance only. */
+body[data-room=home] .site-header{height:88px;margin:0 4.2%;position:relative;z-index:12;border-color:#a4babd24;color:#eee9de}
+body[data-room=home] .site-header .brand{color:#eee9de}
+body[data-room=home] .site-header .brand small{color:#aab9b9}
+body[data-room=home] .site-header nav a{color:#dce0d9}
+body[data-room=home] .site-header nav a:after{background:#d8c58b}
+body[data-room=home] .site-header nav a[aria-current]{color:#e6cf8e}
+body[data-room=home] .edition{display:none}
+
+/* Main scene and layered terrain. */
+body[data-room=home] .roaming-night{height:min(860px,calc(100svh - 88px));min-height:650px;padding:0;position:relative;isolation:isolate;overflow:hidden;background:#0a1b24;color:#eee9de;--line:#34505a;--muted:#a7b7b7}
+body[data-room=home] .roaming-night:before{content:'';position:absolute;inset:0;z-index:0;background:radial-gradient(ellipse at 74% 28%,#1e4b4b44,transparent 44%),radial-gradient(ellipse at 27% 72%,#1a4a4730,transparent 42%),linear-gradient(135deg,#081721 0%,#102b33 48%,#0a1b25 100%);pointer-events:none}
+body[data-room=home] .roaming-night:after{display:none}
+body[data-room=home] .river-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+body[data-room=home] .scene-art{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+body[data-room=home] .scene-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+body[data-room=home] .mobile-scene-art{display:none}
+body[data-room=home] .mobile-scene-art .river-body{fill:url(#mobileWater);stroke:none;opacity:.67}
+body[data-room=home] .mobile-scene-art .river-body-glow{fill:#9bb9a4;stroke:none;opacity:.1;filter:url(#mobileBloom)}
+body[data-room=home] .terrain-far{fill:#112b34;opacity:.58}
+body[data-room=home] .terrain-left{fill:#0b202a;opacity:.7}
+body[data-room=home] .terrain-lower-left{fill:#0a1c25;opacity:.72}
+body[data-room=home] .terrain-right{fill:#123039;opacity:.44}
+body[data-room=home] .terrain-lower-right{fill:#091a23;opacity:.68}
+body[data-room=home] .terrain{filter:blur(2.5px)}
+body[data-room=home] .terrain-contours{fill:none;stroke:#90a99b;stroke-width:.85;opacity:.085;vector-effect:non-scaling-stroke}
+body[data-room=home] .mobile-scene-art>ellipse{opacity:.09}
+body[data-room=home] .river-shape path{stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+
+/* The riverbed is a filled, irregular shape; narrow reflections give it light without making a road. */
+body[data-room=home] .river-shape .river-body{fill:url(#riverWater);stroke:none;opacity:.88}
+body[data-room=home] .river-shape .river-body-glow{fill:url(#riverReflection);stroke:none;opacity:.25;filter:url(#riverSoft)}
+body[data-room=home] .river-bank,body[data-room=home] .river-edge,body[data-room=home] .river-water,body[data-room=home] .river-shadowline{opacity:0!important}
+body[data-room=home] .river-reflection{fill:none;stroke:url(#riverReflection);stroke-width:35;stroke-linecap:round;opacity:.14;filter:url(#riverSoft)}
+body[data-room=home] .river-bloom{fill:none;stroke:#e0c981;stroke-width:20;stroke-linecap:round;opacity:.11;filter:url(#riverBloom)}
+body[data-room=home] .river-core{fill:none;stroke:url(#riverCore);stroke-width:.95;stroke-linecap:round;opacity:.18}
+body[data-room=home] .river-current{fill:none;stroke:#fff0bd;stroke-width:3;stroke-dasharray:.55 49.45;stroke-linecap:round;opacity:.92;animation:river-current-flow 21s linear infinite;animation-play-state:paused;vector-effect:non-scaling-stroke}
+body[data-room=home] .tributary{fill:none;stroke:#d8c58b;stroke-width:1.1;stroke-dasharray:1.5 8;stroke-linecap:round;opacity:.28;transition:opacity .4s,stroke-width .4s;vector-effect:non-scaling-stroke}
+body[data-room=home] .scene-points circle{fill:#f3dfa6;opacity:.72}
+body[data-room=home] .scene-points .point-halo{fill:#e9cc80;opacity:.17;filter:url(#pointBloom)}
+body[data-room=home] .river-glint{fill:#f5e6b1;opacity:.18;filter:url(#pointBloom);animation:glint-breathe 7.8s ease-in-out infinite;animation-play-state:paused;transform-box:fill-box;transform-origin:center}
+body[data-room=home] .glint-b{animation-delay:-2.1s}body[data-room=home] .glint-c{animation-delay:-4.6s}body[data-room=home] .glint-d{animation-delay:-1.3s}body[data-room=home] .glint-e{animation-delay:-5.7s}body[data-room=home] .glint-f{animation-delay:-3.3s}
+body[data-room=home] .scene-dust{fill:#dce7d7;animation:quiet-dust 9s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center;animation-play-state:paused}
+body[data-room=home] .dust-1{animation-delay:-3s}body[data-room=home] .dust-2{animation-delay:-6s}body[data-room=home] .dust-3{animation-delay:-1.5s}body[data-room=home] .dust-4{animation-delay:-4.5s}
+body[data-room=home] .scene-vignette{position:absolute;inset:0;background:linear-gradient(90deg,#06131a40,transparent 34%,transparent 75%,#06131a3d),linear-gradient(0deg,#06131a55,transparent 24%,transparent 74%,#06131a38);opacity:.65}
+body[data-room=home] .scene-mist{position:absolute;inset:-15%;width:60%;height:42%;border-radius:50%;filter:blur(45px);opacity:.12;mix-blend-mode:screen;animation:mist-drift 26s ease-in-out infinite alternate;animation-play-state:paused}
+body[data-room=home] .mist-one{left:32%;top:10%;background:radial-gradient(ellipse,#4c8274 0%,transparent 68%)}
+body[data-room=home] .mist-two{left:0;top:57%;width:70%;height:35%;background:radial-gradient(ellipse,#326c68 0%,transparent 68%);animation-delay:-12s}
+
+/* Four destinations float in the landscape, not in cards. */
+body[data-room=home] .roaming-network{position:absolute;inset:0;height:auto;z-index:3}
+body[data-room=home] footer{margin:0;padding:40px 4.2% 44px;border-top:1px solid #a4babd20;background:#0a1b24;color:#e9e4d8}
+body[data-room=home] footer .footer-title{display:block;padding:7px 0 12px;color:#d8c18a;font-size:clamp(25px,3vw,40px);line-height:1.6;letter-spacing:.025em;text-wrap:balance}
+body[data-room=home] footer>div{display:none}
+body[data-room=home] footer a:hover{color:#f5e7b8}
+body[data-room=home] .wander-node{width:auto;min-height:0;padding:12px 0 12px 22px;z-index:4;display:block;max-width:34%;transition:transform .35s ease,color .35s;text-shadow:0 2px 20px #07151db8}
+body[data-room=home] .wander-node h2{font-size:clamp(25px,2.35vw,36px);line-height:1.55;letter-spacing:.02em;color:#f0e9d8;font-weight:400;white-space:nowrap;transition:color .35s,text-shadow .35s,transform .35s}
+body[data-room=home] .wander-node .node-point{position:absolute;left:0;top:50%;width:5px;height:5px;transform:translateY(-50%);border:0;border-radius:50%;background:#d9c78f;box-shadow:0 0 12px 3px #d6c17d55;opacity:.7;animation:node-glimmer 6.5s ease-in-out infinite;animation-play-state:paused}
+body[data-room=home] .wander-node .node-tail{display:none}
+body[data-room=home] .node-photos{left:62%;top:10%;max-width:36%}
+body[data-room=home] .node-poems{left:26%;top:34%;max-width:32%}
+body[data-room=home] .node-traces{left:67%;top:59%;max-width:32%}
+body[data-room=home] .node-lab{left:17%;top:73%;max-width:37%}
+body[data-room=home] .wander-node:hover,body[data-room=home] .wander-node:focus-visible{transform:translateY(-3px)}
+body[data-room=home] .wander-node:hover h2,body[data-room=home] .wander-node:focus-visible h2{color:#ffe7a7;text-shadow:0 0 24px #e4c87965,0 2px 18px #07151d}
+body[data-room=home] .wander-node:hover .node-point,body[data-room=home] .wander-node:focus-visible .node-point{opacity:1;box-shadow:0 0 0 6px #e2c77d15,0 0 18px 5px #e4c87980}
+body[data-room=home] .roaming-night:has(.node-poems:is(:hover,:focus-visible)) .tributary-poems,body[data-room=home] .roaming-night:has(.node-photos:is(:hover,:focus-visible)) .tributary-photos,body[data-room=home] .roaming-night:has(.node-traces:is(:hover,:focus-visible)) .tributary-traces,body[data-room=home] .roaming-night:has(.node-lab:is(:hover,:focus-visible)) .tributary-lab{opacity:.95;stroke-width:2.1;stroke:#ffe8ac}
+body[data-room=home] .roaming-night:has(.wander-node:is(:hover,:focus-visible)) .river-current{opacity:.95}
+body[data-room=home] .motion-toggle{position:absolute;right:4.3%;top:22px;z-index:5;width:40px;height:40px;min-width:40px;min-height:40px;padding:0;border:1px solid #d8d4bd36;border-radius:50%;display:grid;place-items:center;background:#07172130;color:#d8c58b;font-size:13px;line-height:1;backdrop-filter:blur(8px);transition:background .25s,border-color .25s,color .25s}
+body[data-room=home] .motion-toggle:hover{background:#d8c58b12;border-color:#d8c58b9c;color:#f5e7b8}
+body[data-room=home] .motion-toggle:disabled{opacity:.75;cursor:default}
+body[data-room=home] .roaming-night[data-running=true] .river-current,body[data-room=home] .roaming-night[data-running=true] .scene-dust,body[data-room=home] .roaming-night[data-running=true] .scene-mist,body[data-room=home] .roaming-night[data-running=true] .node-point,body[data-room=home] .roaming-night[data-running=true] .river-glint{animation-play-state:running}
+body[data-room=home] .roaming-night[data-paused=true] .river-current{opacity:.34}
+body[data-room=home] .roaming-night a:focus-visible,body[data-room=home] .roaming-night button:focus-visible{outline:2px solid #e9c98d;outline-offset:7px}
+
+/* Quiet motion and responsive compositions. */
+@keyframes river-current-flow{from{stroke-dashoffset:0}to{stroke-dashoffset:-100}}
+@keyframes quiet-dust{from{opacity:.12;transform:translate3d(0,0,0)}to{opacity:.6;transform:translate3d(2px,-5px,0)}}
+@keyframes mist-drift{from{transform:translate3d(-2%,0,0) scale(.96)}to{transform:translate3d(5%,4%,0) scale(1.06)}}
+@keyframes node-glimmer{0%,100%{opacity:.55;box-shadow:0 0 8px 2px #d6c17d35}50%{opacity:1;box-shadow:0 0 15px 4px #d6c17d8c}}
+@keyframes glint-breathe{0%,100%{opacity:.14;transform:scale(.8)}50%{opacity:.9;transform:scale(1.35)}}
+@media(max-width:1100px){body[data-room=home] .wander-node h2{font-size:clamp(24px,2.7vw,30px)}body[data-room=home] .node-photos{left:63%}body[data-room=home] .node-traces{left:68%}}
+@media(max-width:700px){
+ body[data-room=home] .site-header{height:auto;min-height:124px;margin:0 6%;padding:16px 0 5px;gap:8px}
+ body[data-room=home] .site-header nav{width:100%;justify-content:space-between;gap:8px}
+ body[data-room=home] .site-header nav a{font-size:12px;padding:7px 0}
+ body[data-room=home] .roaming-night{height:820px;min-height:820px;max-height:none}
+ body[data-room=home] .desktop-scene-art{display:none}
+ body[data-room=home] .mobile-scene-art{display:block}
+ body[data-room=home] .mobile-scene-art .river-body{fill:url(#mobileWater);opacity:.67}
+ body[data-room=home] .mobile-scene-art .river-body-glow{fill:#9bb9a4;opacity:.1;filter:url(#mobileBloom)}
+ body[data-room=home] .river-reflection{stroke-width:20;opacity:.09;stroke:#9db9a5;filter:blur(2px)}
+ body[data-room=home] .river-bloom{stroke-width:12;opacity:.08;filter:url(#mobileBloom)}
+ body[data-room=home] .river-core{stroke:#e7d39a;stroke-width:.8;opacity:.17}
+ body[data-room=home] .river-current{stroke-width:1.05;stroke-dasharray:1 12}
+ body[data-room=home] .terrain-contours{opacity:.06}
+ body[data-room=home] .scene-mist{opacity:.08;filter:blur(32px)}
+ body[data-room=home] .motion-toggle{right:6%;top:18px;width:38px;height:38px;min-width:38px;min-height:38px}
+ body[data-room=home] .wander-node{max-width:80%;padding-left:19px;padding-block:10px}
+ body[data-room=home] .wander-node h2{font-size:clamp(23px,6.2vw,28px);white-space:normal;line-height:1.55}
+ body[data-room=home] .wander-node .node-point{width:4px;height:4px}
+ body[data-room=home] .node-photos{left:48%;top:12%;max-width:46%}
+ body[data-room=home] .node-poems{left:7%;top:27%;max-width:65%}
+ body[data-room=home] .node-traces{left:46%;top:48%;max-width:50%}
+ body[data-room=home] .node-lab{left:8%;top:69%;max-width:77%}
+ body[data-room=home] footer{padding:28px 6% 34px}
+ body[data-room=home] footer .footer-title{font-size:clamp(23px,6vw,28px);line-height:1.8;padding:4px 0 8px}
+}
+@media(prefers-reduced-motion:reduce){
+ body[data-room=home] .scene-dust,body[data-room=home] .river-current,body[data-room=home] .scene-mist,body[data-room=home] .node-point,body[data-room=home] .river-glint{animation:none!important}
+ body[data-room=home] .river-current{opacity:.24}
+ body[data-room=home] .wander-node,body[data-room=home] .wander-node h2,body[data-room=home] .tributary{transition:none!important}
+}

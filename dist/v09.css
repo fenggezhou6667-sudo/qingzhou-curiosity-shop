@@ -1,0 +1,156 @@
+/* v0.9 | moon-warmed branching current, a book that opens, a pocket of sound. */
+:root{--river-gold:#f2d99a;--river-amber:#d3aa63}
+/* One consistent header geometry. Only the ink/paper scheme changes by room. */
+.site-header,body[data-room=home] .site-header{height:88px;min-height:88px;margin:0 4.2%;padding:0;display:flex;align-items:center;justify-content:space-between;gap:20px;position:relative;z-index:20}
+.site-header .edition{display:none!important}
+.site-header nav{display:flex;align-items:center;gap:clamp(12px,2.3vw,33px)}
+.site-header nav a{font-size:13px;line-height:1.5;white-space:nowrap}
+.site-header .cat-mark{width:58px;height:43px}
+.site-header .brand{font-size:17px;gap:11px}
+body[data-room=home] .site-header{border-color:#edd4a329}
+/* Warmth is in the water and a quiet veil of reflected amber, not a flat yellow overlay. */
+body[data-room=home],body[data-room=home] main,body[data-room=home] .roaming-night{background:#0d252d}
+body[data-room=home] .roaming-night:before{background:radial-gradient(ellipse at 58% 55%,#d9aa6330,transparent 46%),radial-gradient(ellipse at 72% 24%,#549a9055,transparent 47%),radial-gradient(ellipse at 19% 82%,#d6a15b24,transparent 46%),linear-gradient(135deg,#0c1f2d,#174044 58%,#102b34)}
+body[data-room=home] .terrain-far{fill:#193b3e;opacity:.60}
+body[data-room=home] .terrain-right{fill:#244c48;opacity:.44}
+body[data-room=home] .river-shape .river-body{filter:drop-shadow(0 0 18px #e0af6942);opacity:.98}
+body[data-room=home] .river-shape .river-body-glow{opacity:.34}
+body[data-room=home] .river-reflection{opacity:.27!important;stroke-width:64!important}
+body[data-room=home] .river-bloom{opacity:.23;stroke:#f0c781}
+body[data-room=home] .river-core{opacity:.36;stroke:#ffe4a0}
+body[data-room=home] .river-ripples{opacity:.49;stroke:#ffe3a8;stroke-width:1.85}
+body[data-room=home] .river-current{stroke:#fff1c4;opacity:.90}
+/* The four river mouths carry a warm glassy core, each linked to one semantic destination. */
+body[data-room=home] .river-distributary{pointer-events:none}
+body[data-room=home] .river-distributary path{fill:none;stroke-linecap:round;vector-effect:non-scaling-stroke;transition:opacity .38s ease,stroke-width .38s ease,stroke .38s ease}
+body[data-room=home] .river-distributary .branch-haze{stroke:#f2c875;stroke-width:13;opacity:.09;filter:blur(5px)}
+body[data-room=home] .river-distributary .tributary{stroke:#e4c37d;stroke-width:3.5;opacity:.29;stroke-dasharray:none}
+body[data-room=home] .river-distributary .branch-spark{stroke:#ffe6ac;stroke-width:1.4;opacity:.62;stroke-dasharray:8 92;animation:branch-water 12s linear infinite;animation-play-state:paused}
+body[data-room=home] .roaming-night[data-running=true] .branch-spark{animation-play-state:running}
+body[data-room=home] .roaming-night:has(.node-poems:is(:hover,:focus-visible)) .branch-poems .branch-haze,body[data-room=home] .roaming-night:has(.node-photos:is(:hover,:focus-visible)) .branch-photos .branch-haze,body[data-room=home] .roaming-night:has(.node-traces:is(:hover,:focus-visible)) .branch-traces .branch-haze,body[data-room=home] .roaming-night:has(.node-lab:is(:hover,:focus-visible)) .branch-lab .branch-haze{opacity:.39;stroke-width:23}
+body[data-room=home] .roaming-night:has(.node-poems:is(:hover,:focus-visible)) .branch-poems .tributary,body[data-room=home] .roaming-night:has(.node-photos:is(:hover,:focus-visible)) .branch-photos .tributary,body[data-room=home] .roaming-night:has(.node-traces:is(:hover,:focus-visible)) .branch-traces .tributary,body[data-room=home] .roaming-night:has(.node-lab:is(:hover,:focus-visible)) .branch-lab .tributary{stroke:#ffe5a1;stroke-width:4.5;opacity:.78}
+body[data-room=home] .roaming-night:has(.node-poems:is(:hover,:focus-visible)) .branch-poems .branch-spark,body[data-room=home] .roaming-night:has(.node-photos:is(:hover,:focus-visible)) .branch-photos .branch-spark,body[data-room=home] .roaming-night:has(.node-traces:is(:hover,:focus-visible)) .branch-traces .branch-spark,body[data-room=home] .roaming-night:has(.node-lab:is(:hover,:focus-visible)) .branch-lab .branch-spark{opacity:1;stroke-width:2.8}
+@keyframes branch-water{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+/* The river now has surface crests oriented along the actual centreline. */
+body[data-room=home] .water-sheens{fill:none;stroke:#ffe3a7;stroke-linecap:round;stroke-width:1.15;filter:drop-shadow(0 0 2px #e8cb8688)}
+body[data-room=home] .water-sheens path{opacity:.19;animation:surface-shimmer var(--duration,5s) ease-in-out var(--delay,0s) infinite alternate;animation-play-state:paused}
+body[data-room=home] .roaming-night[data-running=true] .water-sheens path{animation-play-state:running}
+@keyframes surface-shimmer{0%{opacity:.08;stroke-width:.8}42%{opacity:.54}100%{opacity:.13;stroke-width:1.5}}
+body[data-room=home] footer{background:#102631;color:#e9dfcf}
+body[data-room=home] footer .footer-title{color:#e8ca93}
+/* Floating audio lives at body level, survives the SPA hash-route changes. */
+.music-dock{position:fixed;right:max(18px,calc((100vw - 1600px)/2 + 30px));bottom:22px;z-index:55;color:#f5eddf;font-family:var(--sans);font-size:13px;filter:drop-shadow(0 9px 24px #08101a7d)}
+.dock-toggle{display:flex;align-items:center;gap:10px;border:1px solid #d8c99a87;border-radius:28px;padding:10px 14px;background:#142a34ee;backdrop-filter:blur(13px);color:#f1dfb3;min-height:47px;transition:background .2s,border-color .2s}
+.dock-toggle:hover{background:#29434a;border-color:#f0d597}
+.dock-toggle>span:first-child{display:grid;place-items:center;width:21px;font-size:20px}
+.dock-title{font-family:var(--serif);font-size:13px;letter-spacing:.03em}
+.dock-pulse{width:5px;height:5px;border-radius:50%;background:#bda26e;opacity:.65}
+.music-dock.is-playing .dock-pulse{box-shadow:0 0 0 5px #e4ce8d27,0 0 14px #e4ce8d;animation:dock-breath 2.6s ease-in-out infinite}
+@keyframes dock-breath{50%{opacity:1;transform:scale(1.25)}}
+.dock-panel{position:absolute;bottom:calc(100% + 12px);right:0;width:min(340px,calc(100vw - 30px));padding:23px 24px 22px;border:1px solid #d8bf8455;border-radius:16px;background:linear-gradient(155deg,#17343bfa,#0a1f2dfc);box-shadow:0 18px 50px #030d16a0;color:#eae6d9}
+.dock-panel[hidden]{display:none!important}
+.dock-eyebrow{display:block;color:#c1aa7c;font-size:10px;letter-spacing:.13em;margin-bottom:7px}
+.dock-panel h2{font-family:var(--serif);font-size:23px;color:#f4e5bc}
+.dock-panel p{color:#b9c8c5;margin:10px 0 22px;line-height:1.8;font-size:12px}
+.dock-controls{display:flex;gap:15px;align-items:center}
+#dock-play{width:42px;height:42px;min-width:42px;border:1px solid #e1c7887d;border-radius:50%;background:#d4b36f24;color:#f1d9a5;font-size:15px}
+.dock-timeline{min-width:0;flex:1}
+.dock-timeline input{width:100%;height:4px;margin:8px 0;appearance:none;background:linear-gradient(to right,#e1c689 0 var(--fill,0%),#647b79 var(--fill,0%) 100%);border-radius:4px;cursor:pointer}
+.dock-timeline input::-webkit-slider-thumb{appearance:none;width:13px;height:13px;border-radius:50%;background:#f0dcaf}
+.dock-timeline input::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:#f0dcaf;border:0}
+.dock-times{display:flex;justify-content:space-between;color:#afc0ba;font-size:11px;font-variant-numeric:tabular-nums}
+.music-dock button:focus-visible,.music-dock input:focus-visible{outline:2px solid #f3d794;outline-offset:3px}
+/* A physical book: thickness, textured leaves, central gutter, readable poetry. */
+body[data-room=poems]{background:#d5c6ab;color:#382f25}
+body[data-room=poems] main{background:radial-gradient(ellipse at 52% 40%,#e9dec9,#cabc9e 90%)}
+body[data-room=poems] .poetry-room-v09{max-width:1360px;padding:0 clamp(14px,4vw,60px) 75px}
+.poetry-room-v09 .poetry-heading{padding:26px 0 26px;text-align:center}
+.poetry-room-v09 .poetry-heading h1{font-size:clamp(28px,3.4vw,43px);font-weight:400;color:#33291e;margin:7px 0}
+.poetry-room-v09 .poetry-overline{color:#987455;font-size:11px;letter-spacing:.18em}
+.book-library{max-width:1130px;margin:auto}
+.book-toolbar{display:flex;align-items:center;justify-content:space-between;gap:15px}
+.book-toolbar .poetry-switch{margin:6px 0 20px;gap:25px}
+.book-count{color:#84715e;font-size:12px}
+.book-cover-row{display:flex;gap:10px;justify-content:center;margin:0 0 27px}
+.book-cover{appearance:none;border:1px solid #ad9778;border-left:7px solid #8e6f52;min-width:138px;max-width:230px;flex:1;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:74px;padding:12px 17px;color:#4a3628;background:linear-gradient(128deg,#e2d2b4,#f5e9d5 70%,#e5d5bb);box-shadow:5px 7px 12px #4f361e17,inset 3px 0 7px #76563b19;transition:transform .25s,box-shadow .25s;cursor:pointer}
+.book-cover.is-current{transform:translateY(-5px);box-shadow:6px 12px 23px #4f361e2a,inset 3px 0 7px #76563b19;border-color:#8d6045}
+.book-cover strong{font:400 clamp(18px,2vw,25px)/1.4 var(--serif);white-space:nowrap}
+.book-cover small,.book-cover-seal{font-size:10px;color:#92725d;white-space:nowrap}
+.book-cover:focus-visible,.book-index-item:focus-visible,.book-page-controls button:focus-visible{outline:2px solid #ad5d3c;outline-offset:3px}
+.book-open{display:grid;grid-template-columns:1fr 1fr;align-items:stretch;position:relative;margin:0 auto;padding:14px;background:#735d46;border-radius:4px 15px 15px 4px;box-shadow:0 30px 55px #38291747,0 6px 12px #291e1145,inset 0 0 0 2px #a18b7099}
+.book-open:after{content:'';position:absolute;left:50%;top:12px;bottom:12px;width:23px;transform:translateX(-50%);pointer-events:none;z-index:2;background:linear-gradient(90deg,transparent,#60463126 27%,#392a2153 46%,#ffffff30 63%,transparent)}
+.book-sheet{position:relative;min-width:0;min-height:610px;padding:clamp(30px,4vw,64px) clamp(27px,4.7vw,72px) 44px;background-color:#f7f0e2;background-image:radial-gradient(#b09b7818 .7px,transparent .8px),linear-gradient(98deg,#ede0c9 0,#fcf6ea 16%,#f8f0e2 74%,#eee2d0);background-size:7px 7px,100% 100%;color:#3c3025}
+.book-left{border-radius:2px 0 0 2px;box-shadow:inset -15px 0 23px -18px #453022a6,inset 5px 0 12px #fff6e7a6}
+.book-right{border-radius:0 10px 10px 0;box-shadow:inset 17px 0 24px -19px #453022a6,inset -6px 0 16px #7d665436;display:flex;flex-direction:column}
+.book-page-small,.book-leaf-meta{font:11px/1.8 var(--sans);color:#a18363;letter-spacing:.08em}
+.book-left h2{font-size:clamp(28px,3vw,44px);margin:18px 0 20px}
+.book-index{display:grid;gap:2px;max-height:none}
+.book-index-item{display:grid;grid-template-columns:28px 1fr;align-items:center;text-align:left;gap:12px;width:100%;padding:10px 4px;background:transparent;border:0;border-bottom:1px solid #ac987b2b;cursor:pointer;color:#6e5c48;font:14px/1.8 var(--serif)}
+.book-index-item span:first-child{font:11px/1.5 var(--sans);color:#af9177}
+.book-index-item:is(:hover,.is-selected){color:#9c5c41}
+.book-poem-header h2{font-family:var(--serif);font-size:clamp(23px,2.4vw,34px);line-height:1.6;margin:14px 0 8px;color:#332a23}
+.book-date{color:#94785e;font-size:11px}
+.book-poem-body{font-family:var(--serif);font-size:clamp(14px,1.35vw,17px);line-height:2.2;letter-spacing:.025em;white-space:normal;padding:28px 0 24px}
+.book-poem-body p{white-space:pre-wrap;margin:0 0 1.2em;overflow-wrap:anywhere}
+.book-permalink{font-size:12px;color:#98694f;border-bottom:1px solid #ae816650;align-self:start;margin-bottom:20px}
+.book-page-controls{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:auto;padding-top:20px;border-top:1px solid #a58d683f;font-size:12px;color:#8a775e}
+.book-page-controls button{background:transparent;border:0;color:#71513c;cursor:pointer;font-size:12px;padding:8px 0}
+.book-page-controls button:disabled{opacity:.3;cursor:default}
+.book-footnote{position:absolute;bottom:26px;left:clamp(27px,4.7vw,72px);font-size:10px;color:#a28b71;letter-spacing:.08em}
+.book-back{display:none}.book-handhint{font-size:11px;text-align:center;color:#816e58;margin:20px 0 5px}
+.poetry-room-v09 .poetry-source-details{color:#806e57;padding:5px 0 30px}
+body[data-room=poems] footer{background:#d5c6ab}
+/* Mobile opens one leaf at a time. The whole poem may extend vertically; no truncation. */
+@media(max-width:700px){
+ .site-header,body[data-room=home] .site-header{height:auto;min-height:110px;margin:0 5%;padding:12px 0 8px;gap:8px;flex-wrap:wrap}
+ .site-header .brand{font-size:15px}.site-header .cat-mark{width:48px;height:36px}
+ .site-header nav{width:100%;justify-content:space-between;gap:9px}
+ .site-header nav a{font-size:12px}
+ body[data-room=home] .river-reflection{stroke-width:32!important;opacity:.21!important}
+ body[data-room=home] .river-bloom{opacity:.19}
+ body[data-room=home] .water-sheens{stroke-width:.9}
+ body[data-room=home] .river-distributary .branch-haze{stroke-width:10}
+ body[data-room=home] .river-distributary .tributary{stroke-width:3.7}
+ .music-dock{bottom:calc(12px + env(safe-area-inset-bottom));right:12px}
+ .dock-toggle{padding:10px 12px;min-height:44px}.dock-title{font-size:12px}
+ .dock-panel{padding:20px;width:min(324px,calc(100vw - 24px))}
+ .poetry-room-v09 .poetry-heading{padding:20px 0}
+ .poetry-room-v09 .poetry-heading h1{font-size:30px}
+ .book-cover-row{gap:6px;margin-bottom:18px}
+ .book-cover{min-width:0;padding:11px 6px;min-height:65px;border-left-width:4px;flex-direction:column;gap:2px}
+ .book-cover strong{font-size:19px}.book-cover-seal{display:none}.book-cover small{font-size:10px}
+ .book-open{grid-template-columns:1fr;padding:8px;border-radius:3px 10px 10px 3px}
+ .book-open:after{display:none}
+ .book-sheet{min-height:560px;padding:34px clamp(22px,6vw,34px) 38px}
+ .book-left{border-radius:2px 6px 6px 2px;box-shadow:inset 8px 0 20px #a88c681f}
+ .book-right{border-radius:2px 6px 6px 2px;box-shadow:inset 8px 0 20px #a88c681f}
+ .book-open:not(.book-show-poem) .book-right{display:none}
+ .book-open.book-show-poem .book-left{display:none}
+ .book-back{display:inline-block;align-self:start;border:0;background:none;color:#886344;padding:0 0 16px;cursor:pointer;font-size:12px}
+ .book-poem-body{font-size:15.5px;line-height:2.18}
+ .book-handhint{line-height:1.8}
+ .book-count{font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+ body[data-room=home] .water-sheens path,body[data-room=home] .river-distributary .branch-spark,.music-dock.is-playing .dock-pulse{animation:none!important}
+ .book-cover,.river-distributary path,.dock-toggle{transition:none!important}
+}
+/* River mouths draw in after the central current; light radiates outward on focus. */
+body[data-room=home] .external-branches{opacity:.9}
+body[data-room=home] .external-branches .branch-haze{stroke-width:17;opacity:.12;filter:blur(7px)}
+body[data-room=home] .external-branches .tributary{stroke-width:4;opacity:.34}
+body[data-room=home] .external-branches .branch-spark{stroke-width:1.2;opacity:.72}
+body[data-room=home] .roaming-night[data-intro="pending"] .external-branches{opacity:0}
+body[data-room=home] .roaming-night[data-intro="playing"] .external-branches{animation:branch-arrival-v09 1.8s 2.1s both}
+body[data-room=home] .roaming-night[data-intro="playing"][data-paused="true"] .external-branches{animation-play-state:paused}
+@keyframes branch-arrival-v09{from{opacity:0}to{opacity:.9}}
+@media(prefers-reduced-motion:reduce){body[data-room=home] .external-branches{opacity:.9!important;animation:none!important}}
+
+/* Standalone poem deep-links also read as paper, not a separate app template. */
+body[data-room=poems] .article.poetry-reading{background:linear-gradient(95deg,#eee0c8,#fcf5e7 9%,#faf2e4 94%,#e7dac7);box-shadow:12px 20px 45px #4c352829,inset 5px 0 17px #715a3920;border:1px solid #ab947277;border-radius:4px 10px 10px 4px;padding:clamp(28px,5vw,72px);margin:35px auto 85px}
+body[data-room=poems] .article.poetry-reading .body p{white-space:pre-wrap}
+
+/* A slight leaf movement is enough: no rigid 3D page flipping or clipped verse. */
+#book-current.leaf-turn{animation:leaf-turn-v09 .36s cubic-bezier(.17,.65,.36,1) both;transform-origin:left center}
+@keyframes leaf-turn-v09{from{opacity:.74;transform:perspective(900px) rotateY(-3deg) translateX(5px)}to{opacity:1;transform:perspective(900px) rotateY(0) translateX(0)}}
+@media(prefers-reduced-motion:reduce){#book-current.leaf-turn{animation:none!important}}
