@@ -61,7 +61,7 @@ footer>div{flex-wrap:wrap}footer .footer-title{font-size:clamp(25px,3.2vw,42px)}
 .in-darkroom .site-header{height:78px;border-color:#30342c}.in-darkroom .brand{font-size:14px;opacity:.65}.in-darkroom .brand small{font-size:9px}
 .in-darkroom .seal{font-size:13px}.in-darkroom .site-header nav a{opacity:.56;font-size:12px}.in-darkroom .site-header nav a:hover,.in-darkroom .site-header nav a:focus-visible,.in-darkroom .site-header nav a[aria-current]{opacity:1}
 .in-darkroom .edition{opacity:.45;font-size:10px}.in-darkroom footer{border-color:#30342c}.in-darkroom footer>div{color:#a9afa4}
-.in-darkroom footer .footer-title{font-size:26px;color:#bdc2b5}.in-darkroom:before{opacity:.025}
+.in-darkroom footer .footer-title{font-size:clamp(24px,2.7vw,39px);color:#d4b77a}.in-darkroom:before{opacity:.025}
 .darkroom{background:transparent}.collection-heading{padding:65px 0 70px}.collection-heading h1{font-size:clamp(38px,4.8vw,66px);line-height:1.6;margin:20px 0 15px}
 .collection-heading>p{font-size:14px;line-height:2;color:#c0c4b8}.collection-note{display:block;font-size:12px;color:#919987;line-height:2;margin-top:28px}
 .photo-collection .work-image{background:#171c14}.photo-collection .work-image img{filter:saturate(.8)}

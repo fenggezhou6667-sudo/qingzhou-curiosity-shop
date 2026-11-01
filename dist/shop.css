@@ -92,7 +92,7 @@ body[data-text-scheme=dark]:not(.in-darkroom){color:#e9e5da;background:#12212b;-
 .shop-colophon{display:flex;justify-content:space-between;gap:20px;padding-top:25px;padding-bottom:55px;color:#706b60;font-size:11px;line-height:2}
 .shop-colophon>span:last-child{font:italic 13px/2 Georgia,serif;letter-spacing:.04em}
 .mobile-break{display:none}
-footer{padding-top:40px;padding-bottom:35px}footer .footer-title{display:block;font-size:clamp(24px,2.7vw,39px);line-height:1.9;letter-spacing:.04em;color:var(--cat);text-wrap:balance}
+footer{padding-top:40px;padding-bottom:35px}footer .footer-title{display:block;font-size:clamp(24px,2.7vw,39px);line-height:1.9;letter-spacing:.04em;color:#d4b77a;text-wrap:balance}
 footer>div{font-size:11px;line-height:2;gap:22px;margin-top:20px}
 .in-darkroom .cat-mark{opacity:.85;width:58px;height:42px}
 .in-darkroom .site-header .brand{font-size:15px}.in-darkroom .site-header .brand small{font-size:9px}

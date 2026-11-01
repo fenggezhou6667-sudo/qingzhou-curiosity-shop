@@ -5,7 +5,13 @@ body[data-room="home"] .river-reflection{opacity:.27!important;stroke-width:64!i
 body[data-room="home"] .river-bloom{opacity:.23;stroke:#f0c781}
 body[data-room="home"] .river-core{opacity:.36;stroke:#ffe4a0}
 body[data-room="home"] .river-ripples{opacity:.49;stroke:#ffe3a8;stroke-width:1.85}
-body[data-room="home"] .river-current{stroke:#fff1c4;opacity:.90}
+body[data-room="home"] .river-current{stroke:#fff1c4;stroke-opacity:.18;opacity:.90}
+/* v1.1.1 regression repair: restore the quieter v0.9 river surface. */
+body[data-room="home"] .river-reflection{stroke-width:35!important;opacity:.14!important}
+body[data-room="home"] .river-bloom{opacity:.11!important;stroke:#e0c981!important}
+body[data-room="home"] .river-core{opacity:0!important;stroke:#ffe4a0!important}
+body[data-room="home"] .river-ripples{opacity:.12!important;stroke-width:1.05!important;stroke:#d9c58b!important}
+body[data-room="home"] .river-flowline{display:none!important}
 /* Use the v0.9 centreline-oriented, sparse water-sheen marks. */
 body[data-room="home"] .water-sheens{fill:none;stroke:#ffe3a7;stroke-linecap:round;stroke-width:1.15;filter:drop-shadow(0 0 2px #e8cb8688)}
 body[data-room="home"] .water-sheens path{opacity:.19;animation:surface-shimmer var(--duration,5s) ease-in-out var(--delay,0s) infinite alternate;animation-play-state:paused}
@@ -25,7 +31,7 @@ body[data-room="home"] .roaming-night[data-running="true"] .river-distributary :
 @keyframes branch-water{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
 body[data-room="home"] .roaming-night:has(.node-poems:is(:hover,:focus-visible)) .branch-poems .branch-haze,body[data-room="home"] .roaming-night:has(.node-photos:is(:hover,:focus-visible)) .branch-photos .branch-haze,body[data-room="home"] .roaming-night:has(.node-traces:is(:hover,:focus-visible)) .branch-traces .branch-haze,body[data-room="home"] .roaming-night:has(.node-lab:is(:hover,:focus-visible)) .branch-lab .branch-haze{stroke-width:43;opacity:.28}
 body[data-room="home"] .roaming-night:has(.node-poems:is(:hover,:focus-visible)) .branch-poems .branch-bed,body[data-room="home"] .roaming-night:has(.node-photos:is(:hover,:focus-visible)) .branch-photos .branch-bed,body[data-room="home"] .roaming-night:has(.node-traces:is(:hover,:focus-visible)) .branch-traces .branch-bed,body[data-room="home"] .roaming-night:has(.node-lab:is(:hover,:focus-visible)) .branch-lab .branch-bed{opacity:.88;filter:drop-shadow(0 0 12px #e6c77b55) brightness(1.12)}
-body[data-room="home"] .roaming-night:has(.node-poems:is(:hover,:focus-visible)) .branch-poems .branch-current,body[data-room="home"] .roaming-night:has(.node-photos:is(:hover,:focus-visible)) .branch-photos .branch-current,body[data-room="home"] .roaming-night:has(.node-traces:is(:hover,:focus-visible)) .branch-traces .branch-current,body[data-room="home"] .roaming-night:has(.node-lab:is(:hover,:focus-visible)) .branch-lab .branch-current{opacity:.8;stroke-width:3.2}
+body[data-room="home"] .roaming-night:has(.node-poems:is(:hover,:focus-visible)) .branch-poems .branch-current,body[data-room="home"] .roaming-night:has(.node-photos:is(:hover,:focus-visible)) .branch-photos .branch-current,body[data-room="home"] .roaming-night:has(.node-traces:is(:hover,:focus-visible)) .branch-traces .branch-current,body[data-room="home"] .roaming-night:has(.node-lab:is(:hover,:focus-visible)) .branch-lab .branch-current{opacity:.5;stroke-width:9}
 body[data-room="home"] .roaming-night[data-intro="pending"] .branch-bed{opacity:0}
 body[data-room="home"] .roaming-night[data-intro="playing"] .branch-bed{opacity:0;animation:tributary-bed-reveal .72s cubic-bezier(.2,.65,.25,1) both}
 body[data-room="home"] .roaming-night[data-intro="playing"] .branch-photos .branch-bed{animation-delay:1.95s}

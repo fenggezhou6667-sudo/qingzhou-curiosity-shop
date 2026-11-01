@@ -1,0 +1,113 @@
+
+/* v1.2 — one continuous night palette, unified river branches, and the China footprint map. */
+:root{--ink:#e7e6d9;--muted:#aab8af;--line:#304a43;--red:#d4b77a;--paper:#0b211f}
+html{background:#0b211f}
+body{background:#0b211f!important;color:#e7e6d9;--ink:#e7e6d9;--muted:#aab8af;--line:#304a43;--red:#d4b77a;--paper:#0b211f}
+body:before{opacity:.055;background-image:radial-gradient(ellipse at 20% 12%,#4d786b33,transparent 46%),radial-gradient(ellipse at 83% 68%,#c1a56b12,transparent 42%)}
+a{color:inherit}
+.site-header{color:#e7e6d9!important;border-bottom-color:#345047!important;isolation:isolate;position:relative;background:transparent!important}
+.site-header::before{content:"";position:absolute;z-index:-1;pointer-events:none;inset:0 0 -18px;background:linear-gradient(180deg,rgba(8,29,28,.99) 0%,rgba(10,33,31,.94) 64%,rgba(10,33,31,.62) 86%,rgba(10,33,31,0) 100%);opacity:1!important}
+.site-header::after{opacity:0!important}
+.site-header nav a,.site-header .brand,.site-header .edition{color:#e7e6d9!important}
+.site-header nav a[aria-current=page]:after{background:#d4b77a}
+.site-header nav a:after{background:#aab8af}
+footer{border-top-color:#304a43!important;color:#aab8af!important}
+.footer-title{color:#d4b77a}
+footer a:hover{color:#e8d7a6}
+.eyebrow{color:#aab8af}
+.room-heading h1,.page-title h1,.article h1,.poetry-heading h1{color:#e7e6d9}
+.room-heading>p,.page-title>p,.article .lead{color:#aab8af}
+.note-row,.poetry-shelf,.poetry-room,.personal-lab,.about-room,.credits-room{background:transparent!important;color:#e7e6d9}
+.note-row{border-color:#304a43!important}
+.note-row h3,.note-row a,.article .article-nav a{color:#e7e6d9}
+.note-row .note-meta,.note-row .arrow,.article .article-nav{color:#aab8af}
+.lab-teaser{background:linear-gradient(135deg,#102f2c,#0b211f)!important;color:#e7e6d9!important;border-block:1px solid #345047}
+.darkroom,.in-darkroom{background:#0b211f!important;color:#e7e6d9!important;--ink:#e7e6d9;--paper:#0b211f;--muted:#aab8af;--line:#304a43}
+.in-darkroom:before{opacity:.055}
+body[data-room=poems] .poetry-room-v09{background:transparent!important;color:#e7e6d9}
+body[data-room=poems] .poetry-room-v09 .poetry-heading h1{color:#e7d1a3!important;font-family:"STKaiti","KaiTi","Kaiti SC",serif;font-weight:400;letter-spacing:.06em}
+body[data-room=poems] .poetry-room-v09 .poetry-overline{color:#d4b77a}
+body[data-room=poems] .poetry-heading{color:#e7e6d9}
+body[data-room=poems] footer .footer-title{color:#d4b77a}
+.book-toolbar{color:#e7e6d9}
+.book-toolbar .poetry-switch button{color:#d7d9cf;border-color:#476057}
+.book-toolbar .poetry-switch button[aria-pressed=true]{color:#f0d79c;border-color:#b89b64}
+.book-count{color:#aab8af}
+.book-handhint{color:#aab8af}
+.poetry-source-details{color:#aab8af;border-color:#304a43}
+.poetry-source-details summary{color:#d4b77a}
+.book-open{box-shadow:0 30px 55px #020b0a66,0 6px 12px #020b0a55,inset 0 0 0 2px #a18b7099}
+/* Preserve the warm, tactile paper itself while the surrounding room remains night-green. */
+.book-poem-body,.article.poetry-reading .body{font-family:"FangSong","STFangsong","FangSong SC",serif;letter-spacing:.045em}
+.book-sheet{--ink:#3c3025;--paper:#f7f0e2;--muted:#776a59;--line:#d5c8b5;color:#3c3025}
+.book-cover{color:#4a3628}
+body[data-room=lab] .life-stage{background:transparent!important}
+body[data-room=lab] .life-fog{opacity:.5}
+body[data-room=traces] .china-footprints{color:#e7e6d9;background:radial-gradient(ellipse at 32% 36%,#173d37 0%,#0c2927 42%,#081d1d 84%);min-height:78vh;padding:42px 0 82px;overflow:hidden}
+.china-wrap{max-width:1600px}
+.china-intro{padding:16px 0 34px}
+.china-intro .eyebrow{color:#d4b77a;letter-spacing:.16em}
+.china-intro h1{font:400 clamp(44px,6vw,82px)/1.25 var(--serif);margin:14px 0 10px;color:#e7e6d9}
+.china-intro p{font:17px/1.9 var(--serif);color:#b7c5bb;margin:0}
+.china-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.72fr);gap:clamp(28px,5vw,84px);align-items:center}
+.china-map-stage{position:relative;min-width:0;padding:18px 14px 12px;background:radial-gradient(ellipse at 48% 48%,#234b402c,transparent 68%);border-top:1px solid #355149;border-bottom:1px solid #355149}
+.china-map-caption{display:flex;justify-content:space-between;gap:12px;color:#d5c18b;font-size:10px;letter-spacing:.13em;text-transform:uppercase;padding:0 7px 7px}
+.china-map-caption span:first-child{font-family:var(--serif);font-size:13px;letter-spacing:.08em;text-transform:none;color:#d8e1d7}
+.china-map{display:block;width:100%;height:auto;overflow:visible;max-height:70vh}
+.china-grid{fill:none;stroke:#8eafa31a;stroke-width:1}
+.china-land-shadow{fill:#020c0b;opacity:.55;transform:translate(0 10px);filter:blur(12px)}
+.china-land-depth{fill:#2d554b;stroke:none;opacity:.85}
+.china-land{fill:url(#chinaLandFill);stroke:url(#chinaLandEdge);stroke-width:1.4;stroke-linejoin:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 15px #7eaa8b18)}
+.china-island{fill:url(#chinaLandFill);stroke:#a5b68f88;stroke-width:1.1;vector-effect:non-scaling-stroke}
+.china-topography{fill:none;stroke:#9cb5a04b;stroke-width:1.15;stroke-linecap:round}
+.china-network{fill:none;stroke:#d3bb7a;stroke-width:1.2;stroke-opacity:.23;stroke-dasharray:2 7;stroke-linecap:round}
+.china-link{animation:china-link-breathe 8s ease-in-out infinite alternate}
+@keyframes china-link-breathe{from{stroke-opacity:.12}to{stroke-opacity:.34}}
+.china-city{cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
+.china-city .city-halo{fill:url(#chinaCityGlow);opacity:.38;transform-box:fill-box;transform-origin:center;transition:opacity .25s,transform .25s}
+.china-city .city-pulse{fill:#e8c67d;opacity:.3}
+.china-city .city-core{fill:#f5dca0;stroke:#f5dca0;stroke-width:1;filter:drop-shadow(0 0 4px #f2d18a88)}
+.china-city .city-label{font:15px var(--serif);fill:#f3e8c7;paint-order:stroke;stroke:#0b211f;stroke-width:4px;stroke-linejoin:round;opacity:0;pointer-events:none}
+.china-city:hover .city-halo,.china-city:focus-visible .city-halo,.china-city.is-selected .city-halo{opacity:1;transform:scale(1.55)}
+.china-city:hover .city-pulse,.china-city:focus-visible .city-pulse,.china-city.is-selected .city-pulse{opacity:.9}
+.china-city.is-selected .city-core{fill:#fff2bf;stroke:#fff8d9;stroke-width:1.4}
+.china-city.is-selected .city-label{opacity:1}
+.china-city:focus-visible{outline:none}
+.china-city:focus-visible .city-core{stroke:#fff;stroke-width:2.5}
+.china-nearby{margin:4px 8px 12px;padding:12px 14px;border-left:1px solid #b99f6d;background:#15383280;color:#d8e1d7}
+.china-nearby[hidden]{display:none}
+.china-nearby p{margin:0 0 8px;font:13px/1.6 var(--serif)}
+.china-nearby .china-city-pills button{min-height:40px}
+.china-map-note{font-size:11px;line-height:1.8;color:#90a99e;margin:8px 8px 0}
+.china-story{padding:10px 0}
+.china-count{font-size:11px;letter-spacing:.16em;color:#d4b77a}
+.china-story h2{font:400 clamp(30px,3.3vw,43px)/1.45 var(--serif);margin:12px 0;color:#e7e6d9}
+.china-story>p{font:14px/2 var(--serif);color:#b7c5bb}
+.china-story .china-disclaimer{border-left:1px solid #b99f6d;padding-left:13px;color:#8fa69b;font:11px/1.9 var(--sans);margin:18px 0 26px}
+.china-city-list{display:grid;gap:15px}
+.china-city-group h3{font-size:11px;letter-spacing:.08em;color:#8fa69b;font-weight:400;margin:0 0 8px}
+.china-city-pills{display:flex;flex-wrap:wrap;gap:7px}
+.china-city-pills button{appearance:none;background:#153832aa;border:1px solid #47665a;border-radius:999px;color:#cbd6ca;padding:7px 12px;font:12px var(--sans);cursor:pointer;transition:background .2s,border-color .2s,color .2s,transform .2s}
+.china-city-pills button:hover,.china-city-pills button:focus-visible{background:#214a3e;border-color:#d2b77a;color:#f4e5bd;transform:translateY(-1px)}
+.china-city-pills button[aria-pressed=true]{background:#d1b67820;border-color:#d4b77a;color:#f1d99c}
+.china-footer{text-align:center;color:#b5c4b8;font:15px/2 var(--serif);margin:45px 0 0}
+body[data-room=home] .desktop-scene-art .river-body{filter:url(#riverSoft)}
+body[data-room=home] .mobile-scene-art .river-body{filter:blur(1.5px)}
+body[data-room=home] .branch-water-surface{opacity:.92}
+body[data-room=home] .river-distributary{pointer-events:none}
+body[data-room=home] .river-distributary .branch-haze{stroke:#e4d19a;stroke-width:24;opacity:.06;filter:blur(8px)}
+body[data-room=home] .river-distributary .tributary{stroke:#e4d19a;stroke-width:1.1;opacity:0}
+body[data-room=home] .river-distributary .branch-waterline{stroke:#f0dda5;stroke-width:1.4;opacity:0}
+body[data-room=home] .river-distributary .branch-ripples path{fill:none;stroke:#f0dca6;stroke-width:1;opacity:.1}
+body[data-room=home] .river-distributary .branch-current{stroke:#fff0bf;stroke-width:1.4;stroke-dasharray:30 180;opacity:0;filter:blur(4px)}
+body[data-room=home] .river-distributary .branch-spark{stroke:#fff0bc;stroke-width:1.05;stroke-dasharray:6 118;opacity:0}
+body[data-room=home] .river-distributary:focus-within .branch-haze,body[data-room=home] .roaming-night:has(.wander-node:hover) .branch-haze{opacity:.2}
+@media(max-width:850px){.china-layout{grid-template-columns:1fr;gap:26px}.china-map{max-height:none}.china-map-stage{padding:14px 0}.china-story{padding:0 2px}.china-intro{padding-bottom:22px}.china-city-list{grid-template-columns:repeat(2,minmax(0,1fr));display:grid;gap:14px}}
+@media(max-width:520px){.china-footprints{padding-top:24px!important}.china-map-caption span:last-child{font-size:8px}.china-map-note{font-size:10px}.china-city-pills button{padding:7px 10px}.site-header{background:transparent!important}}
+@media(prefers-reduced-motion:reduce){.china-link{animation:none}.china-city .city-halo,.china-city-pills button{transition:none}}
+
+body[data-text-scheme=dark]{background:#0b211f!important;color:#e7e6d9;--ink:#e7e6d9;--muted:#aab8af;--line:#304a43;--red:#d4b77a;--paper:#0b211f}
+body[data-room=home]:before{opacity:.055!important}
+.dock-toggle{background:#12342fe8!important;border-color:#d8c99a87!important;color:#f1dfb3!important}
+.dock-toggle:hover{background:#1d4a3e!important;border-color:#f0d597!important}
+.dock-panel{background:linear-gradient(155deg,#173b32fa,#0a211ffc)!important;border-color:#d8bf8455!important;color:#eae6d9}

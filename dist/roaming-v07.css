@@ -19,7 +19,7 @@ body[data-room=home] .roaming-night:after{display:none}
 body[data-room=home] .river-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 body[data-room=home] .scene-art{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
 body[data-room=home] .scene-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-body[data-room=home] .mobile-scene-art{display:none}
+body[data-room=home] .mobile-scene-art,body[data-room=home] .tablet-scene-art{display:none}
 body[data-room=home] .mobile-scene-art .river-body{fill:url(#mobileWater);stroke:none;opacity:.67}
 body[data-room=home] .mobile-scene-art .river-body-glow{fill:#9bb9a4;stroke:none;opacity:.1;filter:url(#mobileBloom)}
 body[data-room=home] .terrain-far{fill:#112b34;opacity:.58}
@@ -58,13 +58,13 @@ body[data-room=home] footer{margin:0;padding:40px 4.2% 44px;border-top:1px solid
 body[data-room=home] footer .footer-title{display:block;padding:7px 0 12px;color:#d8c18a;font-size:clamp(25px,3vw,40px);line-height:1.6;letter-spacing:.025em;text-wrap:balance}
 body[data-room=home] footer>div{display:none}
 body[data-room=home] footer a:hover{color:#f5e7b8}
-body[data-room=home] .wander-node{width:auto;min-height:0;padding:12px 0 12px 22px;z-index:4;display:block;max-width:34%;transition:transform .35s ease,color .35s;text-shadow:0 2px 20px #07151db8}
+body[data-room=home] .wander-node{width:auto;min-height:0;padding:12px 0 12px 22px;z-index:4;display:block;max-width:34%;transition:transform .35s ease,color .35s;text-shadow:0 1px 4px #001413,0 3px 18px #001413}
 body[data-room=home] .wander-node h2{font-size:clamp(25px,2.35vw,36px);line-height:1.55;letter-spacing:.02em;color:#f0e9d8;font-weight:400;white-space:nowrap;transition:color .35s,text-shadow .35s,transform .35s}
 body[data-room=home] .wander-node .node-point{position:absolute;left:0;top:50%;width:5px;height:5px;transform:translateY(-50%);border:0;border-radius:50%;background:#d9c78f;box-shadow:0 0 12px 3px #d6c17d55;opacity:.7;animation:node-glimmer 6.5s ease-in-out infinite;animation-play-state:paused}
 body[data-room=home] .wander-node .node-tail{display:none}
-body[data-room=home] .node-photos{left:62%;top:10%;max-width:36%}
+body[data-room=home] .node-photos{left:73%;top:14%;max-width:25%}
 body[data-room=home] .node-poems{left:26%;top:34%;max-width:32%}
-body[data-room=home] .node-traces{left:67%;top:59%;max-width:32%}
+body[data-room=home] .node-traces{left:75%;top:60%;max-width:25%}
 body[data-room=home] .node-lab{left:17%;top:73%;max-width:37%}
 body[data-room=home] .wander-node:hover,body[data-room=home] .wander-node:focus-visible{transform:translateY(-3px)}
 body[data-room=home] .wander-node:hover h2,body[data-room=home] .wander-node:focus-visible h2{color:#ffe7a7;text-shadow:0 0 24px #e4c87965,0 2px 18px #07151d}
@@ -84,7 +84,7 @@ body[data-room=home] .roaming-night a:focus-visible,body[data-room=home] .roamin
 @keyframes mist-drift{from{transform:translate3d(-2%,0,0) scale(.96)}to{transform:translate3d(5%,4%,0) scale(1.06)}}
 @keyframes node-glimmer{0%,100%{opacity:.55;box-shadow:0 0 8px 2px #d6c17d35}50%{opacity:1;box-shadow:0 0 15px 4px #d6c17d8c}}
 @keyframes glint-breathe{0%,100%{opacity:.14;transform:scale(.8)}50%{opacity:.9;transform:scale(1.35)}}
-@media(max-width:1100px){body[data-room=home] .wander-node h2{font-size:clamp(24px,2.7vw,30px)}body[data-room=home] .node-photos{left:63%}body[data-room=home] .node-traces{left:68%}}
+@media(max-width:1100px){body[data-room=home] .wander-node h2{font-size:clamp(20px,2.8vw,30px)}}
 @media(max-width:700px){
  body[data-room=home] .site-header{height:auto;min-height:124px;margin:0 6%;padding:16px 0 5px;gap:8px}
  body[data-room=home] .site-header nav{width:100%;justify-content:space-between;gap:8px}
@@ -100,16 +100,24 @@ body[data-room=home] .roaming-night a:focus-visible,body[data-room=home] .roamin
  body[data-room=home] .river-current{stroke-width:1.05;stroke-dasharray:1 12}
  body[data-room=home] .terrain-contours{opacity:.06}
  body[data-room=home] .scene-mist{opacity:.08;filter:blur(32px)}
- body[data-room=home] .motion-toggle{right:6%;top:18px;width:38px;height:38px;min-width:38px;min-height:38px}
+ body[data-room=home] .motion-toggle{left:6%;right:auto;top:18px;width:38px;height:38px;min-width:38px;min-height:38px}
  body[data-room=home] .wander-node{max-width:80%;padding-left:19px;padding-block:10px}
- body[data-room=home] .wander-node h2{font-size:clamp(23px,6.2vw,28px);white-space:normal;line-height:1.55}
  body[data-room=home] .wander-node .node-point{width:4px;height:4px}
- body[data-room=home] .node-photos{left:48%;top:12%;max-width:46%}
- body[data-room=home] .node-poems{left:7%;top:27%;max-width:65%}
- body[data-room=home] .node-traces{left:46%;top:48%;max-width:50%}
- body[data-room=home] .node-lab{left:8%;top:69%;max-width:77%}
  body[data-room=home] footer{padding:28px 6% 34px}
  body[data-room=home] footer .footer-title{font-size:clamp(23px,6vw,28px);line-height:1.8;padding:4px 0 8px}
+}
+@media (min-width:501px) and (max-width:900px) and (orientation:portrait){
+ body[data-room=home] .roaming-night{height:820px;min-height:820px;max-height:none}
+ body[data-room=home] .desktop-scene-art,body[data-room=home] .mobile-scene-art{display:none}
+ body[data-room=home] .tablet-scene-art{display:block}
+}
+@media (max-width:900px) and (orientation:portrait){
+ body[data-room=home] .motion-toggle{left:4.3%;right:auto}
+ body[data-room=home] .wander-node h2{font-size:clamp(19px,5.6vw,25px)}
+ body[data-room=home] .node-photos{left:auto;right:5%;top:15%;max-width:none}
+ body[data-room=home] .node-poems{left:12%;top:31%;max-width:none}
+ body[data-room=home] .node-traces{left:auto;right:5%;top:53%;max-width:none}
+ body[data-room=home] .node-lab{left:12%;top:71%;max-width:none}
 }
 @media(prefers-reduced-motion:reduce){
  body[data-room=home] .scene-dust,body[data-room=home] .river-current,body[data-room=home] .scene-mist,body[data-room=home] .node-point,body[data-room=home] .river-glint{animation:none!important}

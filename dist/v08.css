@@ -1,21 +1,19 @@
 /* v0.8: wave reveal + literary volumes + one original recording. No new JS framework. */
 body[data-room="home"] .roaming-night .river-reveal-trace{stroke-dasharray:100;stroke-dashoffset:0}
-body[data-room="home"] .roaming-night[data-intro="pending"] .river-reveal-trace{stroke-dashoffset:100}
-body[data-room="home"] .roaming-night[data-intro="playing"] .river-reveal-trace{animation:river-reveal-v08 4.3s cubic-bezier(.35,.04,.44,1) both;animation-play-state:running}
-body[data-room="home"] .roaming-night[data-intro="playing"][data-paused="true"] .river-reveal-trace{animation-play-state:paused}
-@keyframes river-reveal-v08{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+body[data-room="home"] .roaming-night[data-intro="pending"] .river-revealed{opacity:0}
+body[data-room="home"] .roaming-night[data-intro="playing"] .river-revealed{animation:river-reveal-v08 1.4s ease-out both;animation-play-state:running}
+body[data-room="home"] .roaming-night[data-intro="playing"][data-paused="true"] .river-revealed{animation-play-state:paused}
+@keyframes river-reveal-v08{from{opacity:0}to{opacity:1}}
 body[data-room="home"] .roaming-night[data-intro="pending"] .wander-node{opacity:0;transform:translateY(12px)}
-body[data-room="home"] .roaming-night[data-intro="playing"] .wander-node{opacity:0;animation:destination-arrival-v08 .75s ease-out forwards;animation-play-state:running}
+body[data-room="home"] .roaming-night[data-intro="playing"] .wander-node{opacity:0;animation:destination-arrival-v08 .55s ease-out forwards;animation-play-state:running}
 body[data-room="home"] .roaming-night[data-intro="playing"][data-paused="true"] .wander-node{animation-play-state:paused}
-body[data-room="home"] .roaming-night[data-intro="playing"] .node-photos{animation-delay:.85s}
-body[data-room="home"] .roaming-night[data-intro="playing"] .node-poems{animation-delay:1.85s}
-body[data-room="home"] .roaming-night[data-intro="playing"] .node-traces{animation-delay:2.75s}
-body[data-room="home"] .roaming-night[data-intro="playing"] .node-lab{animation-delay:3.45s}
+body[data-room="home"] .roaming-night[data-intro="playing"] .node-photos{animation-delay:.15s}
+body[data-room="home"] .roaming-night[data-intro="playing"] .node-poems{animation-delay:.3s}
+body[data-room="home"] .roaming-night[data-intro="playing"] .node-traces{animation-delay:.45s}
+body[data-room="home"] .roaming-night[data-intro="playing"] .node-lab{animation-delay:.6s}
 body[data-room="home"] .roaming-night[data-intro="pending"] .wander-node:is(:focus-visible,:hover),body[data-room="home"] .roaming-night[data-intro="playing"] .wander-node:is(:focus-visible,:hover){opacity:1!important;animation:none!important}
 @keyframes destination-arrival-v08{from{opacity:0;transform:translateY(12px);filter:blur(2px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
 /* The original S-curve remains; the channel gains breadth and visible interior water motion. */
-body[data-room="home"] .desktop-scene-art .river-body,body[data-room="home"] .desktop-scene-art .river-body-glow{transform:scaleX(1.24);transform-origin:760px 440px}
-body[data-room="home"] .mobile-scene-art .river-body,body[data-room="home"] .mobile-scene-art .river-body-glow{transform:scaleX(1.12);transform-origin:192px 440px}
 body[data-room="home"] .river-ripples{fill:none;stroke:#e7dba7;stroke-width:1.65;stroke-linecap:round;opacity:.40;vector-effect:non-scaling-stroke;animation:river-wave-v08 5.9s ease-in-out infinite alternate;animation-play-state:paused}
 body[data-room="home"] .river-ripples path:nth-child(even){opacity:.55;stroke-width:1;animation:river-reflection-v08 7s ease-in-out infinite alternate;animation-play-state:paused}
 body[data-room="home"] .roaming-night[data-running="true"] .river-ripples,body[data-room="home"] .roaming-night[data-running="true"] .river-ripples path:nth-child(even){animation-play-state:running}
@@ -29,6 +27,7 @@ body[data-room="home"] .desktop-scene-art .river-current{stroke-width:2.2;opacit
 @media(max-width:700px){body[data-room="home"] .mobile-scene-art .river-ripples{stroke-width:1.35;opacity:.34}body[data-room="home"] .mobile-scene-art .river-reflection{stroke-width:30;opacity:.14}}
 @media(prefers-reduced-motion:reduce){
  body[data-room="home"] .roaming-night .river-reveal-trace{stroke-dashoffset:0!important;animation:none!important}
+ body[data-room="home"] .roaming-night .river-revealed{opacity:1!important;animation:none!important}
  body[data-room="home"] .roaming-night .wander-node{opacity:1!important;filter:none!important;transform:none!important;animation:none!important}
  body[data-room="home"] .river-ripples,body[data-room="home"] .river-ripples path{animation:none!important}
 }
