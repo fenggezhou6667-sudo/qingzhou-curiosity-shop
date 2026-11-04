@@ -9,8 +9,8 @@ body[data-room="home"] .river-current{stroke:#fff1c4;stroke-opacity:.18;opacity:
 /* v1.1.1 regression repair: restore the quieter v0.9 river surface. */
 body[data-room="home"] .river-reflection{stroke-width:35!important;opacity:.14!important}
 body[data-room="home"] .river-bloom{opacity:.11!important;stroke:#e0c981!important}
-body[data-room="home"] .river-core{opacity:0!important;stroke:#ffe4a0!important}
-body[data-room="home"] .river-ripples{opacity:.12!important;stroke-width:1.05!important;stroke:#d9c58b!important}
+body[data-room="home"] .river-core{opacity:.18!important;stroke:#e7d69f!important}
+body[data-room="home"] .river-ripples{opacity:.28!important;stroke-width:1.05!important;stroke:#d9c58b!important}
 body[data-room="home"] .river-flowline{display:none!important}
 /* Use the v0.9 centreline-oriented, sparse water-sheen marks. */
 body[data-room="home"] .water-sheens{fill:none;stroke:#ffe3a7;stroke-linecap:round;stroke-width:1.15;filter:drop-shadow(0 0 2px #e8cb8688)}
@@ -24,7 +24,7 @@ body[data-room="home"] .river-distributary .branch-haze{fill:none;stroke:#efc875
 body[data-room="home"] .river-distributary .branch-bed{fill:url(#branchWaterDesktop);stroke:none;opacity:.64;filter:drop-shadow(0 0 8px #c8a75c28);transition:opacity .38s ease,filter .38s ease}
 body[data-room="home"] .river-distributary .tributary{fill:none;stroke:#d9c58a;stroke-width:1.3;opacity:.38;stroke-dasharray:none}
 body[data-room="home"] .river-distributary .branch-waterline{fill:none;stroke:#e4d29b;stroke-width:2.2;opacity:.24}
-body[data-room="home"] .river-distributary .branch-current{fill:none;stroke:#fff0bf;stroke-width:2.6;stroke-dasharray:24 126;stroke-dashoffset:0;opacity:.32;animation:tributary-current-flow 21s linear infinite;animation-play-state:paused}
+body[data-room="home"] .river-distributary .branch-current{fill:none;stroke:#fff0bf;stroke-width:2.6;stroke-dasharray:24 126;stroke-dashoffset:0;opacity:.32;animation:tributary-current-flow 21s linear infinite reverse;animation-play-state:paused}
 body[data-room="home"] .river-distributary .branch-spark{fill:none;stroke:#fff0bc;stroke-width:1.15;stroke-dasharray:7 118;stroke-dashoffset:0;opacity:.3;animation:branch-water 16s linear infinite;animation-play-state:paused}
 body[data-room="home"] .roaming-night[data-running="true"] .river-distributary :is(.branch-current,.branch-spark){animation-play-state:running}
 @keyframes tributary-current-flow{from{stroke-dashoffset:0}to{stroke-dashoffset:-1000}}

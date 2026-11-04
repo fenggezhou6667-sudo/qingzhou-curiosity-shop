@@ -91,15 +91,15 @@ body[data-room=traces] .china-footprints{color:#e7e6d9;background:radial-gradien
 .china-city-pills button:hover,.china-city-pills button:focus-visible{background:#214a3e;border-color:#d2b77a;color:#f4e5bd;transform:translateY(-1px)}
 .china-city-pills button[aria-pressed=true]{background:#d1b67820;border-color:#d4b77a;color:#f1d99c}
 .china-footer{text-align:center;color:#b5c4b8;font:15px/2 var(--serif);margin:45px 0 0}
-body[data-room=home] .desktop-scene-art .river-body{filter:url(#riverSoft)}
-body[data-room=home] .mobile-scene-art .river-body{filter:blur(1.5px)}
+body[data-room=home] .desktop-scene-art .river-body{filter:none}
+body[data-room=home] .mobile-scene-art .river-body{filter:none}
 body[data-room=home] .branch-water-surface{opacity:.92}
 body[data-room=home] .river-distributary{pointer-events:none}
 body[data-room=home] .river-distributary .branch-haze{stroke:#e4d19a;stroke-width:24;opacity:.06;filter:blur(8px)}
 body[data-room=home] .river-distributary .tributary{stroke:#e4d19a;stroke-width:1.1;opacity:0}
-body[data-room=home] .river-distributary .branch-waterline{stroke:#f0dda5;stroke-width:1.4;opacity:0}
+body[data-room=home] .river-distributary .branch-waterline{stroke:#f0dda5;stroke-width:1.1;opacity:.07}
 body[data-room=home] .river-distributary .branch-ripples path{fill:none;stroke:#f0dca6;stroke-width:1;opacity:.1}
-body[data-room=home] .river-distributary .branch-current{stroke:#fff0bf;stroke-width:1.4;stroke-dasharray:30 180;opacity:0;filter:blur(4px)}
+body[data-room=home] .river-distributary .branch-current{stroke:#fff0bf;stroke-width:1.4;stroke-dasharray:30 180;opacity:.32;filter:blur(2px)}
 body[data-room=home] .river-distributary .branch-spark{stroke:#fff0bc;stroke-width:1.05;stroke-dasharray:6 118;opacity:0}
 body[data-room=home] .river-distributary:focus-within .branch-haze,body[data-room=home] .roaming-night:has(.wander-node:hover) .branch-haze{opacity:.2}
 @media(max-width:850px){.china-layout{grid-template-columns:1fr;gap:26px}.china-map{max-height:none}.china-map-stage{padding:14px 0}.china-story{padding:0 2px}.china-intro{padding-bottom:22px}.china-city-list{grid-template-columns:repeat(2,minmax(0,1fr));display:grid;gap:14px}}

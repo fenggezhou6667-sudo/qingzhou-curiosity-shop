@@ -39,7 +39,7 @@ body[data-room=home] .river-bank,body[data-room=home] .river-edge,body[data-room
 body[data-room=home] .river-reflection{fill:none;stroke:url(#riverReflection);stroke-width:35;stroke-linecap:round;opacity:.14;filter:url(#riverSoft)}
 body[data-room=home] .river-bloom{fill:none;stroke:#e0c981;stroke-width:20;stroke-linecap:round;opacity:.11;filter:url(#riverBloom)}
 body[data-room=home] .river-core{fill:none;stroke:url(#riverCore);stroke-width:.95;stroke-linecap:round;opacity:.18}
-body[data-room=home] .river-current{fill:none;stroke:#fff0bd;stroke-width:3;stroke-dasharray:.55 49.45;stroke-linecap:round;opacity:.92;animation:river-current-flow 21s linear infinite;animation-play-state:paused;vector-effect:non-scaling-stroke}
+body[data-room=home] .river-current{fill:none;stroke:#fff0bd;stroke-width:3;stroke-dasharray:.55 49.45;stroke-linecap:round;opacity:.92;animation:river-current-flow 21s linear infinite reverse;animation-play-state:paused;vector-effect:non-scaling-stroke}
 body[data-room=home] .tributary{fill:none;stroke:#d8c58b;stroke-width:1.1;stroke-dasharray:1.5 8;stroke-linecap:round;opacity:.28;transition:opacity .4s,stroke-width .4s;vector-effect:non-scaling-stroke}
 body[data-room=home] .scene-points circle{fill:#f3dfa6;opacity:.72}
 body[data-room=home] .scene-points .point-halo{fill:#e9cc80;opacity:.17;filter:url(#pointBloom)}
@@ -55,11 +55,11 @@ body[data-room=home] .mist-two{left:0;top:57%;width:70%;height:35%;background:ra
 /* Four destinations float in the landscape, not in cards. */
 body[data-room=home] .roaming-network{position:absolute;inset:0;height:auto;z-index:3}
 body[data-room=home] footer{margin:0;padding:40px 4.2% 44px;border-top:1px solid #a4babd20;background:#0a1b24;color:#e9e4d8}
-body[data-room=home] footer .footer-title{display:block;padding:7px 0 12px;color:#d8c18a;font-size:clamp(25px,3vw,40px);line-height:1.6;letter-spacing:.025em;text-wrap:balance}
+body[data-room=home] footer .footer-title{display:block;padding:7px 0 12px;color:#c4b487;font-size:clamp(21px,2vw,29px);line-height:1.7;letter-spacing:.04em;text-wrap:balance}
 body[data-room=home] footer>div{display:none}
 body[data-room=home] footer a:hover{color:#f5e7b8}
 body[data-room=home] .wander-node{width:auto;min-height:0;padding:12px 0 12px 22px;z-index:4;display:block;max-width:34%;transition:transform .35s ease,color .35s;text-shadow:0 1px 4px #001413,0 3px 18px #001413}
-body[data-room=home] .wander-node h2{font-size:clamp(25px,2.35vw,36px);line-height:1.55;letter-spacing:.02em;color:#f0e9d8;font-weight:400;white-space:nowrap;transition:color .35s,text-shadow .35s,transform .35s}
+body[data-room=home] .wander-node h2{font-size:clamp(25px,2.1vw,32px);line-height:1.6;letter-spacing:.045em;color:#eadfbe;font-weight:400;white-space:nowrap;transition:color .35s,text-shadow .35s,transform .35s}
 body[data-room=home] .wander-node .node-point{position:absolute;left:0;top:50%;width:5px;height:5px;transform:translateY(-50%);border:0;border-radius:50%;background:#d9c78f;box-shadow:0 0 12px 3px #d6c17d55;opacity:.7;animation:node-glimmer 6.5s ease-in-out infinite;animation-play-state:paused}
 body[data-room=home] .wander-node .node-tail{display:none}
 body[data-room=home] .node-photos{left:73%;top:14%;max-width:25%}
@@ -104,7 +104,7 @@ body[data-room=home] .roaming-night a:focus-visible,body[data-room=home] .roamin
  body[data-room=home] .wander-node{max-width:80%;padding-left:19px;padding-block:10px}
  body[data-room=home] .wander-node .node-point{width:4px;height:4px}
  body[data-room=home] footer{padding:28px 6% 34px}
- body[data-room=home] footer .footer-title{font-size:clamp(23px,6vw,28px);line-height:1.8;padding:4px 0 8px}
+ body[data-room=home] footer .footer-title{font-size:clamp(20px,5.5vw,25px);line-height:1.8;padding:4px 0 8px}
 }
 @media (min-width:501px) and (max-width:900px) and (orientation:portrait){
  body[data-room=home] .roaming-night{height:820px;min-height:820px;max-height:none}
@@ -113,7 +113,7 @@ body[data-room=home] .roaming-night a:focus-visible,body[data-room=home] .roamin
 }
 @media (max-width:900px) and (orientation:portrait){
  body[data-room=home] .motion-toggle{left:4.3%;right:auto}
- body[data-room=home] .wander-node h2{font-size:clamp(19px,5.6vw,25px)}
+ body[data-room=home] .wander-node h2{font-size:clamp(19px,5.3vw,24px)}
  body[data-room=home] .node-photos{left:auto;right:5%;top:15%;max-width:none}
  body[data-room=home] .node-poems{left:12%;top:31%;max-width:none}
  body[data-room=home] .node-traces{left:auto;right:5%;top:53%;max-width:none}

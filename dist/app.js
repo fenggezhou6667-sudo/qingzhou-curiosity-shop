@@ -19,9 +19,122 @@ function workCard(w){
   return '<a class="work-link" href="#/works/'+w.slug+'"><div class="work-image">'+photo(w.cover)+'<div class="image-hover"><span>'+esc(w.id)+' / '+(isDemo?'图库选读':'摄影档案')+'</span><span>打开档案 ↗</span></div></div><div class="work-label"><div><h3>'+esc(w.title)+'</h3><small>'+esc(w.en)+'</small></div><span class="eyebrow">'+esc(w.id)+'<br>'+esc(w.photos.length)+' 幅 / '+(isDemo?'演示':esc(w.year))+'</span></div><p class="work-medium">'+esc(w.medium)+' <span>'+(isDemo?'非所有者作品':esc(w.year))+'</span></p></a>';
 }
 function home(){
- const rooms=[['photos','光停过的地方','works'],['poems','诗的房间','notes'],['traces','日子走过的小路','traces'],['lab','还亮着的实验桌','lab']];
- const scene=(classes,width,height,asset,path)=>`<svg class="scene-svg ${classes}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><g class="river-revealed"><image href="assets/${asset}" width="${width}" height="${height}" preserveAspectRatio="none"/><rect width="${width}" height="${height}" fill="#061d21" opacity=".12"/><path class="river-current" pathLength="100" d="${path}"/></g></svg>`;
- return `<div class="shop-home"><section class="roaming-night roaming-v07b" id="rooms" aria-labelledby="roaming-title" data-paused="false" data-running="false"><h1 id="roaming-title" class="river-sr">清舟的杂货铺 · 漫游入口</h1><div class="scene-art" aria-hidden="true">${scene('desktop-scene-art',1440,820,'river-quiet-desktop.jpg','M 730 0 C 710 75 760 135 780 190 C 790 250 710 290 730 340 C 750 395 820 430 800 480 C 780 540 725 570 750 640 C 780 710 750 765 750 820')}${scene('mobile-scene-art tablet-scene-art',390,820,'river-quiet-portrait.jpg','M 230 0 C 220 70 195 105 210 150 C 235 210 250 245 220 300 C 200 355 260 400 250 450 C 240 500 210 550 235 600 C 265 660 230 740 250 820')}</div><button class="motion-toggle" id="toggle-roaming" type="button" aria-label="暂停首页动画" aria-pressed="false" title="暂停首页动画"><span aria-hidden="true">Ⅱ</span></button><div class="roaming-network">${rooms.map(([key,name,href])=>'<a class="wander-node node-'+key+'" data-branch="'+key+'" href="#/'+href+'"><span class="node-point" aria-hidden="true"></span><h2>'+name+'</h2></a>').join('')}</div></section></div>`;
+  const branches=[
+    {key:'photos',title:'光停过的地方',href:'works',
+      path:'M 930 124 C 1000 77 1070 74 1156 82 S 1340 93 1490 68',
+      ribbon:'M 912 121 C 982 69 1060 54 1158 66 S 1343 79 1490 50 L 1490 88 C 1337 111 1243 105 1153 98 S 1013 101 940 146 Z'},
+    {key:'poems',title:'诗的房间',href:'notes',
+      path:'M 814 286 C 764 300 727 322 676 323 C 616 325 565 297 510 300 C 390 305 260 278 -60 267',
+      ribbon:'M 827 291 C 773 305 732 329 676 338 C 615 338 566 315 510 315 C 370 320 232 294 -60 287 L -60 247 C 231 255 373 290 510 281 C 568 277 620 309 677 306 C 728 306 770 281 821 267 Z'},
+    {key:'traces',title:'日子走过的小路',href:'traces',
+      path:'M 928 403 C 982 439 1020 492 1080 519 C 1180 563 1317 559 1500 531',
+      ribbon:'M 916 392 C 979 424 1025 477 1089 502 C 1180 538 1321 540 1500 513 L 1500 551 C 1321 579 1175 579 1072 536 C 1012 509 964 458 922 432 Z'},
+    {key:'lab',title:'还亮着的实验桌',href:'lab',
+      path:'M 514 660 C 475 645 441 632 403 642 C 330 665 260 710 170 708 S 20 730 -60 764',
+      ribbon:'M 505 680 C 453 649 414 651 369 672 C 304 700 241 730 169 725 S 21 750 -60 786 L -60 747 C 24 708 93 685 171 690 S 321 650 405 625 C 447 612 485 623 525 640 Z'}
+  ];
+  const desktopMainShape='M 170 850 C 280 770 357 694 479 633 C 588 579 730 563 808 513 C 866 476 905 443 876 416 C 836 380 749 338 760 270 C 769 213 858 171 905 112 C 935 74 945 23 939 -45 L 979 -45 C 984 29 970 88 940 140 C 902 201 831 239 828 278 C 824 315 912 348 952 391 C 1008 449 966 516 882 568 C 790 627 648 641 544 694 C 434 752 405 804 350 850 Z';
+  const desktopNetwork=desktopMainShape+' '+branches.map(b=>b.ribbon).join(' ');
+  const desktopWaterShapes='<path d="'+desktopMainShape+'"/>'+branches.map(b=>'<path d="'+b.ribbon+'"/>').join('');
+  const desktopMaskShapes=branches.map(b=>'<path fill="url(#desktopFade-'+b.key+')" d="'+b.ribbon+'"/>').join('')+'<path fill="white" d="'+desktopMainShape+'"/>';
+  const desktopBranchReveal=branches.map(b=>'<path class="river-reveal-trace branch-reveal" pathLength="100" d="'+b.path+'" stroke="white" stroke-width="62" stroke-linecap="round" fill="none"/>').join('');
+  const tributaries=branches.map(b=>'<g class="river-distributary branch-'+b.key+'"><path class="branch-haze" fill="none" d="'+b.path+'"/><path class="tributary tributary-'+b.key+'" fill="none" pathLength="100" d="'+b.path+'"/><path class="branch-waterline" fill="none" d="'+b.path+'"/><path class="branch-current" fill="none" pathLength="1000" d="'+b.path+'"/><path class="branch-spark" fill="none" pathLength="100" d="'+b.path+'"/></g>').join('');
+  const mobileBranches=[
+    {key:'photos',path:'M 262 145 C 311 134 371 167 448 172 S 591 181 720 175',ribbon:'M 247 124 C 311 116 368 152 449 155 S 600 161 720 159 L 720 191 C 601 195 520 195 446 190 S 310 151 281 160 C 268 163 255 169 244 176 Z'},
+    {key:'poems',path:'M 106 280 C 59 267 21 240 -40 236 S -200 220 -350 232',ribbon:'M 113 263 C 66 250 25 224 -39 219 S -210 205 -350 213 L -350 249 C -200 240 -110 251 -40 253 S 57 282 100 298 Z'},
+    {key:'traces',path:'M 292 416 C 335 428 367 463 434 474 S 594 482 720 468',ribbon:'M 280 396 C 335 404 371 445 437 457 S 602 464 720 451 L 720 487 C 595 501 499 504 430 491 S 332 447 301 444 C 290 443 280 446 269 451 Z'},
+    {key:'lab',path:'M 90 540 C 46 541 7 577 -51 602 S -221 624 -350 613',ribbon:'M 102 520 C 45 520 3 562 -55 584 S -223 606 -350 595 L -350 631 C -217 642 -112 647 -47 620 S 45 563 78 562 C 88 561 96 562 107 565 Z'}
+  ];
+  const mobileMainShape='M -300 925 C -8 765 173 760 197 691 C 218 629 12 624 38 540 C 58 467 261 479 264 414 C 270 363 29 355 52 278 C 75 218 275 209 256 -40 L 284 -40 C 320 210 126 237 124 280 C 122 340 351 353 336 416 C 318 491 123 489 123 540 C 120 600 298 623 301 684 C 305 770 98 810 -300 985 Z';
+  const mobileNetwork=mobileMainShape+' '+mobileBranches.map(b=>b.ribbon).join(' ');
+  const mobileWaterShapes='<path d="'+mobileMainShape+'"/>'+mobileBranches.map(b=>'<path d="'+b.ribbon+'"/>').join('');
+  const mobileWaterMaskShapes=mobileBranches.map(b=>'<path fill="url(#branchFade-'+b.key+')" d="'+b.ribbon+'"/>').join('')+'<path fill="white" d="'+mobileMainShape+'"/>';
+  const mobileBranchReveal=mobileBranches.map(b=>'<path class="river-reveal-trace branch-reveal" pathLength="100" d="'+b.path+'" stroke="white" stroke-width="48" stroke-linecap="round" fill="none"/>').join('');
+  const mobileTributaries=mobileBranches.map(b=>'<g class="river-distributary branch-'+b.key+'"><path class="branch-haze" fill="none" d="'+b.path+'"/><path class="tributary tributary-'+b.key+'" fill="none" pathLength="100" d="'+b.path+'"/><path class="branch-waterline" fill="none" d="'+b.path+'"/><path class="branch-current" fill="none" pathLength="1000" d="'+b.path+'"/><path class="branch-spark" fill="none" pathLength="100" d="'+b.path+'"/></g>').join('');
+  const stars=Array.from({length:54},(_,i)=>{
+    const x=(i*173.7+47)%1440, y=(i*97.3+31)%820, r=(i%7===0?1.5:i%3===0?1.05:.65), op=(.12+(i%5)*.075).toFixed(2);
+    return '<circle class="scene-dust dust-'+(i%5)+'" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r+'" opacity="'+op+'"/>';
+  }).join('');
+  const mobileStars=Array.from({length:28},(_,i)=>{
+    const x=(i*67.3+13)%390, y=(i*109.1+21)%820, r=(i%6===0?1.35:i%3===0?.9:.55), op=(.13+(i%4)*.08).toFixed(2);
+    return '<circle class="scene-dust dust-'+(i%5)+'" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r+'" opacity="'+op+'"/>';
+  }).join('');
+  const nodes=branches.map(b=>'<a class="wander-node node-'+b.key+'" data-branch="'+b.key+'" href="#/'+b.href+'"><span class="node-point" aria-hidden="true"></span><h2>'+b.title+'</h2><span class="node-tail" aria-hidden="true"></span></a>').join('');
+  return `<div class="shop-home"><section class="roaming-night roaming-v07b" id="rooms" aria-labelledby="roaming-title" data-paused="false" data-running="false"><h1 id="roaming-title" class="river-sr">清舟的杂货铺 · 漫游入口</h1>
+    <div class="scene-art" aria-hidden="true">
+      <svg class="scene-svg desktop-scene-art" viewBox="0 0 1440 820" preserveAspectRatio="none">
+        <defs><clipPath id="riverClipDesktop">${desktopWaterShapes}</clipPath>
+          ${branches.map(b=>`<linearGradient id="desktopFade-${b.key}" gradientUnits="userSpaceOnUse" x1="${b.key==='photos'||b.key==='traces'?920:780}" y1="0" x2="${b.key==='photos'||b.key==='traces'?1440:0}" y2="0"><stop offset="0" stop-color="#b6b6b6"/><stop offset=".5" stop-color="#4d4d4d"/><stop offset="1" stop-color="#050505"/></linearGradient>`).join('')}
+          <filter id="desktopBankSoft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="3"/></filter>
+          <mask id="desktopWaterMask" maskUnits="userSpaceOnUse" x="0" y="0" width="1440" height="820"><g filter="url(#desktopBankSoft)">${desktopMaskShapes}</g></mask>
+          <filter id="desktopWaterTexture" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".014 .12" numOctaves="2" seed="12"/><feColorMatrix type="matrix" values="0 0 0 0 .8  0 0 0 0 .77  0 0 0 0 .57  0 0 0 .22 0"/></filter>
+          <linearGradient id="nightGround" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#071722"/><stop offset=".46" stop-color="#102d35"/><stop offset="1" stop-color="#071923"/></linearGradient>
+          <linearGradient id="riverWater" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#173b43"/><stop offset=".36" stop-color="#21494b"/><stop offset=".7" stop-color="#243f42"/><stop offset="1" stop-color="#142c35"/></linearGradient>
+          <linearGradient id="riverReflection" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#5d8b7c" stop-opacity=".1"/><stop offset=".46" stop-color="#d6c17d" stop-opacity=".42"/><stop offset=".72" stop-color="#f2dfaa" stop-opacity=".82"/><stop offset="1" stop-color="#a7c0a7" stop-opacity=".22"/></linearGradient>
+          <linearGradient id="riverCore" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#a0b6a0"/><stop offset=".42" stop-color="#d5c17e"/><stop offset=".72" stop-color="#fff0bd"/><stop offset="1" stop-color="#b8c6ad"/></linearGradient><linearGradient id="branchWaterDesktop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#426c68"/><stop offset=".48" stop-color="#8e9b78"/><stop offset=".72" stop-color="#d2b978"/><stop offset="1" stop-color="#547a72"/></linearGradient>
+          <radialGradient id="distantGlow"><stop offset="0" stop-color="#5b887c" stop-opacity=".25"/><stop offset="1" stop-color="#5b887c" stop-opacity="0"/></radialGradient>
+          <filter id="riverBloom" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="8"/></filter><filter id="riverBankBlur" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="8"/></filter>
+          <filter id="riverSoft" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="2.4"/></filter>
+          <mask id="riverMaskDesktop" maskUnits="userSpaceOnUse" x="0" y="0" width="1440" height="820"><path class="river-reveal-trace" pathLength="100" d="M962 -60 C970 95 896 154 798 250 C722 338 965 352 927 453 C885 552 685 592 511 663 C405 716 312 796 255 860" stroke="white" stroke-width="250" stroke-linecap="round" fill="none"/>${desktopBranchReveal}</mask><filter id="pointBloom" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="4"/></filter>
+        </defs>
+        <rect width="1440" height="820" fill="url(#nightGround)"/>
+        <ellipse cx="1020" cy="210" rx="520" ry="340" fill="url(#distantGlow)"/>
+        <path class="terrain terrain-far" d="M0 0H610C550 68 522 123 554 176S664 260 708 293C602 336 480 348 351 365S125 405 0 455Z"/>
+        <path class="terrain terrain-left" d="M0 0H438C418 72 420 117 464 171S552 245 640 278C523 326 373 351 235 365C145 374 72 390 0 414Z"/>
+        <path class="terrain terrain-lower-left" d="M0 486C150 438 280 459 370 520S462 627 365 702C300 750 220 786 150 820H0Z"/>
+        <path class="terrain terrain-right" d="M940 0H1440V350C1325 327 1220 309 1132 267S1004 189 940 0Z"/>
+        <path class="terrain terrain-lower-right" d="M1000 310C1126 326 1195 383 1205 442S1136 515 1082 550C1025 589 1020 665 927 820H1440V330C1308 352 1175 333 1000 310Z"/>
+        <g class="terrain-contours" fill="none">
+          <path d="M-30 185C150 133 293 163 393 233S541 316 656 324"/><path d="M-20 209C149 162 285 190 383 254S535 331 629 342"/>
+          <path d="M-50 605C127 542 260 562 327 612S366 716 246 797"/><path d="M-30 632C120 580 234 591 300 638S330 719 226 790"/>
+          <path d="M1094 -20C1080 80 1124 153 1208 189S1375 236 1480 218"/><path d="M1124 -20C1111 73 1150 136 1230 172S1395 213 1480 198"/>
+          <path d="M1160 610C1234 560 1350 558 1470 593"/><path d="M1140 642C1222 592 1340 591 1470 623"/>
+        </g>
+        <g class="river-shape river-revealed" mask="url(#riverMaskDesktop)">
+          <g mask="url(#desktopWaterMask)"><rect class="river-body" x="0" y="-45" width="1440" height="895" style="fill:url(#riverWater) #21494b"/><rect class="river-body-glow" x="0" y="-45" width="1440" height="895" style="fill:url(#riverReflection) #244448"/><rect width="1440" height="820" filter="url(#desktopWaterTexture)" opacity=".42"/></g>
+          <g clip-path="url(#riverClipDesktop)">
+          <path class="river-bank" fill="none" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/>
+          <path class="river-edge" fill="none" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/>
+          <path class="river-water" fill="none" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/>
+          <path class="river-shadowline" fill="none" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/>
+          <path class="river-reflection" fill="none" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/>
+          <path class="river-bloom" fill="none" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/>
+          <path class="river-core" fill="none" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/>
+          <path class="river-current" fill="none" pathLength="100" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/><path class="river-flowline flowline-wide" fill="none" pathLength="1000" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/><path class="river-flowline flowline-mid" fill="none" pathLength="1000" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/><path class="river-flowline flowline-fine" fill="none" pathLength="1000" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/>
+          <g class="river-ripples" fill="none" aria-hidden="true"><path d="M322 784q31 -12 53 -5"/><path d="M463 680q35 -14 60 -7"/><path d="M635 616q23 -11 55 -8"/><path d="M796 554q23 -8 47 -4"/><path d="M912 468q13 -13 30 -14"/><path d="M867 382q26 -2 41 5"/><path d="M774 274q13 -12 27 -12"/><path d="M896 138q19 -5 30 -3"/></g>
+          </g>
+        </g>
+        <g class="external-branches" clip-path="url(#riverClipDesktop)">${tributaries}</g>
+        <g class="scene-points"><circle cx="514" cy="660" r="7"/><circle cx="514" cy="660" r="22" class="point-halo"/><circle cx="924" cy="402" r="4.5"/><circle cx="924" cy="402" r="17" class="point-halo"/><circle cx="927" cy="126" r="3.5"/><circle cx="927" cy="126" r="14" class="point-halo"/><circle class="river-glint glint-a" cx="650" cy="610" r="1.6"/><circle class="river-glint glint-b" cx="754" cy="578" r="1.2"/><circle class="river-glint glint-c" cx="896" cy="478" r="1.6"/><circle class="river-glint glint-d" cx="826" cy="326" r="1.2"/><circle class="river-glint glint-e" cx="875" cy="211" r="1.5"/><circle class="river-glint glint-f" cx="950" cy="72" r="1.1"/></g>
+        <g class="scene-stars">${stars}</g>
+      </svg>
+      <svg class="scene-svg mobile-scene-art tablet-scene-art" viewBox="0 0 390 820" preserveAspectRatio="none">
+        <defs><clipPath id="riverClipMobile">${mobileWaterShapes}</clipPath>
+        ${mobileBranches.map(b=>`<linearGradient id="branchFade-${b.key}" gradientUnits="userSpaceOnUse" x1="${b.key==='photos'||b.key==='traces'?260:100}" y1="0" x2="${b.key==='photos'||b.key==='traces'?700:-330}" y2="0"><stop offset="0" stop-color="#b6b6b6"/><stop offset=".55" stop-color="#626262"/><stop offset="1" stop-color="#0c0c0c"/></linearGradient>`).join('')}
+        <filter id="mobileBankSoft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="2"/></filter><mask id="mobileWaterMask" maskUnits="userSpaceOnUse" x="-300" y="0" width="990" height="820"><g filter="url(#mobileBankSoft)">${mobileWaterMaskShapes}</g></mask><linearGradient id="mobileGround" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#071722"/><stop offset=".55" stop-color="#102d35"/><stop offset="1" stop-color="#071923"/></linearGradient><linearGradient id="mobileWater" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#16343d"/><stop offset=".62" stop-color="#1c3b40"/><stop offset="1" stop-color="#8b9b80"/></linearGradient><linearGradient id="branchWaterMobile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#355e60"/><stop offset=".55" stop-color="#87977b"/><stop offset=".78" stop-color="#c5ae75"/><stop offset="1" stop-color="#476c68"/></linearGradient><mask id="riverMaskMobile" maskUnits="userSpaceOnUse" x="-300" y="0" width="990" height="820"><path class="river-reveal-trace" pathLength="100" d="M270 -40 C314 189 60 218 84 281 C112 364 302 367 300 416 C294 488 70 478 92 539 C118 620 275 629 254 691 C227 759 49 781 3 860" fill="none" stroke="white" stroke-width="138" stroke-linecap="round"/>${mobileBranchReveal}</mask><filter id="mobileBloom" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="7"/></filter></defs>
+        <defs><filter id="mobileWaterTexture" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".025 .12" numOctaves="2" seed="12"/><feColorMatrix type="matrix" values="0 0 0 0 .8  0 0 0 0 .77  0 0 0 0 .57  0 0 0 .22 0"/></filter></defs>
+        <rect x="-300" width="990" height="820" fill="url(#mobileGround)"/><ellipse cx="300" cy="230" rx="240" ry="260" fill="#2b5b57" opacity=".16"/>
+        <path class="terrain terrain-far" d="M-300 0H690V240C500 252 300 230 206 143S112 72 -300 88Z"/><path class="terrain terrain-left" d="M-300 0H160C139 76 180 134 230 175S280 250 230 300C155 326 72 306 -300 340Z"/><path class="terrain terrain-lower-left" d="M-300 465C85 424 150 449 190 500S235 602 158 671C111 713 52 772 -300 820Z"/><path class="terrain terrain-right" d="M305 0H690V820H284C340 730 350 662 307 612S242 522 300 454S345 365 287 317S258 224 310 160Z"/>
+        <g class="terrain-contours" fill="none"><path d="M-30 118C70 85 132 111 176 163S220 230 275 235"/><path d="M-30 139C60 112 120 137 163 184S215 247 260 254"/><path d="M-30 515C62 469 127 493 166 545S174 640 98 698"/><path d="M-30 544C53 503 110 524 145 570S151 643 86 693"/></g>
+        <g class="river-revealed mobile-river-revealed" mask="url(#riverMaskMobile)">
+        <g mask="url(#mobileWaterMask)"><rect class="river-body" x="-300" width="990" height="820" style="fill:url(#mobileWater) #1c3b40"/><rect class="river-body-glow" x="-300" width="990" height="820" style="fill:#9bb9a4"/><rect x="-300" width="990" height="820" filter="url(#mobileWaterTexture)" opacity=".42"/></g><g clip-path="url(#riverClipMobile)"><path class="river-bank" fill="none" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/>
+        <path class="river-edge" fill="none" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/>
+        <path class="river-water mobile-river-water" fill="none" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/>
+        <path class="river-reflection" fill="none" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/>
+        <path class="river-bloom" fill="none" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/>
+        <path class="river-core" fill="none" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/>
+        <path class="river-current" fill="none" pathLength="100" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/><path class="river-flowline flowline-wide" fill="none" pathLength="1000" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/><path class="river-flowline flowline-mid" fill="none" pathLength="1000" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/><path class="river-flowline flowline-fine" fill="none" pathLength="1000" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/>
+        <g class="river-ripples" fill="none" aria-hidden="true"><path d="M81 780q24 -8 45 -5"/><path d="M199 684q28 -9 46 -2"/><path d="M87 544q27 -9 44 -3"/><path d="M266 415q19 -7 31 0"/><path d="M79 280q25 -5 41 0"/><path d="M238 134q18 -5 29 -1"/></g></g>
+        </g>
+        <g class="external-branches" clip-path="url(#riverClipMobile)">${mobileTributaries}</g>
+        <g class="scene-points"><circle class="river-glint glint-a" cx="220" cy="704" r="1.4"/><circle class="river-glint glint-b" cx="128" cy="597" r="1.1"/><circle class="river-glint glint-c" cx="290" cy="431" r="1.3"/><circle class="river-glint glint-d" cx="102" cy="302" r="1.2"/><circle class="river-glint glint-e" cx="250" cy="151" r="1.1"/></g><g class="scene-stars">${mobileStars}</g>
+      </svg>
+      <div class="scene-vignette"></div><div class="scene-mist mist-one"></div><div class="scene-mist mist-two"></div>
+    </div>
+    <button class="motion-toggle" id="toggle-roaming" type="button" aria-label="暂停首页动画" aria-pressed="false" title="暂停首页动画"><span aria-hidden="true">Ⅱ</span></button>
+    <div class="roaming-network">${nodes}</div>
+  </section>
+  </div>`;
 }
 function starfieldMarkup(kind='collection',count=190){
   const width=1440,height=kind==='darkroom'?1320:1780;
@@ -50,10 +163,17 @@ function starfieldMarkup(kind='collection',count=190){
   return '<div class="stellar-sky stellar-sky-'+kind+'" aria-hidden="true"><svg viewBox="0 0 '+width+' '+height+'" preserveAspectRatio="none"><defs><radialGradient id="sky-nebula-'+kind+'"><stop offset="0" stop-color="#b7a16a" stop-opacity=".15"/><stop offset=".5" stop-color="#527d89" stop-opacity=".08"/><stop offset="1" stop-color="#0b1928" stop-opacity="0"/></radialGradient></defs><ellipse class="sky-nebula" cx="'+(kind==='darkroom'?740:850)+'" cy="'+(kind==='darkroom'?440:520)+'" rx="530" ry="370" fill="url(#sky-nebula-'+kind+')"/>'+constellations+stars+crosses+'</svg></div>';
 }
 function works(){
-  const selectedPoem=A.notes[0],poemLine=selectedPoem?.body[0]?.split('\n')[0]||'';
-  const poemStar=selectedPoem?'<details class="poem-star"><summary aria-label="打开星点，读一句诗"><span aria-hidden="true">✧</span></summary><div class="star-poem-page"><span>一行诗 / '+esc(selectedPoem.title)+'</span><p>'+esc(poemLine)+'</p><a href="#/notes/'+esc(selectedPoem.slug)+'">读完这首诗 ↗</a></div></details>':'';
-  const demoCount=A.works.filter(w=>w.demo!==false).length;
-  return '<div class="stellar-room">'+starfieldMarkup('collection',210)+'<div class="wrap"><div class="stellar-preface"><header class="stellar-intro"><h1>星空暗房</h1><p>让目光慢下来，沿着光寻找影像。</p><small>'+(demoCount?'当前包含 '+demoCount+' 组授权图库选读，真实摄影作品待补充。':'影像收藏 / PHOTOGRAPHY')+'</small></header>'+poemStar+'</div><div class="stellar-stage"><svg class="stellar-threads" aria-hidden="true"></svg><div class="stellar-works">'+A.works.map((w,i)=>'<a href="#/works/'+esc(w.slug)+'" class="stellar-work star-place-'+(i%3)+'"><span class="stellar-star" aria-hidden="true"></span><div class="stellar-image">'+photo(w.cover,i===0,'card')+'</div><div class="stellar-caption"><span>'+(w.demo!==false?'图库选读':'摄影作品')+'</span><h2>'+esc(w.title)+'</h2><small>'+esc(w.en)+' ↗</small></div></a>').join('')+'</div></div><p class="stellar-end">光会留下它经过的地方。<br><span>选择一幅影像，进入暗房。</span></p></div></div>';
+  const first=A.works[0];
+  const themes=A.works.map((w,i)=>'<button type="button" class="cosmos-theme'+(i===0?' is-active':'')+'" data-theme="'+i+'" aria-pressed="'+(i===0)+'">'+esc(w.title)+'</button>').join('');
+  return '<div class="cosmos-room"><div class="cosmos-heading wrap"><div><p>影像 · 主题星系</p><h1>星空暗房</h1><span>每一组影像，都是一片可以靠近的星空。</span></div><small>图库选读 · 黑洞与引力波纹为艺术示意</small></div><section class="cosmos" aria-label="摄影星系"><div class="cosmos-themes" aria-label="选择影像主题">'+themes+'</div><div class="cosmos-layout"><div class="cosmos-scene"><canvas class="cosmos-canvas" tabindex="0" aria-label="三维星系，拖动旋转；点击后滚轮缩放，触屏可双指缩放"></canvas><p class="cosmos-instructions"><span class="cosmos-hint-desktop">拖动旋转 · 点击后滚轮缩放 · 触碰亮星</span><span class="cosmos-hint-touch">单指旋转 · 双指缩放 · 点击亮星</span></p><div class="cosmos-zoom"><button type="button" data-zoom="in" aria-label="放大星系">＋</button><button type="button" data-zoom="out" aria-label="缩小星系">−</button><button type="button" data-zoom="reset" aria-label="重置视角">↺</button></div><p class="cosmos-fallback" hidden>当前设备无法显示三维星系，可以使用右侧按钮浏览影像。</p></div><aside class="cosmos-panel"><span class="cosmos-kicker">主题影像</span><h2>'+esc(first.title)+'</h2><p class="cosmos-intro">'+esc(first.intro)+'</p><div class="cosmos-picture">'+photo(first.photos[0],true,'card')+'</div><p class="cosmos-caption" aria-live="polite">'+esc(first.captions[0])+'</p><div class="cosmos-frames" aria-label="选择影像"></div><a class="cosmos-enter" href="#/works/'+esc(first.slug)+'">进入这组影像 ↗</a><small>图库选读 · 非个人作品</small></aside></div></section><p class="cosmos-end wrap">光会留下它经过的地方。</p></div>';
+}
+function bindCosmos(){
+  const root=document.querySelector('.cosmos'),pic=root.querySelector('.cosmos-picture img'),frames=root.querySelector('.cosmos-frames');let theme=0,selected=0,disposed=false,stop=()=>{};
+  const render=()=>{const work=A.works[theme],im=A.images[work.photos[selected]];root.querySelector('.cosmos-panel h2').textContent=work.title;root.querySelector('.cosmos-intro').textContent=work.intro;root.querySelector('.cosmos-caption').textContent=work.captions[selected]||im.alt;pic.style.objectPosition=im.focal||'50% 50%';syncImage(pic,im,'card');root.querySelector('.cosmos-enter').href='#/works/'+work.slug;root.querySelectorAll('[data-theme]').forEach((el,i)=>{el.classList.toggle('is-active',i===theme);el.setAttribute('aria-pressed',String(i===theme));});if(frames.dataset.loadedTheme!==String(theme)){frames.dataset.loadedTheme=String(theme);frames.innerHTML=work.photos.map((p,i)=>'<button type="button" data-frame="'+i+'" aria-label="预览第 '+(i+1)+' 幅：'+esc(A.images[p].alt)+'"><span aria-hidden="true">✦</span> '+String(i+1).padStart(2,'0')+'</button>').join('');}frames.querySelectorAll('[data-frame]').forEach((el,i)=>el.setAttribute('aria-pressed',String(i===selected)));root.dispatchEvent(new CustomEvent('cosmos-change',{detail:{theme,selected}}));};
+  root.addEventListener('click',e=>{const tab=e.target.closest('[data-theme]'),frame=e.target.closest('[data-frame]');if(tab){theme=Number(tab.dataset.theme);selected=0;render();}else if(frame){selected=Number(frame.dataset.frame);render();}});
+  root.addEventListener('cosmos-pick',e=>{selected=e.detail.index;render();});render();
+  import('./galaxy3d.js').then(m=>{if(!disposed)stop=m.mountGalaxy(root,A);}).catch(error=>{console.error('星系加载失败',error);root.querySelector('.cosmos-fallback').hidden=false;});
+  return ()=>{disposed=true;stop();};
 }
 function workPage(w){
   currentWork=w;photoIndex=0;
@@ -245,6 +365,17 @@ let roamingIntroComplete=false;
 function bindRoaming(){
   const area=document.querySelector('#rooms'),button=document.querySelector('#toggle-roaming');
 
+  // Keep the portrait illustration's proportions while giving tablets wider banks.
+  const portraitScene=area.querySelector('.mobile-scene-art');
+  const sizePortrait=()=>{
+    const width=area.clientWidth;
+    const portrait=matchMedia('(orientation: portrait)').matches;
+    const frame=portrait&&width<=900 ? Math.max(390,width) : 390;
+    portraitScene.setAttribute('viewBox',`${(390-frame)/2} 0 ${frame} 820`);
+  };
+  sizePortrait();
+  window.addEventListener('resize',sizePortrait);
+
   const preference=matchMedia('(prefers-reduced-motion: reduce)');
   let visible=false,disposed=false;
   let introDone=roamingIntroComplete||preference.matches;
@@ -268,7 +399,7 @@ function bindRoaming(){
   const onToggle=()=>{roamingPaused=!roamingPaused;sync();};
   button.addEventListener('click',onToggle);area.addEventListener('animationend',onComplete);
   preference.addEventListener('change',sync);document.addEventListener('visibilitychange',sync);sync();
-  return ()=>{disposed=true;observer.disconnect();button.removeEventListener('click',onToggle);area.removeEventListener('animationend',onComplete);preference.removeEventListener('change',sync);document.removeEventListener('visibilitychange',sync);};
+  return ()=>{disposed=true;observer.disconnect();window.removeEventListener('resize',sizePortrait);button.removeEventListener('click',onToggle);area.removeEventListener('animationend',onComplete);preference.removeEventListener('change',sync);document.removeEventListener('visibilitychange',sync);};
 }
 
 function render(){
@@ -328,6 +459,7 @@ function bind(){
   }));
   if(document.querySelector('.book-library')){const previousDispose=disposePage,stop=bindBook();disposePage=()=>{previousDispose();stop();};}
   if(document.querySelector('.roaming-night'))disposePage=bindRoaming();
+  if(document.querySelector('.cosmos'))disposePage=bindCosmos();
   if(document.querySelector('.idea-tree')){const previousDispose=disposePage,tree=document.querySelector('.idea-tree');const obs=new IntersectionObserver(entries=>{if(entries[0].isIntersecting){tree.classList.add('tree-in-view');obs.disconnect();}},{threshold:.15});const revealOnFocus=()=>{tree.classList.remove('tree-in-view');obs.disconnect();};tree.addEventListener('focusin',revealOnFocus);obs.observe(tree);disposePage=()=>{previousDispose();obs.disconnect();tree.removeEventListener('focusin',revealOnFocus);};}
   if(document.querySelector('#china-footprint-map')&&window.initChinaFootprints){const previousDispose=disposePage;const stop=window.initChinaFootprints();disposePage=()=>{previousDispose();stop?.();};}
   if(document.querySelector('.stellar-stage')){const previousDispose=disposePage,disposeConstellation=bindConstellation();disposePage=()=>{previousDispose();disposeConstellation();};}
