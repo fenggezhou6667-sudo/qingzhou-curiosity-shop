@@ -1,9 +1,9 @@
 /* v0.8: wave reveal + literary volumes + one original recording. No new JS framework. */
 body[data-room="home"] .roaming-night .river-reveal-trace{stroke-dasharray:100;stroke-dashoffset:0}
-body[data-room="home"] .roaming-night[data-intro="pending"] .river-revealed{opacity:0}
-body[data-room="home"] .roaming-night[data-intro="playing"] .river-revealed{animation:river-reveal-v08 1.4s ease-out both;animation-play-state:running}
+body[data-room="home"] .roaming-night[data-intro="pending"] .river-reveal-trace{stroke-dashoffset:100}
+body[data-room="home"] .roaming-night[data-intro="playing"] .river-reveal-trace{animation:river-reveal-v08 4.2s cubic-bezier(.28,.1,.25,1) both;animation-play-state:running}
 body[data-room="home"] .roaming-night[data-intro="playing"][data-paused="true"] .river-revealed{animation-play-state:paused}
-@keyframes river-reveal-v08{from{opacity:0}to{opacity:1}}
+@keyframes river-reveal-v08{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
 body[data-room="home"] .roaming-night[data-intro="pending"] .wander-node{opacity:0;transform:translateY(12px)}
 body[data-room="home"] .roaming-night[data-intro="playing"] .wander-node{opacity:0;animation:destination-arrival-v08 .55s ease-out forwards;animation-play-state:running}
 body[data-room="home"] .roaming-night[data-intro="playing"][data-paused="true"] .wander-node{animation-play-state:paused}
