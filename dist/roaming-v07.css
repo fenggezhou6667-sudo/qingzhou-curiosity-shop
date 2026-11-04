@@ -93,13 +93,13 @@ body[data-room=home] .roaming-night a:focus-visible,body[data-room=home] .roamin
  body[data-room=home] .desktop-scene-art{display:none}
  body[data-room=home] .mobile-scene-art{display:block}
  body[data-room=home] .mobile-scene-art .river-body{fill:url(#mobileWater);opacity:.67}
- body[data-room=home] .mobile-scene-art .river-body-glow{fill:#9bb9a4;opacity:.1;filter:url(#mobileBloom)}
- body[data-room=home] .river-reflection{stroke-width:20;opacity:.09;stroke:#9db9a5;filter:blur(2px)}
- body[data-room=home] .river-bloom{stroke-width:12;opacity:.08;filter:url(#mobileBloom)}
+ body[data-room=home] .mobile-scene-art .river-body-glow{fill:#9bb9a4;opacity:.08;filter:none}
+ body[data-room=home] .river-reflection{stroke-width:20;opacity:.09;stroke:#9db9a5;filter:none}
+ body[data-room=home] .river-bloom{stroke-width:12;opacity:.06;filter:none}
  body[data-room=home] .river-core{stroke:#e7d39a;stroke-width:.8;opacity:.17}
  body[data-room=home] .river-current{stroke-width:1.05;stroke-dasharray:1 12}
  body[data-room=home] .terrain-contours{opacity:.06}
- body[data-room=home] .scene-mist{opacity:.08;filter:blur(32px)}
+ body[data-room=home] .scene-mist{opacity:.05;filter:blur(22px);animation:none}
  body[data-room=home] .motion-toggle{left:6%;right:auto;top:18px;width:38px;height:38px;min-width:38px;min-height:38px}
  body[data-room=home] .wander-node{max-width:80%;padding-left:19px;padding-block:10px}
  body[data-room=home] .wander-node .node-point{width:4px;height:4px}

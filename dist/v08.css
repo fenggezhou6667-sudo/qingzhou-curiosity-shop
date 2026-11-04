@@ -24,7 +24,14 @@ body[data-room="home"] .river-bloom{opacity:.15}
 body[data-room="home"] .desktop-scene-art .river-current{stroke-width:2.2;opacity:.68}
 @keyframes river-wave-v08{0%{transform:translate(-6px,2px);opacity:.19}45%{opacity:.45}100%{transform:translate(7px,-4px);opacity:.51}}
 @keyframes river-reflection-v08{0%{opacity:.12}100%{opacity:.72}}
-@media(max-width:700px){body[data-room="home"] .mobile-scene-art .river-ripples{stroke-width:1.35;opacity:.34}body[data-room="home"] .mobile-scene-art .river-reflection{stroke-width:30;opacity:.14}}
+@media(max-width:700px){
+ body[data-room="home"] .mobile-scene-art .river-ripples{stroke-width:1.35;opacity:.34;filter:none}
+ body[data-room="home"] .mobile-scene-art .river-reflection{stroke-width:30;opacity:.14}
+ body[data-room="home"] .roaming-night .mobile-scene-art .river-reveal-trace{stroke-dashoffset:0;animation:none}
+ body[data-room="home"] .roaming-night[data-intro="pending"] .mobile-river-revealed{opacity:0}
+ body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-river-revealed{animation:river-mobile-arrival 2.4s ease-out both}
+ @keyframes river-mobile-arrival{from{opacity:0}to{opacity:1}}
+}
 @media(prefers-reduced-motion:reduce){
  body[data-room="home"] .roaming-night .river-reveal-trace{stroke-dashoffset:0!important;animation:none!important}
  body[data-room="home"] .roaming-night .river-revealed{opacity:1!important;animation:none!important}
