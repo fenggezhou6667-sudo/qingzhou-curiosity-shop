@@ -111,3 +111,80 @@ body[data-room=home]:before{opacity:.055!important}
 .dock-toggle{background:#12342fe8!important;border-color:#d8c99a87!important;color:#f1dfb3!important}
 .dock-toggle:hover{background:#1d4a3e!important;border-color:#f0d597!important}
 .dock-panel{background:linear-gradient(155deg,#173b32fa,#0a211ffc)!important;border-color:#d8bf8455!important;color:#eae6d9}
+
+/* — Artistic & Interactive Upgrades: Poetry Marginalia & Cinnabar Seal, Night Desk Workbench, China Map Poem Slips, Audio Resonance — */
+:root{--audio-energy:0}
+body[data-room=home] .river-bloom{opacity:calc(.52 + var(--audio-energy) * .38);transition:opacity .12s linear}
+body[data-room=home] .scene-points .point-halo{opacity:calc(.45 + var(--audio-energy) * .45)}
+
+.book-poem-wrap{position:relative;padding-bottom:8px}
+.poem-vignette{position:absolute;right:12px;top:68px;width:132px;height:112px;color:#7d6245;opacity:.42;pointer-events:none;transition:opacity .35s ease,transform .35s ease}
+.book-sheet:hover .poem-vignette{opacity:.56;transform:translateY(-2px)}
+.poetry-reading .book-poem-wrap .poem-vignette{color:#d4b77a;opacity:.34;right:4px;top:24px}
+.book-poem-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;padding-top:14px;border-top:1px dashed rgba(138,113,86,.32)}
+.poetry-reading .book-poem-actions{border-top-color:rgba(212,183,122,.24);margin-top:26px}
+.book-poem-actions .book-colophon,.book-poem-actions .reading-colophon{margin:0!important}
+.poem-seal-btn{appearance:none;display:inline-flex;align-items:center;gap:9px;padding:6px 13px 6px 8px;border-radius:3px;border:1px solid rgba(168,62,49,.42);background:rgba(168,62,49,.06);color:#7b3228;font:12px/1.3 var(--serif);letter-spacing:.06em;cursor:pointer;transition:background .22s,border-color .22s,transform .22s,color .22s}
+.poetry-reading .poem-seal-btn{color:#e6bdb4;border-color:rgba(205,92,76,.48);background:rgba(168,62,49,.14)}
+.poem-seal-btn:hover,.poem-seal-btn:focus-visible{background:rgba(168,62,49,.13);border-color:#a83e31;transform:translateY(-1px)}
+.poetry-reading .poem-seal-btn:hover{background:rgba(185,68,54,.24);border-color:#d96b5c}
+.poem-seal-btn .seal-mark{display:inline-grid;place-items:center;width:24px;height:24px;border:1.5px solid #a83e31;border-radius:2px;font-family:"STKaiti","KaiTi",var(--serif);font-size:10px;line-height:1;letter-spacing:0;color:#a83e31;background:rgba(255,247,238,.55);transition:transform .25s,background .25s,color .25s,box-shadow .25s}
+.poetry-reading .poem-seal-btn .seal-mark{background:rgba(30,14,12,.55);color:#e06c5c;border-color:#cd5c4c}
+.poem-seal-btn.is-sealed{border-color:#a6382b;background:rgba(166,56,43,.12);color:#8f291e}
+.poetry-reading .poem-seal-btn.is-sealed{color:#f5d0c8;border-color:#d85a4a;background:rgba(179,57,43,.24)}
+.poem-seal-btn.is-sealed .seal-mark{background:#b03528;color:#fbf2e6;border-color:#9e2c20;transform:rotate(-5deg) scale(1.05);box-shadow:0 2px 10px rgba(176,53,40,.35)}
+
+#lab-desk{position:relative;--lamp-x:50%;--lamp-y:24%;isolation:isolate}
+.lab-lamp-glow{position:Absolute;inset:-36px -3vw;pointer-events:none;z-index:-1;background:radial-gradient(540px circle at var(--lamp-x) var(--lamp-y),rgba(232,199,126,.13),rgba(69,124,108,.05) 46%,transparent 74%);transition:background .15s ease-out}
+.lab-workbench{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(18px,2.4vw,30px);margin-top:26px}
+.lab-card{display:flex;flex-direction:column;justify-content:space-between;padding:22px 22px 20px;background:linear-gradient(160deg,rgba(19,50,45,.82),rgba(10,29,28,.94));border:1px solid rgba(206,180,122,.28);border-radius:4px;box-shadow:0 18px 38px rgba(3,12,11,.42);text-decoration:none;color:#e7e6d9;transition:transform .26s ease,border-color .26s ease,box-shadow .26s ease}
+.lab-card:hover,.lab-card:focus-visible{transform:translateY(-4px);border-color:rgba(230,202,138,.66);box-shadow:0 24px 48px rgba(2,10,9,.6),0 0 26px rgba(212,183,122,.1)}
+.lab-card-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;letter-spacing:.1em;color:#9eb3a8}
+.lab-card-id{color:#d4b77a;font-weight:500}
+.lab-card-status{color:#a8beb2;font-size:11px}
+.lab-card-diagram{margin:16px 0 15px;padding:12px 10px 6px;background:radial-gradient(ellipse at 50% 50%,rgba(37,84,74,.38),rgba(8,24,23,.62));border:1px dashed rgba(170,192,178,.24);border-radius:3px;color:#e4cb90}
+.lab-blueprint{display:block;width:100%;height:auto;max-height:114px}
+.lab-card-body h2{font:400 clamp(22px,2.1vw,27px)/1.35 var(--serif);margin:0 0 4px;color:#f1ead8}
+.lab-card-body small{display:block;font-size:12px;letter-spacing:.05em;color:#95aca0;margin-bottom:11px}
+.lab-card-body p{font:14px/1.85 var(--serif);color:#c3d0c6;margin:0 0 18px}
+.lab-card-enter{font-size:12px;letter-spacing:.1em;color:#e3ca8e;padding-top:12px;border-top:1px solid rgba(168,190,175,.16);display:inline-flex;align-items:center;justify-content:space-between}
+
+.lab-interactive-box{margin-top:38px;padding:26px 28px;background:linear-gradient(155deg,rgba(19,51,46,.76),rgba(10,29,28,.9));border:1px solid rgba(212,183,122,.35);border-radius:4px;box-shadow:0 16px 36px rgba(3,12,11,.36)}
+.lab-interactive-box h2{font:400 clamp(22px,2.3vw,29px)/1.35 var(--serif);margin:10px 0 6px;color:#f0ead8}
+.lab-proto-desc{font:14px/1.85 var(--serif);color:#b6c5bb;margin:0 0 16px}
+.herb-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.herb-pill{appearance:none;background:rgba(20,54,48,.75);border:1px solid #48685c;border-radius:999px;color:#cbd6ca;padding:7px 14px;font:12.5px var(--serif);letter-spacing:.05em;cursor:pointer;transition:background .2s,border-color .2s,color .2s}
+.herb-pill:hover,.herb-pill:focus-visible{background:#214a3e;border-color:#d2b77a;color:#f4e5bd}
+.herb-pill[aria-pressed=true]{background:rgba(212,183,122,.16);border-color:#d4b77a;color:#f3dc9f}
+.herb-card{padding:18px 20px;background:rgba(9,26,25,.68);border:1px solid rgba(168,190,175,.2);border-left:3px solid #d4b77a;border-radius:3px}
+.herb-card-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(168,190,175,.18)}
+.herb-card-head span{font:italic 14px var(--serif);color:#e4cb90;letter-spacing:.04em}
+.herb-card-head small{font-size:12px;color:#96ada1}
+.herb-card p{font:14px/1.9 var(--serif);color:#d7dfd8;margin:0 0 12px}
+.herb-card blockquote{margin:0;padding:8px 14px;background:rgba(212,183,122,.07);border-left:2px solid rgba(212,183,122,.5);font:14.5px/1.85 "STKaiti","KaiTi",var(--serif);color:#f0deb0}
+
+.china-city .city-poem-ring{fill:none;stroke:#f2d68d;stroke-width:1.1;stroke-dasharray:2.5 3.5;opacity:.75;pointer-events:none}
+.china-city.is-selected .city-poem-ring{stroke:#fff3c4;opacity:1;stroke-dasharray:none}
+.china-city-pills button.has-poem-pill{border-color:rgba(212,183,122,.52)}
+.china-city-pills button .pill-star{color:#e6cb87;margin-left:4px;font-size:10px}
+.china-poem-slot{margin:16px 0 18px}
+.china-poem-card{padding:15px 17px;background:linear-gradient(145deg,rgba(23,57,50,.82),rgba(12,33,31,.92));border:1px solid rgba(212,183,122,.36);border-left:3px solid #d4b77a;border-radius:3px;box-shadow:0 12px 28px rgba(3,12,11,.32)}
+.china-poem-meta{display:flex;justify-content:space-between;gap:8px;font-size:11px;letter-spacing:.08em;color:#d4b77a;margin-bottom:6px}
+.china-poem-card h3{font:400 18px/1.4 var(--serif);margin:0 0 8px;color:#f2ead7}
+.china-poem-card h3 a{text-decoration:none}
+.china-poem-card h3 a:hover{color:#f5dc9c;text-decoration:underline}
+.china-poem-card blockquote{margin:0 0 10px;padding:0;font:13.5px/1.85 "STKaiti","KaiTi",var(--serif);color:#dce4dd}
+.china-poem-hint-text{margin:0;font:13px/1.85 var(--serif);color:#c7d4cb}
+.china-poem-hint-text strong{color:#f0d89a;font-weight:400}
+.china-poem-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding-top:8px;border-top:1px dashed rgba(168,190,175,.2);font-size:12px}
+.china-poem-link{color:#e6cb87;text-decoration:none;letter-spacing:.05em}
+.china-poem-link:hover{text-decoration:underline;color:#fff0c2}
+.china-poem-alt{font-size:11.5px;color:#9ab0a4}
+.china-poem-alt a{color:#d5c18b;text-decoration:none}
+.china-poem-alt a:hover{text-decoration:underline}
+
+@media(max-width:860px){
+ .lab-workbench{grid-template-columns:1fr;gap:18px}
+ .lab-interactive-box{padding:20px 18px}
+ .poem-vignette{width:96px;height:74px;opacity:.24}
+}

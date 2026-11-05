@@ -196,9 +196,29 @@ function poemVolumes(mode='series'){
 const POETRY_GROUPS={series:['墨檐','挽岚','其他作品'],genre:['现代诗','古风与拟古','词']};
 let bookState={mode:'series',group:'墨檐',index:0,view:'contents'};
 const bookEntries=()=>A.notes.filter(n=>(bookState.mode==='genre'?n.genre:n.category)===bookState.group);
+function poemVignette(n){
+  const text=(n.title||'')+'\n'+(n.body||[]).join('\n');
+  if(/梧桐|叶脉|秋叶|枫/.test(text)){
+    return '<div class="poem-vignette vignette-leaf" aria-hidden="true" title="梧桐叶脉"><svg viewBox="0 0 120 120" fill="none"><path d="M22 98 C45 75 72 48 96 20" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"/><path d="M36 82 C26 62 24 44 34 26 C48 33 56 30 68 18 C72 34 82 38 96 20 C88 42 92 52 104 64 C86 68 76 76 68 92 C54 84 44 84 36 82 Z" stroke="currentColor" stroke-width=".95" stroke-linejoin="round" opacity=".78"/><path d="M52 68 L35 50 M65 55 L48 35 M58 62 L80 57 M72 47 L92 43" stroke="currentColor" stroke-width=".75" stroke-linecap="round" opacity=".58"/></svg></div>';
+  }
+  if(/猫|萨摩耶/.test(text)){
+    return '<div class="poem-vignette vignette-cat" aria-hidden="true" title="眠猫小印"><svg viewBox="0 0 120 120" fill="none"><path d="M30 78 C28 56 46 44 68 48 C84 50 94 62 92 76 C90 86 76 90 54 90 C36 90 22 84 22 76 C22 70 28 67 35 68" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M35 55 L32 42 L43 49 M52 48 L56 38 L61 48" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/><path d="M38 64 Q42 67 46 64 M53 64 Q57 67 61 64" stroke="currentColor" stroke-width=".9" stroke-linecap="round"/><path d="M88 78 C98 78 104 71 101 63 C99 57 93 59 94 64" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg></div>';
+  }
+  if(/舟|帆|江|渡|海|波|溪/.test(text)){
+    return '<div class="poem-vignette vignette-boat" aria-hidden="true" title="一叶轻舟"><svg viewBox="0 0 120 120" fill="none"><path d="M18 74 Q60 86 104 68 Q82 88 46 88 Q26 87 18 74 Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M44 76 Q58 62 74 73" stroke="currentColor" stroke-width=".95" opacity=".75"/><path d="M68 74 L96 56" stroke="currentColor" stroke-width=".85" stroke-linecap="round"/><path d="M14 96 Q42 91 70 96 T108 94" stroke="currentColor" stroke-width=".75" stroke-dasharray="3 5" opacity=".55"/></svg></div>';
+  }
+  return '<div class="poem-vignette vignette-moon" aria-hidden="true" title="星月印记"><svg viewBox="0 0 120 120" fill="none"><path d="M72 26 A30 30 0 1 0 94 74 A25 25 0 1 1 72 26 Z" stroke="currentColor" stroke-width="1.05"/><path d="M34 42 L34 50 M30 46 L38 46 M84 34 L84 40 M81 37 L87 37" stroke="currentColor" stroke-width=".8" stroke-linecap="round" opacity=".65"/><path d="M22 86 Q56 78 96 86" stroke="currentColor" stroke-width=".75" stroke-dasharray="2 6" opacity=".5"/></svg></div>';
+}
+function getSealState(slug){
+  try{const map=JSON.parse(localStorage.getItem('qz_poem_seals')||'{}');return !!map[slug];}catch{return false;}
+}
+function toggleSealState(slug){
+  try{const map=JSON.parse(localStorage.getItem('qz_poem_seals')||'{}');map[slug]=!map[slug];localStorage.setItem('qz_poem_seals',JSON.stringify(map));return !!map[slug];}catch{return true;}
+}
 function bookPage(n){
   const paragraphs=n.body.map(p=>'<p>'+esc(p)+'</p>').join('');
-  return '<div class="book-poem-header"><span class="book-leaf-meta">'+esc(n.category)+' / '+esc(n.genre)+'</span><h2>'+esc(n.title)+'</h2><span class="book-date">'+esc(n.date||'')+'</span></div><div class="book-poem-body">'+paragraphs+'</div><a class="book-permalink" href="#/notes/'+esc(n.slug)+'">单独打开这首诗 ↗</a>';
+  const sealed=getSealState(n.slug);
+  return '<div class="book-poem-wrap"><div class="book-poem-header"><span class="book-leaf-meta">'+esc(n.category)+' / '+esc(n.genre)+'</span><h2>'+esc(n.title)+'</h2><span class="book-date">'+esc(n.date||'')+'</span></div><div class="book-poem-body">'+paragraphs+'</div>'+poemVignette(n)+'<div class="book-poem-actions"><a class="book-permalink" href="#/notes/'+esc(n.slug)+'">单独打开这首诗 ↗</a><button type="button" class="poem-seal-btn '+(sealed?'is-sealed':'')+'" data-seal-slug="'+esc(n.slug)+'" aria-pressed="'+sealed+'"><span class="seal-mark" aria-hidden="true">清舟</span><span class="seal-text">'+(sealed?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻')+'</span></button></div></div>';
 }
 function renderBook(){
   const entries=bookEntries(),cur=entries[Math.min(bookState.index,entries.length-1)];
@@ -226,7 +246,8 @@ function bindBook(){
     const item=e.target.closest('[data-book-index]');if(item){bookState.index=Number(item.dataset.bookIndex);bookState.view='poem';renderBook();if(innerWidth<=700)document.querySelector('#reading-book')?.scrollIntoView({block:'start',behavior:'instant'});return;}
     if(e.target.closest('#book-back')){bookState.view='contents';renderBook();return;}
     if(e.target.closest('#book-prev')){bookState.index=Math.max(0,bookState.index-1);bookState.view='poem';renderBook();document.querySelector('#book-prev')?.focus();return;}
-    if(e.target.closest('#book-next')){bookState.index=Math.min(bookEntries().length-1,bookState.index+1);bookState.view='poem';renderBook();document.querySelector('#book-next')?.focus();}
+    if(e.target.closest('#book-next')){bookState.index=Math.min(bookEntries().length-1,bookState.index+1);bookState.view='poem';renderBook();document.querySelector('#book-next')?.focus();return;}
+    const sealBtn=e.target.closest('[data-seal-slug]');if(sealBtn){const on=toggleSealState(sealBtn.dataset.sealSlug);sealBtn.classList.toggle('is-sealed',on);sealBtn.setAttribute('aria-pressed',String(on));const txt=sealBtn.querySelector('.seal-text');if(txt)txt.textContent=on?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻';}
   };
   root.addEventListener('click',click);
   const keyboard=e=>{if(e.altKey||e.ctrlKey||e.metaKey||/INPUT|TEXTAREA|BUTTON/.test(e.target.tagName)||!document.querySelector('.book-open')?.contains(e.target))return;if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();bookState.index=Math.max(0,Math.min(bookEntries().length-1,bookState.index+(e.key==='ArrowRight'?1:-1)));bookState.view='poem';renderBook();}};
@@ -240,14 +261,39 @@ function bindBook(){
 
 function article(n){
   const list=A.notes.includes(n)?A.notes:(A.legacyNotes||[]),i=list.indexOf(n),prev=list[(i+list.length-1)%list.length],next=list[(i+1)%list.length];
-  return '<div class="wrap"><article class="article poetry-reading '+(n.poem?'poem':'')+'"><a class="quiet-link" href="#/notes">← 回到诗集</a><div class="reading-marker"><span>'+String(i+1).padStart(2,'0')+' / '+esc(n.category)+' · '+esc(n.genre||'未分类')+'</span><span>'+(n.demo!==false?'演示文字':'逐页复核稿')+'</span></div><h1>'+esc(n.title)+'</h1>'+(n.en?'<p class="lead">'+esc(n.en)+'</p>':'')+'<div class="body">'+n.body.map(p=>'<p>'+esc(p)+'</p>').join('')+'</div><p class="reading-colophon">'+(n.demo!==false?'此页为原型创作样例，尚非所有者真实作品。':esc((n.sourceMeta||[]).join(' / ')||'来源：诗歌电子稿逐页复核版'))+'</p><div class="article-nav"><a href="#/notes/'+prev.slug+'">← '+esc(prev.title)+'</a><a href="#/notes/'+next.slug+'">'+esc(next.title)+' →</a></div></article></div>';
+  const sealed=getSealState(n.slug);
+  return '<div class="wrap"><article class="article poetry-reading '+(n.poem?'poem':'')+'"><a class="quiet-link" href="#/notes">← 回到诗集</a><div class="reading-marker"><span>'+String(i+1).padStart(2,'0')+' / '+esc(n.category)+' · '+esc(n.genre||'未分类')+'</span><span>'+(n.demo!==false?'演示文字':'逐页复核稿')+'</span></div><h1>'+esc(n.title)+'</h1>'+(n.en?'<p class="lead">'+esc(n.en)+'</p>':'')+'<div class="body book-poem-wrap">'+n.body.map(p=>'<p>'+esc(p)+'</p>').join('')+poemVignette(n)+'</div><div class="book-poem-actions"><p class="reading-colophon">'+(n.demo!==false?'此页为原型创作样例，尚非所有者真实作品。':esc((n.sourceMeta||[]).join(' / ')||'来源：诗歌电子稿逐页复核版'))+'</p><button class="poem-seal-btn '+(sealed?'is-sealed':'')+'" type="button" data-seal-slug="'+esc(n.slug)+'" aria-pressed="'+sealed+'"><span class="seal-mark" aria-hidden="true">清舟</span><span class="seal-text">'+(sealed?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻')+'</span></button></div><div class="article-nav"><a href="#/notes/'+prev.slug+'">← '+esc(prev.title)+'</a><a href="#/notes/'+next.slug+'">'+esc(next.title)+' →</a></div></article></div>';
+}
+function labDiagram(slug){
+  if(slug==='rongrong'){
+    return '<svg class="lab-blueprint" viewBox="0 0 220 118" fill="none" aria-hidden="true"><circle cx="110" cy="56" r="28" stroke="currentColor" stroke-width=".9" stroke-dasharray="3 4" opacity=".6"/><circle cx="110" cy="56" r="14" stroke="currentColor" stroke-width="1.15"/><circle cx="110" cy="56" r="3.2" fill="currentColor"/><path d="M28 56 C58 30 78 42 96 51 M124 61 C142 70 162 80 192 56" stroke="currentColor" stroke-width=".9" opacity=".75"/><circle cx="52" cy="43" r="2.2" fill="currentColor" opacity=".75"/><circle cx="168" cy="67" r="2.2" fill="currentColor" opacity=".75"/><text x="16" y="106" fill="currentColor" font-size="8.5" letter-spacing="1.6" opacity=".6">FIG.01 / DIALOGUE & MEMORY KERNEL</text></svg>';
+  }
+  if(slug==='machine-herbarium'){
+    return '<svg class="lab-blueprint" viewBox="0 0 220 118" fill="none" aria-hidden="true"><path d="M110 92 L110 20 M110 68 L82 48 M110 54 L138 35 M110 38 L88 24" stroke="currentColor" stroke-width="1.15" stroke-linecap="round"/><ellipse cx="77" cy="44" rx="11" ry="5.5" transform="rotate(-28 77 44)" stroke="currentColor" stroke-width=".95"/><ellipse cx="143" cy="32" rx="11" ry="5.5" transform="rotate(28 143 32)" stroke="currentColor" stroke-width=".95"/><rect x="52" y="14" width="116" height="72" stroke="currentColor" stroke-width=".7" stroke-dasharray="2 4" opacity=".5"/><text x="16" y="106" fill="currentColor" font-size="8.5" letter-spacing="1.6" opacity=".6">FIG.02 / SPECULATIVE HERBARIUM</text></svg>';
+  }
+  return '<svg class="lab-blueprint" viewBox="0 0 220 118" fill="none" aria-hidden="true"><path d="M26 72 Q72 32 116 58 T194 40" stroke="currentColor" stroke-width="1.15"/><path d="M26 84 Q80 48 126 70 T194 56" stroke="currentColor" stroke-width=".8" stroke-dasharray="3 4" opacity=".65"/><circle cx="68" cy="51" r="3.2" stroke="currentColor" stroke-width="1"/><circle cx="144" cy="63" r="3.2" stroke="currentColor" stroke-width="1"/><path d="M68 47 L68 26 M144 59 L144 36" stroke="currentColor" stroke-width=".75" opacity=".6"/><text x="16" y="106" fill="currentColor" font-size="8.5" letter-spacing="1.6" opacity=".6">FIG.03 / SENSORY TOPOGRAPHY</text></svg>';
 }
 function lab(){
- return '<div class="wrap personal-lab"><header class="room-heading"><h1>还亮着的实验桌</h1><p>把想法放在这里，慢慢试出结果。</p></header><div class="life-ledger" aria-label="实验项目清单">'+A.labs.map(l=>'<a class="life-ledger-item" href="#/lab/'+esc(l.slug)+'"><span class="life-ledger-kind">'+esc(l.kind||'IDEA')+'</span><strong>'+esc(l.title)+'</strong><span>'+esc(l.status)+'</span><span aria-hidden="true">↗</span></a>').join('')+'</div></div>';
+ return '<div class="wrap personal-lab" id="lab-desk"><div class="lab-lamp-glow" aria-hidden="true"></div><header class="room-heading"><span class="eyebrow">NIGHT DESK / 04</span><h1>还亮着的实验桌</h1><p>夜深时留一盏暖灯，把还未定型的念头、草图与机器实验摊在桌面上。</p></header><div class="lab-workbench" aria-label="实验项目手札">'+A.labs.map((l,idx)=>'<a class="lab-card" href="#/lab/'+esc(l.slug)+'"><div class="lab-card-top"><span class="lab-card-id">'+esc(l.id||('L—00'+(idx+1)))+' · '+esc(l.kind||'CONCEPT')+'</span><span class="lab-card-status">○ '+esc(l.status)+'</span></div><div class="lab-card-diagram">'+labDiagram(l.slug)+'</div><div class="lab-card-body"><h2>'+esc(l.title)+'</h2><small>'+esc(l.en||'')+'</small><p>'+esc(l.intro||'')+'</p></div><span class="lab-card-enter">翻阅实验手札 ↗</span></a>').join('')+'</div></div>';
 }
+const HERBARIUM_SAMPLES=[
+  {tag:'雨后青苔',latin:'Bryophyta · Noctis Imber',place:'旧墙隅与石阶阴面',note:'机器识别为「高湿度地表附生绿斑（置信度 0.91）」；人却记住了雨停后空气里微苦的泥土腥气，和一整个缓慢下来的下午。',verse:'阶前不语承残滴，替旧墙根记岁年。'},
+  {tag:'九月梧桐',latin:'Platanus · Autumnus Mensura',place:'秋风初起的街角',note:'机器提取出「掌状裂叶、边缘锯齿、褐化率 64%」；人拾起它蜷曲的叶脉，觉得那是一把丈量过彤云与远星的旧罗盘。',verse:'叶脉如尺量秋色，留得晴空一寸光。'},
+  {tag:'晚霞与桂子',latin:'Osmanthus · Vespera Aura',place:'暮色将合的江岸小城',note:'机器将气味分子归入「芳樟醇与紫罗兰酮簇」；人却在晚风里听见了客家乡音与采茶回响。',verse:'金粟微茫随水远，半城暮色半城香。'},
+  {tag:'山谷雾松',latin:'Pinus · Nebula Montis',place:'高海拔寒林与乱石间',note:'机器标注为「针叶林冠层低能见度样本」；人在雾海与铁索旁停下脚步，觉得树与树之间的空白才是最好的停留处。',verse:'雾锁寒松千嶂静，人行云外第几峰。'}
+];
 function projectDetail(l){
   const stages=l.stages||[{label:'当前状态',text:l.status},{label:'记录',text:l.record}];
-  return '<div class="wrap project-reading"><a class="quiet-link" href="#/lab">← 回到实验桌</a><header class="room-heading">'+eyebrow(l.id,'PROJECT DOSSIER')+'<h1>'+esc(l.title)+'</h1><p>'+esc(l.en)+'</p><span class="project-status">○ '+esc(l.status)+'</span></header><div class="project-reading-grid"><section><h2>一开始的念头</h2><p>'+esc(l.inspiration||l.intro)+'</p><h2>还想继续问的</h2><ul>'+(l.questions||['这个想法想留下什么？','下一次尝试，需要怎样的观察？']).map(q=>'<li>'+esc(q)+'</li>').join('')+'</ul></section><section><h2>留在桌上的记录</h2><ol class="project-stages">'+stages.map(s=>'<li><span>'+esc(s.label)+'</span><p>'+esc(s.text)+'</p></li>').join('')+'</ol><p class="project-boundary">这里呈现档案与演示状态，不构成已发布产品或已完成科研成果的声明。</p></section></div>'+'</div>';
+  const interactive=l.slug==='machine-herbarium'?
+    '<section class="lab-interactive-box" aria-label="机器植物志·概念标本台"><div class="eyebrow"><span class="red">INTERACTIVE PROTOTYPE</span> &nbsp; / &nbsp; 机器命名 vs 人的记忆</div><h2>采集一枚概念标本</h2><p class="lab-proto-desc">选择一处日常观察片段，看看「算法特征提取」与「人的诗意命名」在同一张标本卡上的对照：</p><div class="herb-pills" role="group" aria-label="选择观察样本">'+HERBARIUM_SAMPLES.map((s,i)=>'<button type="button" class="herb-pill" data-herb="'+i+'" aria-pressed="'+(i===0)+'">'+esc(s.tag)+'</button>').join('')+'</div><div class="herb-card" id="herb-card"><div class="herb-card-head"><span id="herb-latin">'+esc(HERBARIUM_SAMPLES[0].latin)+'</span><small id="herb-place">'+esc(HERBARIUM_SAMPLES[0].place)+'</small></div><p id="herb-note">'+esc(HERBARIUM_SAMPLES[0].note)+'</p><blockquote id="herb-verse">'+esc(HERBARIUM_SAMPLES[0].verse)+'</blockquote></div></section>':'';
+  return '<div class="wrap project-reading" id="lab-desk"><div class="lab-lamp-glow" aria-hidden="true"></div><a class="quiet-link" href="#/lab">← 回到实验桌</a><header class="room-heading">'+eyebrow(l.id,'PROJECT DOSSIER')+'<h1>'+esc(l.title)+'</h1><p>'+esc(l.en)+'</p><span class="project-status">○ '+esc(l.status)+'</span></header><div class="project-reading-grid"><section><h2>一开始的念头</h2><p>'+esc(l.inspiration||l.intro)+'</p><h2>还想继续问的</h2><ul>'+(l.questions||['这个想法想留下什么？','下一次尝试，需要怎样的观察？']).map(q=>'<li>'+esc(q)+'</li>').join('')+'</ul></section><section><h2>留在桌上的记录</h2><ol class="project-stages">'+stages.map(s=>'<li><span>'+esc(s.label)+'</span><p>'+esc(s.text)+'</p></li>').join('')+'</ol><p class="project-boundary">这里呈现档案与演示状态，不构成已发布产品或已完成科研成果的声明。</p></section></div>'+interactive+'</div>';
+}
+function bindLabDesk(){
+  const desk=document.querySelector('#lab-desk');if(!desk)return()=>{};
+  const move=e=>{const r=desk.getBoundingClientRect();desk.style.setProperty('--lamp-x',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');desk.style.setProperty('--lamp-y',((e.clientY-r.top)/r.height*100).toFixed(1)+'%');};
+  const click=e=>{const b=e.target.closest('[data-herb]');if(!b)return;const idx=Number(b.dataset.herb),sample=HERBARIUM_SAMPLES[idx];if(!sample)return;desk.querySelectorAll('[data-herb]').forEach((el,i)=>el.setAttribute('aria-pressed',String(i===idx)));document.querySelector('#herb-latin').textContent=sample.latin;document.querySelector('#herb-place').textContent=sample.place;document.querySelector('#herb-note').textContent=sample.note;document.querySelector('#herb-verse').textContent=sample.verse;};
+  desk.addEventListener('pointermove',move);desk.addEventListener('click',click);
+  return()=>{desk.removeEventListener('pointermove',move);desk.removeEventListener('click',click);};
 }
 
 function about(){return `<div class="wrap">${title('05','ABOUT','关于这间小店','世界的边缘，往往藏在日常的细节里。')}<div class="about-layout"><div>${eyebrow('A PERSONAL MANIFESTO','小店的自述')}<h2>我想保留的，<br>是看向世界的方式。</h2><p>这里是一个安放注意力的小地方。用诗歌留下没说完的话，用摄影留下光，再把实验和日常的碎片，慢慢收进来。</p><p>在这里，事物可以不被立即归类。一个下午的光，可以成为一组照片；一个无法回答的问题，可以长成一篇手记；一次偶然的尝试，也可以留下自己的位置。</p><p>希望每次回到这里，都能发现：世界依然辽阔，而观察尚未结束。</p><div class="demo-note">以上为网站概念文案。所有者的真实姓名、个人简介与经历尚待填写。</div></div><aside class="about-sidebar">${eyebrow('OPEN ENDED','保持开放')}<dl><dt>关注的方向 / INTERESTS</dt><dd>诗歌与日常观察<br>影像与叙事<br>AI、交互与生活碎片</dd><dt>关于作者 / THE PERSON</dt><dd>个人介绍，待续。</dd><dt>联系 / CONTACT</dt><dd>联系方式与社交账号<br>将在所有者提供后加入。</dd><dt>当前版本 / EDITION</dt><dd>Vol. 001 / v1.1.1 · 本地预览<br>诗歌来自所有者稿件，影像与足迹等待真实内容</dd></dl></aside></div></div>`}
@@ -332,6 +378,7 @@ function traces(){
       <aside class="china-story">
         <span class="china-count">PLACES / 21</span><h2 id="china-selected-title">去过的地方</h2>
         <p id="china-selected-description">点亮的城市，来自我真实走过的路。选择一座城市，看看它在地图上的位置。</p>
+        <div id="china-poem-slot" class="china-poem-slot" hidden></div>
         <p class="china-disclaimer">城市位置按公开地理数据近似定位。日期、路线、照片与美食记录，等你慢慢补上。</p>
         <div class="china-city-list" id="china-city-list" aria-label="按城市选择足迹"></div>
       </aside>
@@ -458,8 +505,13 @@ function bind(){
     const volumes=document.querySelector('#poetry-volumes');if(volumes)volumes.innerHTML=poemVolumes(mode);
   }));
   if(document.querySelector('.book-library')){const previousDispose=disposePage,stop=bindBook();disposePage=()=>{previousDispose();stop();};}
+  if(document.querySelector('.poetry-reading [data-seal-slug]')){
+    const sealBtn=document.querySelector('.poetry-reading [data-seal-slug]');
+    sealBtn.addEventListener('click',()=>{const on=toggleSealState(sealBtn.dataset.sealSlug);sealBtn.classList.toggle('is-sealed',on);sealBtn.setAttribute('aria-pressed',String(on));const txt=sealBtn.querySelector('.seal-text');if(txt)txt.textContent=on?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻';});
+  }
   if(document.querySelector('.roaming-night'))disposePage=bindRoaming();
   if(document.querySelector('.cosmos'))disposePage=bindCosmos();
+  if(document.querySelector('#lab-desk')){const previousDispose=disposePage,stop=bindLabDesk();disposePage=()=>{previousDispose();stop();};}
   if(document.querySelector('.idea-tree')){const previousDispose=disposePage,tree=document.querySelector('.idea-tree');const obs=new IntersectionObserver(entries=>{if(entries[0].isIntersecting){tree.classList.add('tree-in-view');obs.disconnect();}},{threshold:.15});const revealOnFocus=()=>{tree.classList.remove('tree-in-view');obs.disconnect();};tree.addEventListener('focusin',revealOnFocus);obs.observe(tree);disposePage=()=>{previousDispose();obs.disconnect();tree.removeEventListener('focusin',revealOnFocus);};}
   if(document.querySelector('#china-footprint-map')&&window.initChinaFootprints){const previousDispose=disposePage;const stop=window.initChinaFootprints();disposePage=()=>{previousDispose();stop?.();};}
   if(document.querySelector('.stellar-stage')){const previousDispose=disposePage,disposeConstellation=bindConstellation();disposePage=()=>{previousDispose();disposeConstellation();};}
@@ -475,7 +527,31 @@ function initSoundDock(){
   document.querySelector('#dock-close').addEventListener('click',()=>open(false));
   play.addEventListener('click',async()=>{if(audio.paused){try{await audio.play();}catch(err){play.setAttribute('aria-label','播放未成功，请检查浏览器音频设置');}}else audio.pause();update();});
   progress.addEventListener('input',()=>{if(audio.duration>0&&Number.isFinite(audio.duration))audio.currentTime=audio.duration*Number(progress.value)/1000;update();});
-  audio.addEventListener('timeupdate',update);audio.addEventListener('loadedmetadata',update);audio.addEventListener('play',update);audio.addEventListener('pause',update);audio.addEventListener('ended',update);audio.addEventListener('error',()=>{play.disabled=true;play.textContent='!';});
+  let audioCtx=null,analyser=null,dataArray=null,rafId=0;
+  const pumpAudioEnergy=()=>{
+    if(audio.paused||!analyser){window.__qzAudioEnergy=0;document.documentElement.style.setProperty('--audio-energy','0');return;}
+    analyser.getByteFrequencyData(dataArray);
+    let sum=0;for(let i=0;i<24;i++)sum+=dataArray[i];
+    const energy=Math.min(1,Math.max(0,(sum/(24*255)-.08)*1.85));
+    window.__qzAudioEnergy=energy;
+    document.documentElement.style.setProperty('--audio-energy',energy.toFixed(3));
+    rafId=requestAnimationFrame(pumpAudioEnergy);
+  };
+  const ensureAudioAnalyser=()=>{
+    if(audioCtx||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    try{
+      const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;
+      audioCtx=new Ctx();const src=audioCtx.createMediaElementSource(audio);
+      analyser=audioCtx.createAnalyser();analyser.fftSize=128;analyser.smoothingTimeConstant=.82;
+      src.connect(analyser);analyser.connect(audioCtx.destination);
+      dataArray=new Uint8Array(analyser.frequencyBinCount);
+    }catch(e){}
+  };
+  audio.addEventListener('timeupdate',update);audio.addEventListener('loadedmetadata',update);
+  audio.addEventListener('play',()=>{update();ensureAudioAnalyser();if(audioCtx?.state==='suspended')audioCtx.resume();cancelAnimationFrame(rafId);pumpAudioEnergy();});
+  audio.addEventListener('pause',()=>{update();cancelAnimationFrame(rafId);window.__qzAudioEnergy=0;document.documentElement.style.setProperty('--audio-energy','0');});
+  audio.addEventListener('ended',()=>{update();cancelAnimationFrame(rafId);window.__qzAudioEnergy=0;document.documentElement.style.setProperty('--audio-energy','0');});
+  audio.addEventListener('error',()=>{play.disabled=true;play.textContent='!';});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)open(false);});
   update();
 }
