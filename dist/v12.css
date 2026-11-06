@@ -245,3 +245,762 @@ body[data-room=home]:before{opacity:.055!important}
  .lab-interactive-box{padding:20px 18px}
  .poem-vignette{width:96px;height:74px;opacity:.24}
 }
+
+
+/* ==========================================================================
+   v1.3: Floating Glass Compass, Progressive River Flow, Tactile Poem Paper,
+   Vertical/Horizontal Mode, Cinnabar Counters, and Eaves Guestbook
+   ========================================================================== */
+
+/* 1. Floating Glass Compass Navigation (悬浮琉璃罗盘导航) */
+.site-header{
+  position:fixed!important;
+  top:0;left:0;right:0;
+  z-index:100;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:14px 4.2%!important;
+  border-bottom:none!important;
+  background:transparent!important;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  pointer-events:none;
+  transition:opacity .35s ease,transform .35s ease;
+}
+.site-header::before,.site-header::after{
+  display:none!important;
+}
+.site-header a,.site-header button,.site-header input{
+  pointer-events:auto;
+}
+.site-header .brand{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  background:rgba(9,26,25,.68);
+  border:1px solid rgba(212,183,122,.28);
+  border-radius:999px;
+  padding:5px 16px 5px 12px;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 20px rgba(0,0,0,.42);
+  text-decoration:none;
+  transition:background .25s,border-color .25s,transform .25s;
+}
+.site-header .brand:hover{
+  background:rgba(16,42,40,.82);
+  border-color:#dfc282;
+  transform:translateY(-1px);
+}
+.site-header .brand .cat-mark{
+  width:42px;
+  height:32px;
+}
+.site-header .brand span{
+  font-family:var(--serif);
+  font-size:15px;
+  color:#f2ecda;
+  letter-spacing:.06em;
+}
+.site-header .brand small{
+  display:block;
+  font-size:9.5px;
+  letter-spacing:.12em;
+  color:#9eb5a8;
+}
+
+.header-compass{
+  display:inline-flex;
+  align-items:center;
+  gap:12px;
+  background:rgba(9,26,25,.75);
+  border:1px solid rgba(212,183,122,.32);
+  border-radius:999px;
+  padding:4px 8px 4px 18px;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  box-shadow:0 8px 24px rgba(2,10,9,.5);
+}
+.header-compass nav{
+  display:flex;
+  align-items:center;
+  gap:clamp(10px,1.8vw,24px);
+}
+.header-compass nav a{
+  color:#cbdad0!important;
+  font:13px/1.4 var(--sans);
+  letter-spacing:.04em;
+  padding:6px 2px;
+  position:relative;
+  text-decoration:none;
+  transition:color .22s;
+}
+.header-compass nav a:after{display:none!important}
+.header-compass nav a:hover{
+  color:#fff2c7!important;
+}
+.header-compass nav a[aria-current=page]{
+  color:#ffeaab!important;
+  font-weight:500;
+}
+.header-compass nav a[aria-current=page]::before{
+  content:"";
+  position:absolute;
+  bottom:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#f2d591;
+  box-shadow:0 0 8px #ffd986;
+}
+
+/* Header auto-dim when reading or moving */
+body:not([data-room=home]) main{
+  padding-top:76px;
+}
+body[data-room=home] main{
+  padding-top:0;
+}
+
+/* 2. Progressive River Flow from One End to Another (一气呵成的整体漫流) */
+body[data-room="home"] .roaming-night .river-reveal-trace{
+  stroke-dasharray:100;
+  stroke-dashoffset:0;
+}
+body[data-room="home"] .roaming-night[data-intro="pending"] .river-reveal-trace{
+  stroke-dashoffset:100;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .river-main-trace{
+  stroke-dashoffset:100;
+  animation:river-progressive-reveal 4.4s cubic-bezier(.22,.1,.22,1) forwards;
+  animation-play-state:running;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-reveal-photos,
+body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-photos{
+  stroke-dashoffset:100;
+  animation:river-progressive-reveal 1.4s cubic-bezier(.22,.1,.22,1) 0.85s forwards;
+  animation-play-state:running;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-reveal-poems,
+body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-poems{
+  stroke-dashoffset:100;
+  animation:river-progressive-reveal 1.4s cubic-bezier(.22,.1,.22,1) 1.75s forwards;
+  animation-play-state:running;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-reveal-traces,
+body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-traces{
+  stroke-dashoffset:100;
+  animation:river-progressive-reveal 1.4s cubic-bezier(.22,.1,.22,1) 2.65s forwards;
+  animation-play-state:running;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-reveal-lab,
+body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-lab{
+  stroke-dashoffset:100;
+  animation:river-progressive-reveal 1.4s cubic-bezier(.22,.1,.22,1) 3.45s forwards;
+  animation-play-state:running;
+}
+@keyframes river-progressive-reveal{
+  from{stroke-dashoffset:100;}
+  to{stroke-dashoffset:0;}
+}
+
+/* Staggered Destination Arrivals matching river crest arrival */
+body[data-room="home"] .roaming-night[data-intro="pending"] .wander-node{
+  opacity:0;
+  transform:translateY(12px);
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .node-photos{
+  animation:destination-arrival-v08 .75s ease-out 1.45s forwards;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .node-poems{
+  animation:destination-arrival-v08 .75s ease-out 2.35s forwards;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .node-traces{
+  animation:destination-arrival-v08 .75s ease-out 3.25s forwards;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .node-lab{
+  animation:destination-arrival-v08 .75s ease-out 4.05s forwards;
+}
+
+/* Drifting Water Verses in River Curves */
+.river-drifting-verses{
+  pointer-events:none;
+}
+.drift-verse{
+  font-family:"STKaiti","KaiTi",var(--serif);
+  font-size:13.5px;
+  letter-spacing:.24em;
+  fill:#ffeac0;
+  opacity:.26;
+  filter:drop-shadow(0 0 6px rgba(228,203,138,.45));
+  animation:drift-verse-breathe 8s ease-in-out infinite alternate;
+}
+.drift-verse.drift-b{
+  animation-delay:-4s;
+}
+@keyframes drift-verse-breathe{
+  0%{opacity:.16;transform:translate(0,0);}
+  50%{opacity:.52;transform:translate(4px,-2px);}
+  100%{opacity:.22;transform:translate(-3px,2px);}
+}
+
+/* Interactive Water Ripple Particle on pointer move */
+.water-ripple-particle{
+  position:absolute;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  border:1.2px solid rgba(235,210,142,.7);
+  box-shadow:0 0 10px rgba(235,210,142,.5);
+  pointer-events:none;
+  z-index:6;
+  transform:translate(-50%,-50%) scale(1);
+  animation:water-ripple-expand 1.15s cubic-bezier(0.1,0.4,0.3,1) forwards;
+}
+@keyframes water-ripple-expand{
+  0%{transform:translate(-50%,-50%) scale(1);opacity:.85;}
+  100%{transform:translate(-50%,-50%) scale(6.2);opacity:0;}
+}
+
+/* 3. Single Poem View: Tactile Paper, Dark Pine-Smoke Ink & Vertical Mode */
+body[data-room=poems] .article.poetry-reading{
+  position:relative;
+  max-width:760px;
+  margin:24px auto 72px;
+  padding:0;
+  border-radius:6px;
+  background:#f8f2e4;
+  background-image:
+    radial-gradient(ellipse at 88% 12%,rgba(212,183,122,.18),transparent 45%),
+    linear-gradient(135deg,#f5ece0 0%,#fdf9f0 50%,#f4ebe0 100%);
+  box-shadow:0 24px 60px rgba(0,0,0,.55),0 4px 14px rgba(0,0,0,.32),inset 0 0 0 1px rgba(186,160,124,.45);
+  color:#2b2118!important;
+  --ink:#2b2118;
+  --paper:#f8f2e4;
+  --muted:#6e5e4e;
+  --line:#d8c7b0;
+  transition:all .3s ease;
+}
+.paperweight-bar{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:22px;
+  background:linear-gradient(180deg,#1c2625 0%,#0d1716 100%);
+  border-radius:6px 6px 0 0;
+  border-bottom:1px solid rgba(212,183,122,.35);
+  box-shadow:0 4px 10px rgba(0,0,0,.25);
+  position:relative;
+}
+.paperweight-bar .weight-label{
+  font-family:"STKaiti","KaiTi",var(--serif);
+  font-size:11px;
+  letter-spacing:.26em;
+  color:#d4b77a;
+  text-shadow:0 1px 2px #000;
+}
+.poem-read-toolbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px clamp(18px,4vw,34px) 10px;
+  border-bottom:1px dashed rgba(186,160,124,.35);
+}
+.poem-read-toolbar .quiet-link{
+  color:#7d6b58!important;
+  font-size:13px;
+  text-decoration:none;
+  letter-spacing:.04em;
+}
+.poem-read-toolbar .quiet-link:hover{
+  color:#241c14!important;
+  text-decoration:underline;
+}
+.dir-toggle-btn{
+  appearance:none;
+  background:rgba(186,160,124,.18);
+  border:1px solid rgba(186,160,124,.45);
+  color:#5c4838;
+  border-radius:4px;
+  padding:4px 11px;
+  font:12px/1.3 "STKaiti","KaiTi",var(--serif);
+  letter-spacing:.06em;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  transition:all .2s;
+}
+.dir-toggle-btn:hover{
+  background:rgba(186,160,124,.32);
+  border-color:#a88a64;
+  color:#241c14;
+}
+.poetry-paper-inner{
+  padding:26px clamp(20px,5vw,62px) 34px;
+}
+body[data-room=poems] .article.poetry-reading h1{
+  color:#241c14!important;
+  font-family:"STKaiti","KaiTi",var(--serif);
+  font-size:clamp(32px,4.5vw,46px);
+  font-weight:400;
+  letter-spacing:.08em;
+  margin:18px 0 24px;
+}
+body[data-room=poems] .article.poetry-reading .reading-marker{
+  color:#7a6652!important;
+  font-size:12px;
+  letter-spacing:.08em;
+  display:flex;
+  justify-content:space-between;
+  border-bottom:none!important;
+}
+body[data-room=poems] .article.poetry-reading .body{
+  border-top:1px dashed rgba(186,160,124,.4);
+  padding-top:24px;
+}
+body[data-room=poems] .article.poetry-reading .body p{
+  color:#241c14!important;
+  font-family:"FangSong","STFangsong","FangSong SC",serif;
+  font-size:17px;
+  line-height:2.35;
+  margin-bottom:20px;
+  letter-spacing:.05em;
+}
+body[data-room=poems] .article.poetry-reading .reading-colophon{
+  color:#85725e!important;
+  font-size:11.5px;
+}
+body[data-room=poems] .article.poetry-reading .book-poem-actions{
+  border-top-color:rgba(186,160,124,.35);
+}
+body[data-room=poems] .article.poetry-reading .poem-seal-btn{
+  color:#7b3228;
+  border-color:rgba(168,62,49,.42);
+  background:rgba(168,62,49,.08);
+}
+body[data-room=poems] .article.poetry-reading .poem-seal-btn .seal-mark{
+  background:rgba(255,247,238,.65);
+  color:#a83e31;
+  border-color:#a83e31;
+}
+body[data-room=poems] .article.poetry-reading .poem-seal-btn.is-sealed{
+  background:rgba(166,56,43,.14);
+  color:#8f291e;
+  border-color:#a6382b;
+}
+body[data-room=poems] .article.poetry-reading .poem-seal-btn.is-sealed .seal-mark{
+  background:#b03528;
+  color:#fbf2e6;
+  border-color:#9e2c20;
+}
+.seal-count-badge{
+  font-size:10.5px;
+  color:#9a5b4c;
+  background:rgba(168,62,49,.1);
+  padding:2px 6px;
+  border-radius:999px;
+  margin-left:4px;
+}
+
+/* Vertical Reading Mode (古笺竖排) */
+body[data-room=poems] .article.poetry-reading.is-vertical .poetry-paper-inner{
+  display:flex;
+  flex-direction:column;
+}
+body[data-room=poems] .article.poetry-reading.is-vertical h1{
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+  float:right;
+  margin:0 0 0 20px;
+  max-height:55vh;
+}
+body[data-room=poems] .article.poetry-reading.is-vertical .body.book-poem-wrap{
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+  overflow-x:auto;
+  min-height:380px;
+  max-height:60vh;
+  padding:14px 20px;
+  margin:6px 0 16px;
+  border-top:none;
+  border-right:1px dashed rgba(186,160,124,.4);
+  background-image:repeating-linear-gradient(to left,transparent,transparent 34px,rgba(198,72,58,.08) 35px,transparent 36px);
+}
+body[data-room=poems] .article.poetry-reading.is-vertical .body p{
+  margin-bottom:0;
+  margin-left:18px;
+  line-height:2.4;
+}
+
+/* Poem Annotations (朱笔夹笺) */
+.poem-annotations{
+  margin-top:24px;
+  padding-top:16px;
+  border-top:1px dashed rgba(186,160,124,.35);
+}
+.poem-annotations summary{
+  cursor:pointer;
+  font:13px var(--serif);
+  color:#6c5746;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 0;
+}
+.poem-annotations summary:hover{
+  color:#241c14;
+}
+.anno-box{
+  margin:14px 0;
+  display:grid;
+  gap:9px;
+  max-height:240px;
+  overflow-y:auto;
+  padding-right:4px;
+}
+.anno-card{
+  padding:9px 13px;
+  background:rgba(255,250,242,.7);
+  border:1px solid rgba(186,160,124,.32);
+  border-left:3px solid #b03528;
+  border-radius:3px;
+  font-size:12.5px;
+}
+.anno-head{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  font-size:11px;
+  color:#826c59;
+  margin-bottom:4px;
+}
+.anno-card p{
+  margin:0;
+  font:13px/1.8 "STKaiti","KaiTi",var(--serif);
+  color:#2e241c;
+}
+.anno-empty{
+  font:12px var(--serif);
+  color:#8a7662;
+  font-style:italic;
+  margin:8px 0;
+}
+.anno-form{
+  margin-top:12px;
+  padding:12px 14px;
+  background:rgba(240,230,214,.55);
+  border:1px dashed rgba(186,160,124,.45);
+  border-radius:4px;
+}
+.anno-form-row{
+  display:flex;
+  gap:9px;
+  margin-bottom:8px;
+}
+.anno-input{
+  flex:1;
+  background:#fffdf9;
+  border:1px solid rgba(186,160,124,.5);
+  border-radius:3px;
+  padding:5px 9px;
+  font:12px var(--serif);
+  color:#2b2118;
+}
+.anno-textarea{
+  width:100%;
+  box-sizing:border-box;
+  background:#fffdf9;
+  border:1px solid rgba(186,160,124,.5);
+  border-radius:3px;
+  padding:6px 9px;
+  font:12.5px/1.7 var(--serif);
+  color:#2b2118;
+  resize:vertical;
+}
+.anno-submit-btn{
+  margin-top:8px;
+  appearance:none;
+  background:#b03528;
+  color:#fffaf5;
+  border:none;
+  border-radius:3px;
+  padding:6px 13px;
+  font:12px var(--serif);
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  transition:background .2s;
+}
+.anno-submit-btn:hover{
+  background:#c23c2d;
+}
+.btn-seal{
+  border:1px solid #ffded8;
+  padding:0 3px;
+  border-radius:2px;
+  font-size:10px;
+}
+
+/* 4. Guestbook Page: Eaves Plaques & Hanging Breeze (檐下留言簿) */
+.guestbook-room{
+  min-height:75vh;
+  padding-bottom:85px;
+}
+.guestbook-stage{
+  display:grid;
+  grid-template-columns:minmax(280px,360px) minmax(0,1fr);
+  gap:clamp(22px,4vw,56px);
+  align-items:start;
+  margin-top:28px;
+}
+.guestbook-composer{
+  position:relative;
+  padding:24px 24px 22px;
+  background:linear-gradient(155deg,rgba(18,48,44,.86),rgba(8,24,24,.95));
+  border:1px solid rgba(212,183,122,.32);
+  border-radius:6px;
+  box-shadow:0 18px 40px rgba(0,0,0,.45);
+}
+.composer-lamp{
+  position:absolute;
+  top:-20px;
+  right:20px;
+  width:64px;
+  height:64px;
+  background:radial-gradient(circle,rgba(240,210,138,.35),transparent 70%);
+  pointer-events:none;
+}
+.guestbook-composer h2{
+  font:400 clamp(20px,2vw,25px)/1.35 var(--serif);
+  color:#f2ead7;
+  margin:0 0 6px;
+}
+.composer-intro{
+  font:13px/1.7 var(--serif);
+  color:#b2c5ba;
+  margin:0 0 16px;
+}
+.seal-picker{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-bottom:14px;
+}
+.seal-opt{
+  display:inline-flex;
+  align-items:center;
+  cursor:pointer;
+}
+.seal-opt input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+.seal-opt span{
+  display:inline-block;
+  padding:4px 10px;
+  background:rgba(24,58,52,.75);
+  border:1px solid rgba(186,206,192,.28);
+  border-radius:999px;
+  color:#c7d6cb;
+  font:11.5px var(--serif);
+  transition:all .2s;
+}
+.seal-opt input:checked + span{
+  background:rgba(212,183,122,.22);
+  border-color:#e4c784;
+  color:#fff2c7;
+  box-shadow:0 0 10px rgba(212,183,122,.2);
+}
+.guestbook-form .form-row{
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
+}
+.guestbook-form input,
+.guestbook-form textarea{
+  background:rgba(9,28,26,.8);
+  border:1px solid rgba(178,202,188,.28);
+  border-radius:4px;
+  padding:8px 12px;
+  color:#e7e6d9;
+  font:13px/1.6 var(--serif);
+  width:100%;
+  box-sizing:border-box;
+  transition:border-color .2s;
+}
+.guestbook-form input:focus,
+.guestbook-form textarea:focus{
+  outline:none;
+  border-color:#d4b77a;
+}
+.guestbook-form textarea{
+  resize:vertical;
+  margin-bottom:12px;
+}
+.gb-submit-btn{
+  appearance:none;
+  width:100%;
+  background:linear-gradient(135deg,#c44030,#982a1d);
+  color:#fff7f2;
+  border:1px solid rgba(255,210,195,.45);
+  border-radius:4px;
+  padding:9px 18px;
+  font:13.5px var(--serif);
+  letter-spacing:.08em;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  box-shadow:0 4px 14px rgba(152,42,29,.42);
+  transition:transform .2s,box-shadow .2s;
+}
+.gb-submit-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 6px 18px rgba(152,42,29,.58);
+}
+
+.guestbook-eaves{
+  position:relative;
+  padding-top:18px;
+}
+.eaves-beam{
+  height:10px;
+  background:linear-gradient(180deg,#243b35 0%,#11201d 100%);
+  border-radius:5px;
+  border-bottom:1px solid rgba(212,183,122,.45);
+  box-shadow:0 6px 16px rgba(0,0,0,.6);
+  position:relative;
+  margin-bottom:22px;
+}
+.eaves-beam .beam-glow{
+  position:absolute;
+  inset:-4px 0;
+  background:radial-gradient(ellipse at 50% 50%,rgba(212,183,122,.2),transparent 65%);
+  pointer-events:none;
+}
+.eaves-plaques{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+  gap:18px;
+}
+.eaves-card{
+  position:relative;
+  padding-top:14px;
+  animation:plaque-sway 7s ease-in-out infinite alternate;
+  transform-origin:top center;
+}
+.eaves-card:nth-child(even){
+  animation-duration:8.2s;
+  animation-delay:-3s;
+}
+.eaves-card.is-new{
+  animation:plaque-drop .65s cubic-bezier(0.18,0.89,0.32,1.28) forwards;
+}
+@keyframes plaque-drop{
+  from{opacity:0;transform:translateY(-24px) scale(.92);}
+  to{opacity:1;transform:translateY(0) scale(1);}
+}
+@keyframes plaque-sway{
+  0%{transform:rotate(-1deg);}
+  100%{transform:rotate(1deg);}
+}
+.plaque-string{
+  position:absolute;
+  top:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:1.2px;
+  height:14px;
+  background:rgba(212,183,122,.65);
+}
+.plaque-inner{
+  padding:14px 15px;
+  background:linear-gradient(155deg,#163934,#0e2725);
+  border:1px solid rgba(212,183,122,.32);
+  border-radius:4px;
+  box-shadow:0 8px 24px rgba(0,0,0,.45);
+  color:#e7e6d9;
+}
+.plaque-top{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin-bottom:8px;
+}
+.plaque-seal-mark{
+  display:inline-grid;
+  place-items:center;
+  width:20px;
+  height:20px;
+  border-radius:2px;
+  background:rgba(176,53,40,.22);
+  border:1px solid #b03528;
+  color:#ff9e92;
+  font:10px/1 "STKaiti","KaiTi",var(--serif);
+}
+.plaque-name{
+  font:400 14px var(--serif);
+  color:#f2ecdc;
+}
+.plaque-place{
+  font-size:11px;
+  color:#8ea79b;
+  margin-left:auto;
+}
+.plaque-text{
+  font:13px/1.85 var(--serif);
+  color:#d4dfd7;
+  margin:0 0 10px;
+}
+.plaque-foot{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding-top:7px;
+  border-top:1px dashed rgba(168,190,175,.2);
+  font-size:10.5px;
+  color:#8ba397;
+}
+
+@media(max-width:760px){
+  body:not([data-room=home]) main{
+    padding-top:104px;
+  }
+  .site-header{
+    padding:8px 4%!important;
+  }
+  .site-header .brand{
+    padding:4px 10px;
+  }
+  .site-header .brand span{
+    font-size:13.5px;
+  }
+  .site-header .brand small{
+    display:none;
+  }
+  .header-compass{
+    padding:3px 6px 3px 12px;
+    gap:8px;
+  }
+  .header-compass nav{
+    gap:9px;
+  }
+  .header-compass nav a{
+    font-size:11.5px;
+  }
+  .guestbook-stage{
+    grid-template-columns:1fr;
+    gap:26px;
+  }
+  .eaves-plaques{
+    grid-template-columns:1fr;
+  }
+}

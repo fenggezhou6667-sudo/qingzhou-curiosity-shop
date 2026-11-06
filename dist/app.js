@@ -6,6 +6,67 @@ let imageObserver;
 let disposePage=()=>{};
 let currentWork=null,photoIndex=0,returnFocus=null;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// --- 留言簿与诗笺批注本地持久化存储 ---
+const DEFAULT_GUESTBOOK=[
+  {id:'gb-1',name:'江客',place:'杭州',seal:'舟',date:'2026.11.05',text:'在光河的转角读到了《破阵子》，很有骨力与共鸣。愿小店长明。'},
+  {id:'gb-2',name:'拾光人',place:'广州',seal:'星',date:'2026.11.04',text:'星空暗房里的恒星系很美，像是一座悬在深空里的琉璃音乐盒。'},
+  {id:'gb-3',name:'云岫',place:'南京',seal:'松',date:'2026.11.03',text:'从玉林的山河到上海的墨檐，诗句读来有一股安静的力量。'},
+  {id:'gb-4',name:'夜渡者',place:'成都',seal:'猫',date:'2026.11.01',text:'很喜欢这间杂货铺的夜色，没有吵闹的卡片，只有河流与星光。'},
+  {id:'gb-5',name:'晚风',place:'苏州',seal:'叶',date:'2026.10.28',text:'停驻良久，给诗集落了一枚朱砂印。'},
+  {id:'gb-6',name:'过路客',place:'北京',seal:'舟',date:'2026.10.26',text:'世界的边缘，往往藏在日常的细节里。很高兴与这间店相遇。'}
+];
+function getGuestbookNotes(){
+  try{
+    const stored=JSON.parse(localStorage.getItem('qz_guestbook_notes')||'[]');
+    return [...stored,...DEFAULT_GUESTBOOK];
+  }catch{return DEFAULT_GUESTBOOK;}
+}
+function addGuestbookNote(item){
+  try{
+    const stored=JSON.parse(localStorage.getItem('qz_guestbook_notes')||'[]');
+    stored.unshift(item);
+    localStorage.setItem('qz_guestbook_notes',JSON.stringify(stored));
+  }catch{}
+}
+function getPoemSealCount(slug){
+  try{
+    const counts=JSON.parse(localStorage.getItem('qz_poem_seal_counts')||'{}');
+    const seeds={'poem-001':68,'poem-005':112,'poem-008':89,'poem-026':156,'poem-029':74,'poem-030':128};
+    return (counts[slug]||0)+(seeds[slug]||38);
+  }catch{return 38;}
+}
+function recordPoemSeal(slug){
+  try{
+    const counts=JSON.parse(localStorage.getItem('qz_poem_seal_counts')||'{}');
+    counts[slug]=(counts[slug]||0)+1;
+    localStorage.setItem('qz_poem_seal_counts',JSON.stringify(counts));
+    return getPoemSealCount(slug);
+  }catch{return 39;}
+}
+function getPoemAnnotations(slug){
+  try{
+    const list=JSON.parse(localStorage.getItem('qz_poem_annos_'+slug)||'[]');
+    const defaults={
+      'poem-026':[
+        {name:'学海舟客',place:'上海',text:'「笔赋三秋叶落，纸倾学海云疆」，读来豪迈沉雄，深有同感。',date:'2026.11.02'},
+        {name:'晚渡',place:'杭州',text:'词牌写得很有骨力，尤其下阙书客燃灯。',date:'2026.10.29'}
+      ],
+      'poem-030':[
+        {name:'秦岳行者',place:'西安',text:'夜登华山，星斗满天，唯有铁索作答。好诗！',date:'2026.11.01'}
+      ]
+    };
+    return [...list,...(defaults[slug]||[])];
+  }catch{return [];}
+}
+function addPoemAnnotation(slug,item){
+  try{
+    const list=JSON.parse(localStorage.getItem('qz_poem_annos_'+slug)||'[]');
+    list.unshift(item);
+    localStorage.setItem('qz_poem_annos_'+slug,JSON.stringify(list));
+  }catch{}
+}
+
 const photo=(key,eager=false,context='card')=>{
   const i=A.images[key],variants=i.variants;
   const sizes={card:'(max-width:700px) 88vw, (max-width:1050px) 70vw, 60vw',hero:'(max-width:700px) 88vw, 76vw',inset:'(max-width:700px) 28vw, 17vw',stage:'90vw',thumb:'86px',credit:'120px'};
@@ -37,7 +98,7 @@ function home(){
   const desktopNetwork=desktopMainShape+' '+branches.map(b=>b.ribbon).join(' ');
   const desktopWaterShapes='<path d="'+desktopMainShape+'"/>'+branches.map(b=>'<path d="'+b.ribbon+'"/>').join('');
   const desktopMaskShapes=branches.map(b=>'<path fill="url(#desktopFade-'+b.key+')" d="'+b.ribbon+'"/>').join('')+'<path fill="white" d="'+desktopMainShape+'"/>';
-  const desktopBranchReveal=branches.map(b=>'<path class="river-reveal-trace branch-reveal" pathLength="100" d="'+b.path+'" stroke="white" stroke-width="62" stroke-linecap="round" fill="none"/>').join('');
+  const desktopBranchReveal=branches.map(b=>'<path class="river-reveal-trace branch-reveal branch-reveal-'+b.key+'" pathLength="100" d="'+b.path+'" stroke="white" stroke-width="64" stroke-linecap="round" fill="none"/>').join('');
   const tributaries=branches.map(b=>'<g class="river-distributary branch-'+b.key+'"><path class="branch-haze" fill="none" d="'+b.path+'"/><path class="tributary tributary-'+b.key+'" fill="none" pathLength="100" d="'+b.path+'"/><path class="branch-waterline" fill="none" d="'+b.path+'"/><path class="branch-current" fill="none" pathLength="1000" d="'+b.path+'"/><path class="branch-spark" fill="none" pathLength="100" d="'+b.path+'"/></g>').join('');
   const mobileBranches=[
     {key:'photos',path:'M 262 145 C 311 134 371 167 448 172 S 591 181 720 175',ribbon:'M 247 124 C 311 116 368 152 449 155 S 600 161 720 159 L 720 191 C 601 195 520 195 446 190 S 310 151 281 160 C 268 163 255 169 244 176 Z'},
@@ -49,7 +110,7 @@ function home(){
   const mobileNetwork=mobileMainShape+' '+mobileBranches.map(b=>b.ribbon).join(' ');
   const mobileWaterShapes='<path d="'+mobileMainShape+'"/>'+mobileBranches.map(b=>'<path d="'+b.ribbon+'"/>').join('');
   const mobileWaterMaskShapes=mobileBranches.map(b=>'<path fill="url(#branchFade-'+b.key+')" d="'+b.ribbon+'"/>').join('')+'<path fill="white" d="'+mobileMainShape+'"/>';
-  const mobileBranchReveal=mobileBranches.map(b=>'<path class="river-reveal-trace branch-reveal" pathLength="100" d="'+b.path+'" stroke="white" stroke-width="48" stroke-linecap="round" fill="none"/>').join('');
+  const mobileBranchReveal=mobileBranches.map(b=>'<path class="river-reveal-trace branch-reveal mobile-reveal-'+b.key+'" pathLength="100" d="'+b.path+'" stroke="white" stroke-width="50" stroke-linecap="round" fill="none"/>').join('');
   const mobileTributaries=mobileBranches.map(b=>'<g class="river-distributary branch-'+b.key+'"><path class="branch-haze" fill="none" d="'+b.path+'"/><path class="tributary tributary-'+b.key+'" fill="none" pathLength="100" d="'+b.path+'"/><path class="branch-waterline" fill="none" d="'+b.path+'"/><path class="branch-current" fill="none" pathLength="1000" d="'+b.path+'"/><path class="branch-spark" fill="none" pathLength="100" d="'+b.path+'"/></g>').join('');
   const stars=Array.from({length:54},(_,i)=>{
     const x=(i*173.7+47)%1440, y=(i*97.3+31)%820, r=(i%7===0?1.5:i%3===0?1.05:.65), op=(.12+(i%5)*.075).toFixed(2);
@@ -75,7 +136,7 @@ function home(){
           <radialGradient id="distantGlow"><stop offset="0" stop-color="#5b887c" stop-opacity=".25"/><stop offset="1" stop-color="#5b887c" stop-opacity="0"/></radialGradient>
           <filter id="riverBloom" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="8"/></filter><filter id="riverBankBlur" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="8"/></filter>
           <filter id="riverSoft" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur stdDeviation="2.4"/></filter>
-          <mask id="riverMaskDesktop" maskUnits="userSpaceOnUse" x="0" y="0" width="1440" height="820"><path class="river-reveal-trace" pathLength="100" d="M962 -60 C970 95 896 154 798 250 C722 338 965 352 927 453 C885 552 685 592 511 663 C405 716 312 796 255 860" stroke="white" stroke-width="250" stroke-linecap="round" fill="none"/>${desktopBranchReveal}</mask><filter id="pointBloom" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="4"/></filter>
+          <mask id="riverMaskDesktop" maskUnits="userSpaceOnUse" x="0" y="0" width="1440" height="820"><path class="river-reveal-trace river-main-trace" pathLength="100" d="M962 -60 C970 95 896 154 798 250 C722 338 965 352 927 453 C885 552 685 592 511 663 C405 716 312 796 255 860" stroke="white" stroke-width="250" stroke-linecap="round" fill="none"/>${desktopBranchReveal}</mask><filter id="pointBloom" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="4"/></filter>
         </defs>
         <rect width="1440" height="820" fill="url(#nightGround)"/>
         <ellipse cx="1020" cy="210" rx="520" ry="340" fill="url(#distantGlow)"/>
@@ -103,15 +164,19 @@ function home(){
           <path class="river-current" fill="none" pathLength="100" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/><path class="river-flowline flowline-wide" fill="none" pathLength="1000" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/><path class="river-flowline flowline-mid" fill="none" pathLength="1000" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/><path class="river-flowline flowline-fine" fill="none" pathLength="1000" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/>
           <g class="river-ripples" fill="none" aria-hidden="true"><path d="M322 784q31 -12 53 -5"/><path d="M463 680q35 -14 60 -7"/><path d="M635 616q23 -11 55 -8"/><path d="M796 554q23 -8 47 -4"/><path d="M912 468q13 -13 30 -14"/><path d="M867 382q26 -2 41 5"/><path d="M774 274q13 -12 27 -12"/><path d="M896 138q19 -5 30 -3"/></g>
           </g>
+          <g class="external-branches" clip-path="url(#riverClipDesktop)">${tributaries}</g>
+          <g class="river-drifting-verses" aria-hidden="true">
+            <text class="river-drift-text drift-a" x="840" y="240">胸藏星斗回光</text>
+            <text class="river-drift-text drift-b" x="620" y="585">一叶扁舟入暮云</text>
+          </g>
         </g>
-        <g class="external-branches" clip-path="url(#riverClipDesktop)">${tributaries}</g>
         <g class="scene-points"><circle cx="514" cy="660" r="7"/><circle cx="514" cy="660" r="22" class="point-halo"/><circle cx="924" cy="402" r="4.5"/><circle cx="924" cy="402" r="17" class="point-halo"/><circle cx="927" cy="126" r="3.5"/><circle cx="927" cy="126" r="14" class="point-halo"/><circle class="river-glint glint-a" cx="650" cy="610" r="1.6"/><circle class="river-glint glint-b" cx="754" cy="578" r="1.2"/><circle class="river-glint glint-c" cx="896" cy="478" r="1.6"/><circle class="river-glint glint-d" cx="826" cy="326" r="1.2"/><circle class="river-glint glint-e" cx="875" cy="211" r="1.5"/><circle class="river-glint glint-f" cx="950" cy="72" r="1.1"/></g>
         <g class="scene-stars">${stars}</g>
       </svg>
       <svg class="scene-svg mobile-scene-art tablet-scene-art" viewBox="0 0 390 820" preserveAspectRatio="none">
         <defs><clipPath id="riverClipMobile">${mobileWaterShapes}</clipPath>
         ${mobileBranches.map(b=>`<linearGradient id="branchFade-${b.key}" gradientUnits="userSpaceOnUse" x1="${b.key==='photos'||b.key==='traces'?260:100}" y1="0" x2="${b.key==='photos'||b.key==='traces'?700:-330}" y2="0"><stop offset="0" stop-color="#b6b6b6"/><stop offset=".55" stop-color="#626262"/><stop offset="1" stop-color="#0c0c0c"/></linearGradient>`).join('')}
-        <filter id="mobileBankSoft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="2"/></filter><mask id="mobileWaterMask" maskUnits="userSpaceOnUse" x="-300" y="0" width="990" height="820"><g>${mobileWaterMaskShapes}</g></mask><linearGradient id="mobileGround" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#071722"/><stop offset=".55" stop-color="#102d35"/><stop offset="1" stop-color="#071923"/></linearGradient><linearGradient id="mobileWater" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#16343d"/><stop offset=".62" stop-color="#1c3b40"/><stop offset="1" stop-color="#8b9b80"/></linearGradient><linearGradient id="branchWaterMobile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#355e60"/><stop offset=".55" stop-color="#87977b"/><stop offset=".78" stop-color="#c5ae75"/><stop offset="1" stop-color="#476c68"/></linearGradient><mask id="riverMaskMobile" maskUnits="userSpaceOnUse" x="-300" y="0" width="990" height="820"><path class="river-reveal-trace" pathLength="100" d="M270 -40 C314 189 60 218 84 281 C112 364 302 367 300 416 C294 488 70 478 92 539 C118 620 275 629 254 691 C227 759 49 781 3 860" fill="none" stroke="white" stroke-width="138" stroke-linecap="round"/>${mobileBranchReveal}</mask><filter id="mobileBloom" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="7"/></filter></defs>
+        <filter id="mobileBankSoft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="2"/></filter><mask id="mobileWaterMask" maskUnits="userSpaceOnUse" x="-300" y="0" width="990" height="820"><g>${mobileWaterMaskShapes}</g></mask><linearGradient id="mobileGround" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#071722"/><stop offset=".55" stop-color="#102d35"/><stop offset="1" stop-color="#071923"/></linearGradient><linearGradient id="mobileWater" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#16343d"/><stop offset=".62" stop-color="#1c3b40"/><stop offset="1" stop-color="#8b9b80"/></linearGradient><linearGradient id="branchWaterMobile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#355e60"/><stop offset=".55" stop-color="#87977b"/><stop offset=".78" stop-color="#c5ae75"/><stop offset="1" stop-color="#476c68"/></linearGradient><mask id="riverMaskMobile" maskUnits="userSpaceOnUse" x="-300" y="0" width="990" height="820"><path class="river-reveal-trace river-main-trace mobile-main-trace" pathLength="100" d="M270 -40 C314 189 60 218 84 281 C112 364 302 367 300 416 C294 488 70 478 92 539 C118 620 275 629 254 691 C227 759 49 781 3 860" fill="none" stroke="white" stroke-width="138" stroke-linecap="round"/>${mobileBranchReveal}</mask><filter id="mobileBloom" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="7"/></filter></defs>
         <defs><filter id="mobileWaterTexture" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".025 .12" numOctaves="2" seed="12"/><feColorMatrix type="matrix" values="0 0 0 0 .8  0 0 0 0 .77  0 0 0 0 .57  0 0 0 .22 0"/></filter></defs>
         <rect x="-300" width="990" height="820" fill="url(#mobileGround)"/><ellipse cx="300" cy="230" rx="240" ry="260" fill="#2b5b57" opacity=".16"/>
         <path class="terrain terrain-far" d="M-300 0H690V240C500 252 300 230 206 143S112 72 -300 88Z"/><path class="terrain terrain-left" d="M-300 0H160C139 76 180 134 230 175S280 250 230 300C155 326 72 306 -300 340Z"/><path class="terrain terrain-lower-left" d="M-300 465C85 424 150 449 190 500S235 602 158 671C111 713 52 772 -300 820Z"/><path class="terrain terrain-right" d="M305 0H690V820H284C340 730 350 662 307 612S242 522 300 454S345 365 287 317S258 224 310 160Z"/>
@@ -125,8 +190,8 @@ function home(){
         <path class="river-core" fill="none" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/>
         <path class="river-current" fill="none" pathLength="100" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/><path class="river-flowline flowline-wide" fill="none" pathLength="1000" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/><path class="river-flowline flowline-mid" fill="none" pathLength="1000" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/><path class="river-flowline flowline-fine" fill="none" pathLength="1000" d="M-40 850C30 766 232 756 250 680S70 612 91 540S322 480 300 410S70 350 96 280S300 210 267 -40"/>
         <g class="river-ripples" fill="none" aria-hidden="true"><path d="M81 780q24 -8 45 -5"/><path d="M199 684q28 -9 46 -2"/><path d="M87 544q27 -9 44 -3"/><path d="M266 415q19 -7 31 0"/><path d="M79 280q25 -5 41 0"/><path d="M238 134q18 -5 29 -1"/></g></g>
-        </g>
         <g class="external-branches" clip-path="url(#riverClipMobile)">${mobileTributaries}</g>
+        </g>
         <g class="scene-points"><circle class="river-glint glint-a" cx="220" cy="704" r="1.4"/><circle class="river-glint glint-b" cx="128" cy="597" r="1.1"/><circle class="river-glint glint-c" cx="290" cy="431" r="1.3"/><circle class="river-glint glint-d" cx="102" cy="302" r="1.2"/><circle class="river-glint glint-e" cx="250" cy="151" r="1.1"/></g><g class="scene-stars">${mobileStars}</g>
       </svg>
       <div class="scene-vignette"></div><div class="scene-mist mist-one"></div><div class="scene-mist mist-two"></div>
@@ -165,13 +230,39 @@ function starfieldMarkup(kind='collection',count=190){
 function works(){
   const first=A.works[0];
   const themes=A.works.map((w,i)=>'<button type="button" class="cosmos-theme'+(i===0?' is-active':'')+'" data-theme="'+i+'" aria-pressed="'+(i===0)+'">'+esc(w.title)+'</button>').join('');
-  return '<div class="cosmos-room"><div class="cosmos-heading wrap"><div><p>一片银河，几段记忆</p><h1>星空暗房</h1><span>每一组影像，都有一片可以靠近的星空。</span></div><small>图库选读 · 银河、恒星系与黑洞为艺术示意</small></div><section class="cosmos" aria-label="摄影星系"><div class="cosmos-themes" aria-label="选择相册星团">'+themes+'</div><div class="cosmos-layout"><div class="cosmos-scene"><canvas class="cosmos-canvas" tabindex="0" aria-label="三维星系，拖动旋转；点击后滚轮缩放，触屏可双指缩放"></canvas><p class="cosmos-instructions"><span class="cosmos-hint-desktop">拖动旋转 · 点击后滚轮缩放 · 点击恒星系靠近 · ↺ 回到银河</span><span class="cosmos-hint-touch">单指旋转 · 双指缩放 · 点击恒星系靠近 · ↺ 返回</span></p><div class="cosmos-zoom"><button type="button" data-zoom="in" aria-label="放大星系">＋</button><button type="button" data-zoom="out" aria-label="缩小星系">−</button><button type="button" data-zoom="reset" aria-label="重置视角">↺</button></div><p class="cosmos-fallback" hidden>当前设备无法显示三维星系，可以使用右侧按钮浏览影像。</p></div><aside class="cosmos-panel"><span class="cosmos-kicker">主题影像</span><h2>'+esc(first.title)+'</h2><p class="cosmos-intro">'+esc(first.intro)+'</p><div class="cosmos-picture">'+photo(first.photos[0],true,'card')+'</div><p class="cosmos-caption" aria-live="polite">'+esc(first.captions[0])+'</p><div class="cosmos-frames" aria-label="选择影像"></div><a class="cosmos-enter" href="#/works/'+esc(first.slug)+'">进入这组影像 ↗</a><small>图库选读 · 非个人作品</small></aside></div></section><p class="cosmos-end wrap">光会留下它经过的地方。</p></div>';
+  return '<div class="cosmos-room"><div class="cosmos-heading wrap"><div><p>一片银河，几段记忆</p><h1>星空暗房</h1><span>每一座恒星系，都安放着一组可以靠近的影像。</span></div><small>3D 琉璃星盘与银河 · 悬浮探看 · 点击深入</small></div><section class="cosmos" aria-label="摄影星系"><div class="cosmos-themes" aria-label="选择相册星团">'+themes+'<button type="button" class="cosmos-theme cosmos-reset-btn" data-zoom="reset">↺ 银河全景</button></div><div class="cosmos-layout"><div class="cosmos-scene"><canvas class="cosmos-canvas" tabindex="0" aria-label="三维星系，拖动旋转；滚轮缩放；悬停查看恒星系，点击进入完整相册"></canvas><p class="cosmos-instructions"><span class="cosmos-hint-desktop">拖拽旋转星河 · 悬浮探看恒星系 · 点击星系展开影像 · ↺ 重置全景</span><span class="cosmos-hint-touch">单指旋转 · 双指缩放 · 轻触恒星系探看 · ↺ 返回全景</span></p><div class="cosmos-zoom"><button type="button" data-zoom="in" aria-label="放大星系">＋</button><button type="button" data-zoom="out" aria-label="缩小星系">−</button><button type="button" data-zoom="reset" aria-label="重置视角">↺</button></div><div id="cosmos-hover-card" class="cosmos-hover-card" aria-live="polite"><a class="cosmos-hover-link" href="#/works/'+esc(first.slug)+'"><div class="cosmos-hover-top"><div class="cosmos-hover-thumb"><img src="'+esc(A.images[first.photos[0]].variants[1].path)+'" alt=""></div><div class="cosmos-hover-meta"><span class="cosmos-hover-kicker">STELLAR SYSTEM 01</span><h2>'+esc(first.title)+'</h2></div></div><p class="cosmos-hover-desc">'+esc(first.intro)+'</p><div class="cosmos-hover-foot"><span>点击进入这组影像 ↗</span><small>'+first.photos.length+' 幅摄影</small></div></a></div><p class="cosmos-fallback" hidden>当前设备无法显示三维星系，可以使用上方按钮浏览影像。</p></div></div></section><p class="cosmos-end wrap">光会留下它经过的地方。</p></div>';
 }
 function bindCosmos(){
-  const root=document.querySelector('.cosmos'),pic=root.querySelector('.cosmos-picture img'),frames=root.querySelector('.cosmos-frames');let theme=0,selected=0,disposed=false,stop=()=>{};
-  const render=()=>{const work=A.works[theme],im=A.images[work.photos[selected]];root.querySelector('.cosmos-panel h2').textContent=work.title;root.querySelector('.cosmos-intro').textContent=work.intro;root.querySelector('.cosmos-caption').textContent=work.captions[selected]||im.alt;pic.style.objectPosition=im.focal||'50% 50%';syncImage(pic,im,'card');root.querySelector('.cosmos-enter').href='#/works/'+work.slug;root.querySelectorAll('[data-theme]').forEach((el,i)=>{el.classList.toggle('is-active',i===theme);el.setAttribute('aria-pressed',String(i===theme));});if(frames.dataset.loadedTheme!==String(theme)){frames.dataset.loadedTheme=String(theme);frames.innerHTML=work.photos.map((p,i)=>'<button type="button" data-frame="'+i+'" aria-label="预览第 '+(i+1)+' 幅：'+esc(A.images[p].alt)+'"><span aria-hidden="true">✦</span> '+String(i+1).padStart(2,'0')+'</button>').join('');}frames.querySelectorAll('[data-frame]').forEach((el,i)=>el.setAttribute('aria-pressed',String(i===selected)));root.dispatchEvent(new CustomEvent('cosmos-change',{detail:{theme,selected}}));};
-  root.addEventListener('click',e=>{const tab=e.target.closest('[data-theme]'),frame=e.target.closest('[data-frame]');if(tab){theme=Number(tab.dataset.theme);selected=0;render();root.dispatchEvent(new CustomEvent('cosmos-focus',{detail:{index:theme}}));}else if(frame){selected=Number(frame.dataset.frame);render();}});
-  root.addEventListener('cosmos-pick',e=>{theme=e.detail.index;selected=0;render();});render();
+  const root=document.querySelector('.cosmos');
+  const card=root.querySelector('#cosmos-hover-card');
+  let currentTheme=0,disposed=false,stop=()=>{};
+  const updateCard=idx=>{
+    if(idx<0||idx>=A.works.length){
+      card?.classList.remove('is-visible');
+      return;
+    }
+    currentTheme=idx;
+    const w=A.works[idx],im=A.images[w.photos[0]];
+    if(card){
+      card.querySelector('.cosmos-hover-link').href='#/works/'+w.slug;
+      const img=card.querySelector('.cosmos-hover-thumb img');
+      if(img){img.src=im.variants[1].path;img.alt=esc(im.alt);}
+      card.querySelector('.cosmos-hover-kicker').textContent='STELLAR SYSTEM 0'+(idx+1);
+      card.querySelector('.cosmos-hover-meta h2').textContent=w.title;
+      card.querySelector('.cosmos-hover-desc').textContent=w.intro;
+      card.querySelector('.cosmos-hover-foot small').textContent=w.photos.length+' 幅摄影';
+      card.classList.add('is-visible');
+    }
+    root.querySelectorAll('[data-theme]').forEach((el,i)=>el.classList.toggle('is-active',i===idx));
+  };
+  root.addEventListener('cosmos-hover',e=>updateCard(e.detail.index));
+  root.addEventListener('click',e=>{
+    const tab=e.target.closest('[data-theme]');
+    if(tab){
+      const idx=Number(tab.dataset.theme);
+      root.dispatchEvent(new CustomEvent('cosmos-focus',{detail:{index:idx,openGallery:false}}));
+    }
+  });
   import('./galaxy3d.js').then(m=>{if(!disposed)stop=m.mountGalaxy(root,A);}).catch(error=>{console.error('星系加载失败',error);root.querySelector('.cosmos-fallback').hidden=false;});
   return ()=>{disposed=true;stop();};
 }
@@ -263,8 +354,66 @@ function bindBook(){
 function article(n){
   const list=A.notes.includes(n)?A.notes:(A.legacyNotes||[]),i=list.indexOf(n),prev=list[(i+list.length-1)%list.length],next=list[(i+1)%list.length];
   const sealed=getSealState(n.slug);
+  const sealCount=getPoemSealCount(n.slug);
   const placeTag=n.place?' · 写于'+esc(n.place):'';
-  return '<div class="wrap"><article class="article poetry-reading '+(n.poem?'poem':'')+'"><a class="quiet-link" href="#/notes">← 回到诗集</a><div class="reading-marker"><span>'+String(i+1).padStart(2,'0')+' / '+esc(n.category)+' · '+esc(n.genre||'未分类')+placeTag+'</span><span>'+(n.demo!==false?'演示文字':'逐页复核稿')+'</span></div><h1>'+esc(n.title)+'</h1>'+(n.en?'<p class="lead">'+esc(n.en)+'</p>':'')+'<div class="body book-poem-wrap">'+n.body.map(p=>'<p>'+esc(p)+'</p>').join('')+poemVignette(n)+'</div><div class="book-poem-actions"><p class="reading-colophon">'+(n.demo!==false?'此页为原型创作样例，尚非所有者真实作品。':esc((n.sourceMeta||[]).join(' / ')||'来源：诗歌电子稿逐页复核版'))+'</p><button class="poem-seal-btn '+(sealed?'is-sealed':'')+'" type="button" data-seal-slug="'+esc(n.slug)+'" aria-pressed="'+sealed+'"><span class="seal-mark" aria-hidden="true">清舟</span><span class="seal-text">'+(sealed?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻')+'</span></button></div><div class="article-nav"><a href="#/notes/'+prev.slug+'">← '+esc(prev.title)+'</a><a href="#/notes/'+next.slug+'">'+esc(next.title)+' →</a></div></article></div>';
+  const annos=getPoemAnnotations(n.slug);
+  const isVertical=localStorage.getItem('qz_poetry_direction')==='vertical';
+  return '<div class="wrap"><article class="article poetry-reading '+(isVertical?'is-vertical ':'')+(n.poem?'poem':'')+'" data-poem-slug="'+esc(n.slug)+'"><div class="paperweight-bar" aria-hidden="true"><span class="weight-label">清舟笺谱</span></div><div class="poem-read-toolbar"><a class="quiet-link" href="#/notes">← 回到诗集</a><div class="read-mode-btns"><button type="button" class="dir-toggle-btn" id="toggle-poem-dir" aria-label="切换排版方向"><span class="dir-icon" aria-hidden="true">'+(isVertical?'＝':'‖')+'</span><span class="dir-text">'+(isVertical?'切为横排':'古笺竖排')+'</span></button></div></div><div class="poetry-paper-inner"><div class="reading-marker"><span>'+String(i+1).padStart(2,'0')+' / '+esc(n.category)+' · '+esc(n.genre||'未分类')+placeTag+'</span><span>'+(n.demo!==false?'演示文字':'逐页复核稿')+'</span></div><h1>'+esc(n.title)+'</h1>'+(n.en?'<p class="lead">'+esc(n.en)+'</p>':'')+'<div class="body book-poem-wrap">'+n.body.map(p=>'<p>'+esc(p)+'</p>').join('')+poemVignette(n)+'</div><div class="book-poem-actions"><p class="reading-colophon">'+(n.demo!==false?'此页为原型创作样例，尚非所有者真实作品。':esc((n.sourceMeta||[]).join(' / ')||'来源：诗歌电子稿逐页复核版'))+'</p><button class="poem-seal-btn '+(sealed?'is-sealed':'')+'" type="button" data-seal-slug="'+esc(n.slug)+'" aria-pressed="'+sealed+'"><span class="seal-mark" aria-hidden="true">清舟</span><span class="seal-text">'+(sealed?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻')+'</span><span class="seal-count-badge">'+sealCount+' 人落印</span></button></div><details class="poem-annotations"><summary><span class="anno-icon">✎</span> 诗笺批注与旅人共鸣 (<span id="poem-anno-count">'+annos.length+'</span>)</summary><div class="anno-box" id="poem-anno-list">'+(annos.length?annos.map(a=>'<div class="anno-card"><div class="anno-head"><strong>'+esc(a.name)+'</strong><small>'+(a.place?'写于 '+esc(a.place)+' · ':'')+esc(a.date)+'</small></div><p>'+esc(a.text)+'</p></div>').join(''):'<p class="anno-empty">这一页尚无夹笺，写下第一句心绪吧。</p>')+'</div><form class="anno-form" id="poem-anno-form"><div class="anno-form-row"><input type="text" id="anno-name" class="anno-input" placeholder="称呼（如：山行客）" maxlength="16" required><input type="text" id="anno-place" class="anno-input" placeholder="来自何处（选填）" maxlength="16"></div><textarea id="anno-text" class="anno-textarea" placeholder="写下一句读这首诗的心绪或批注..." required rows="2" maxlength="140"></textarea><button type="submit" class="anno-submit-btn"><span class="btn-seal">清舟</span> 夹入此页</button></form></details></div><div class="article-nav"><a href="#/notes/'+prev.slug+'">← '+esc(prev.title)+'</a><a href="#/notes/'+next.slug+'">'+esc(next.title)+' →</a></div></article></div>';
+}
+function bindArticle(slug){
+  const art=document.querySelector('.article.poetry-reading');
+  if(!art)return()=>{};
+  const toggleBtn=art.querySelector('#toggle-poem-dir');
+  const onToggleDir=()=>{
+    const vert=!art.classList.contains('is-vertical');
+    art.classList.toggle('is-vertical',vert);
+    localStorage.setItem('qz_poetry_direction',vert?'vertical':'horizontal');
+    const icon=toggleBtn.querySelector('.dir-icon');
+    const txt=toggleBtn.querySelector('.dir-text');
+    if(icon)icon.textContent=vert?'＝':'‖';
+    if(txt)txt.textContent=vert?'切为横排':'古笺竖排';
+  };
+  toggleBtn?.addEventListener('click',onToggleDir);
+
+  const sealBtn=art.querySelector('[data-seal-slug]');
+  const onSeal=()=>{
+    const on=toggleSealState(slug);
+    const newCount=recordPoemSeal(slug);
+    sealBtn.classList.toggle('is-sealed',on);
+    sealBtn.setAttribute('aria-pressed',String(on));
+    const txt=sealBtn.querySelector('.seal-text');
+    if(txt)txt.textContent=on?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻';
+    const badge=sealBtn.querySelector('.seal-count-badge');
+    if(badge)badge.textContent=newCount+' 人落印';
+  };
+  sealBtn?.addEventListener('click',onSeal);
+
+  const form=art.querySelector('#poem-anno-form');
+  const onAddAnno=e=>{
+    e.preventDefault();
+    const name=art.querySelector('#anno-name').value.trim()||'行客';
+    const place=art.querySelector('#anno-place').value.trim()||'';
+    const text=art.querySelector('#anno-text').value.trim();
+    if(!text)return;
+    const now=new Date();
+    const date=now.getFullYear()+'.'+String(now.getMonth()+1).padStart(2,'0')+'.'+String(now.getDate()).padStart(2,'0');
+    addPoemAnnotation(slug,{name,place,text,date});
+    const list=getPoemAnnotations(slug);
+    const listEl=art.querySelector('#poem-anno-list');
+    if(listEl){
+      listEl.innerHTML=list.map(a=>'<div class="anno-card"><div class="anno-head"><strong>'+esc(a.name)+'</strong><small>'+(a.place?'写于 '+esc(a.place)+' · ':'')+esc(a.date)+'</small></div><p>'+esc(a.text)+'</p></div>').join('');
+    }
+    const countEl=art.querySelector('#poem-anno-count');
+    if(countEl)countEl.textContent=list.length;
+    form.reset();
+  };
+  form?.addEventListener('submit',onAddAnno);
+
+  return ()=>{
+    toggleBtn?.removeEventListener('click',onToggleDir);
+    sealBtn?.removeEventListener('click',onSeal);
+    form?.removeEventListener('submit',onAddAnno);
+  };
 }
 function labDiagram(slug){
   if(slug==='rongrong'){
@@ -403,6 +552,39 @@ function setAtmosphere(room){
   const explore=document.querySelector('#explore-atmosphere');
   if(explore)paintAtmosphere(explore,A.backgrounds.explore);
 }
+
+// --- 檐下留言簿页面 ---
+function guestbook(){
+  const notes=getGuestbookNotes();
+  return '<div class="wrap guestbook-room"><header class="room-heading"><span class="eyebrow">GUESTBOOK / 06</span><h1>檐下留言簿</h1><p>夜深时留一盏暖灯，在屋檐下挂一枚木牌，留下一行字迹与行客的名字。</p></header><div class="guestbook-stage"><section class="guestbook-composer"><div class="composer-lamp" aria-hidden="true"></div><h2>挂一枚木牌 / 留一纸心意</h2><p class="composer-intro">选一枚心仪的印记，写下你在此刻的停驻：</p><form id="guestbook-form" class="guestbook-form"><div class="seal-picker" role="radiogroup" aria-label="挑选印记"><label class="seal-opt"><input type="radio" name="seal" value="舟" checked><span>舟 · 孤舟</span></label><label class="seal-opt"><input type="radio" name="seal" value="星"><span>星 · 星河</span></label><label class="seal-opt"><input type="radio" name="seal" value="松"><span>松 · 松针</span></label><label class="seal-opt"><input type="radio" name="seal" value="猫"><span>猫 · 眠猫</span></label><label class="seal-opt"><input type="radio" name="seal" value="叶"><span>叶 · 秋叶</span></label></div><div class="form-row"><input type="text" id="gb-name" placeholder="你的称谓（如：山行客）" maxlength="16" required><input type="text" id="gb-place" placeholder="来自何处（如：江南 / 杭州）" maxlength="16"></div><textarea id="gb-content" placeholder="写下你想对小店说的话，或读诗看画的心绪..." required rows="3" maxlength="240"></textarea><button type="submit" class="gb-submit-btn"><span class="btn-seal">清舟</span> 挂上屋檐</button></form></section><section class="guestbook-eaves" aria-label="檐下挂牌"><div class="eaves-beam" aria-hidden="true"><span class="beam-glow"></span></div><div class="eaves-plaques" id="eaves-plaques">'+notes.map((note,idx)=>'<div class="eaves-card plaque-seal-'+esc(note.seal)+'"><div class="plaque-string" aria-hidden="true"></div><div class="plaque-inner"><div class="plaque-top"><span class="plaque-seal-mark">'+esc(note.seal)+'</span><strong class="plaque-name">'+esc(note.name)+'</strong><small class="plaque-place">'+(note.place?'写于 '+esc(note.place):'')+'</small></div><p class="plaque-text">'+esc(note.text)+'</p><div class="plaque-foot"><span class="plaque-date">'+esc(note.date)+'</span><span class="plaque-num">#'+(idx+1)+'</span></div></div></div>').join('')+'</div></section></div></div>';
+}
+function bindGuestbook(){
+  const form=document.querySelector('#guestbook-form');
+  const plaques=document.querySelector('#eaves-plaques');
+  if(!form||!plaques)return()=>{};
+  const onSubmit=e=>{
+    e.preventDefault();
+    const sealEl=form.querySelector('input[name="seal"]:checked');
+    const seal=sealEl?sealEl.value:'舟';
+    const name=document.querySelector('#gb-name').value.trim()||'过路客';
+    const place=document.querySelector('#gb-place').value.trim()||'';
+    const text=document.querySelector('#gb-content').value.trim();
+    if(!text)return;
+    const now=new Date();
+    const date=now.getFullYear()+'.'+String(now.getMonth()+1).padStart(2,'0')+'.'+String(now.getDate()).padStart(2,'0');
+    const newNote={id:'gb-'+Date.now(),name,place,seal,date,text};
+    addGuestbookNote(newNote);
+    const card=document.createElement('div');
+    card.className='eaves-card plaque-seal-'+seal+' is-new';
+    card.innerHTML='<div class="plaque-string" aria-hidden="true"></div><div class="plaque-inner"><div class="plaque-top"><span class="plaque-seal-mark">'+esc(seal)+'</span><strong class="plaque-name">'+esc(name)+'</strong><small class="plaque-place">'+(place?'写于 '+esc(place):'')+'</small></div><p class="plaque-text">'+esc(text)+'</p><div class="plaque-foot"><span class="plaque-date">'+esc(date)+'</span><span class="plaque-num">刚刚</span></div></div>';
+    plaques.insertBefore(card,plaques.firstChild);
+    form.reset();
+    card.scrollIntoView({behavior:'smooth',block:'nearest'});
+  };
+  form.addEventListener('submit',onSubmit);
+  return ()=>{form.removeEventListener('submit',onSubmit);};
+}
+
 let roamingPaused=false;
 let roamingIntroComplete=false;
 function bindRoaming(){
@@ -434,15 +616,30 @@ function bindRoaming(){
     if(visible&&!document.hidden&&!introDone&&area.dataset.intro==='pending') area.dataset.intro='playing';
   };
   const onComplete=e=>{
-    if(!['river-reveal-v08','river-mobile-arrival'].includes(e.animationName)||disposed)return;
+    if(!['river-reveal-v08','river-mobile-arrival','river-progressive-reveal'].includes(e.animationName)||disposed)return;
     roamingIntroComplete=true;introDone=true;area.dataset.intro='complete';
   };
+  let lastRip=0;
+  const onPointerRipple=e=>{
+    if(area.dataset.running!=='true')return;
+    const now=Date.now();
+    if(now-lastRip<140)return;
+    lastRip=now;
+    const r=area.getBoundingClientRect();
+    const rip=document.createElement('span');
+    rip.className='water-ripple-particle';
+    rip.style.left=(e.clientX-r.left)+'px';
+    rip.style.top=(e.clientY-r.top)+'px';
+    area.appendChild(rip);
+    rip.addEventListener('animationend',()=>rip.remove());
+  };
+  area.addEventListener('pointermove',onPointerRipple,{passive:true});
   const observer=new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;sync();},{threshold:.05});
   observer.observe(area);
   const onToggle=()=>{roamingPaused=!roamingPaused;sync();};
   button.addEventListener('click',onToggle);area.addEventListener('animationend',onComplete);
   preference.addEventListener('change',sync);document.addEventListener('visibilitychange',sync);sync();
-  return ()=>{disposed=true;observer.disconnect();window.removeEventListener('resize',sizePortrait);button.removeEventListener('click',onToggle);area.removeEventListener('animationend',onComplete);preference.removeEventListener('change',sync);document.removeEventListener('visibilitychange',sync);};
+  return ()=>{disposed=true;area.removeEventListener('pointermove',onPointerRipple);observer.disconnect();window.removeEventListener('resize',sizePortrait);button.removeEventListener('click',onToggle);area.removeEventListener('animationend',onComplete);preference.removeEventListener('change',sync);document.removeEventListener('visibilitychange',sync);};
 }
 
 function render(){
@@ -468,6 +665,8 @@ function render(){
     else html=lab();
   }else if(page==='traces'){
     room='traces';label='走过的地方';html=traces();
+  }else if(page==='guestbook'){
+    room='guestbook';label='檐下留言簿';html=guestbook();
   }else if(page==='about'){room='about';html=about();label='关于';}
   else if(page==='credits'){room='about';html=credits();label='版本与来源';}
   if(!html){room='about';html='<div class="wrap">'+title('404','NOT FOUND','这条路，尚未写下。','可以回到入口，重新选一个方向。')+'<a class="quiet-link" href="#/">回到入口 →</a></div>';label='未找到档案';}
@@ -501,9 +700,13 @@ function bind(){
     const volumes=document.querySelector('#poetry-volumes');if(volumes)volumes.innerHTML=poemVolumes(mode);
   }));
   if(document.querySelector('.book-library')){const previousDispose=disposePage,stop=bindBook();disposePage=()=>{previousDispose();stop();};}
-  if(document.querySelector('.poetry-reading [data-seal-slug]')){
-    const sealBtn=document.querySelector('.poetry-reading [data-seal-slug]');
-    sealBtn.addEventListener('click',()=>{const on=toggleSealState(sealBtn.dataset.sealSlug);sealBtn.classList.toggle('is-sealed',on);sealBtn.setAttribute('aria-pressed',String(on));const txt=sealBtn.querySelector('.seal-text');if(txt)txt.textContent=on?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻';});
+  if(document.querySelector('.article.poetry-reading')){
+    const art=document.querySelector('.article.poetry-reading');
+    const slug=art.dataset.poemSlug;
+    if(slug){const previousDispose=disposePage,stop=bindArticle(slug);disposePage=()=>{previousDispose();stop();};}
+  }
+  if(document.querySelector('.guestbook-room')){
+    const previousDispose=disposePage,stop=bindGuestbook();disposePage=()=>{previousDispose();stop();};
   }
   if(document.querySelector('.roaming-night'))disposePage=bindRoaming();
   if(document.querySelector('.cosmos'))disposePage=bindCosmos();
