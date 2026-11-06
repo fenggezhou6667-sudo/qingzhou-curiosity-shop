@@ -4,115 +4,209 @@ const OUTLINE="M 130.8 216.7 C 135.5 212.0, 128.3 209.7, 129.7 207.5 C 131.1 205
 const HAINAN="M 539.9 608.0 C 535.9 608.5, 530.4 606.1, 528.4 603.0 C 526.4 599.8, 526.9 592.6, 528.0 589.0 C 529.0 585.5, 531.2 583.7, 534.9 581.7 C 538.6 579.7, 546.3 577.9, 550.2 577.2 C 554.1 576.5, 556.3 576.4, 558.2 577.5 C 560.1 578.6, 561.8 581.5, 561.3 583.7 C 560.8 585.9, 556.8 588.1, 555.2 590.9 C 553.6 593.6, 554.5 597.4, 551.9 600.2 C 549.4 603.1, 543.8 607.5, 539.9 608.0 Z";
 const TAIWAN="M 712.1 507.6 C 710.3 513.6, 706.1 527.0, 703.7 533.6 C 701.3 540.1, 699.9 546.9, 697.7 546.9 C 695.4 546.8, 691.8 537.5, 690.3 533.2 C 688.8 528.9, 687.6 525.8, 688.7 521.2 C 689.8 516.5, 693.7 510.0, 696.9 505.3 C 700.2 500.6, 705.2 494.3, 708.1 493.0 C 711.1 491.8, 713.9 495.4, 714.5 497.8 C 715.2 500.3, 713.9 501.7, 712.1 507.6 Z";
 
+// Exact 4 poem-creation cities confirmed by the author's manuscript:
+// 上海 (17 poems: 墨檐 7 + 挽岚 4 + 词 6), 玉林 (11 poems), 苏州 (1 poem: 初冬即兴·昆曲), 华阴 (1 poem: 夜登华山记)
+const DIRECT_POEM_CITIES=new Set(['上海','玉林','苏州','华阴']);
+
 const CITY_MEMORIES={
- '玉林':{
-  desc:'岭南桂东南的故地与起点。橙红的江风、客家乡音、桂子清香与采茶回响，都在这里化作诗集的底色。',
-  poem:{slug:'poem-009',title:'《挽岚（其一）·小城记》',tag:'诗集直联 · 岭南风物',verse:'「橙红色的江风 / 温柔地舔舐着 / 霓虹灯旁蜿蜒升起的烟火……空中飘来客家乡音 / 附着桂子清香」'},
-  poemAlt:{slug:'poem-023',title:'《临江仙·始程》',verse:'「天外霜星暗换，欎中花柳始新 / 书客燃灯一千夜。」'}
- },
- '南宁':{
-  desc:'绿城水岸与飞虹桥影。秋日游园时见过的千层翠色与残阳归雁，曾落入旧诗行间。',
-  poem:{slug:'poem-019',title:'《游园博园兴怀》',tag:'诗集直联 · 游园纪行',verse:'「浮纱影分千层翠，天宫云接飞虹桥。/ 远峰墨行残阳雁，乱花蹊承状元楼。」'}
- },
- '北海':{
-  desc:'北部湾畔的潮声与晚风。向南望去是蔚蓝天海与深褐礁岸，留存着海边漫步的呼吸感。',
-  poem:{slug:'poem-006',title:'《墨檐（其九）·雪》',tag:'诗意共鸣 · 蔚蓝天海',verse:'「游向蔚蓝的天海 / 悄悄地 / 潜进深褐的礁，/ 化为一片素绒 / 温暖相框中无形的风」'}
- },
- '防城港':{
-  desc:'山海相接的边境港湾，海风掠过湿润的岸线，留下一段安静的南方海岸记忆。',
-  poem:{slug:'poem-012',title:'《秋晨偶题·忆既往之旅》',tag:'诗意共鸣 · 行旅远帆',verse:'「万绿葳蕤起苍凉，芬芳丛中阵幽香 / 扶摇万里乘风浪，扬帆筑梦再启航」'}
- },
- '贵港':{
-  desc:'西江水系流经的荷城，与桂东南的夏夜、池塘残荷和老屋光影相连。',
-  poem:{slug:'poem-004',title:'《墨檐（其七）·乡》',tag:'诗意共鸣 · 池塘残荷',verse:'「槐荫下的池塘 / 残荷应该还漾在碧波上 / 沉溺于天边流过的云」'}
- },
  '上海':{
-  desc:'黄浦江畔的立桥、高厦与梧桐街区。从「欎外」奔赴「沪中」，在这里写下了申城如书的篇章。',
-  poem:{slug:'poem-010',title:'《挽岚（其二）·申城小记》',tag:'诗集直联 · 申城驻足',verse:'「上海是一本书 / 立桥撑起了书脊 / 高厦为扉页镀上鎏金……仲春在上面留下了褶皱 / 萨摩耶的记忆作了书签」'},
-  poemAlt:{slug:'poem-024',title:'《如梦令·白川晚行》',verse:'「欎外晴晚灯旧，沪中彩焰光昼 / 星霞共飞舟，蓬莱葭苇谁逅?」'}
+  hydro:'长江入海口 · 黄浦江与吴淞江交汇',
+  desc:'黄浦江畔的立桥、高厦与梧桐街区。从「欎外」奔赴「沪中」，《墨檐》七篇、《挽岚》四篇与六首长短句（共 17 首作品）皆诞生于此。'
+ },
+ '玉林':{
+  hydro:'南流江与北流河流域 · 桂东南丘陵盆地',
+  desc:'岭南桂东南的故地与起点。郁江支脉与南流江水滋养的烟火小城，收录了从旧旅、夏晚、暮霭到古言与《清平乐》的 11 首诗篇。'
  },
  '苏州':{
-  desc:'姑苏云泽、水巷与晚花笛声。在江南的春末与初冬之间，听见过水磨调与萧萧竹音。',
-  poem:{slug:'poem-018',title:'《无韵（姑苏云泽）》',tag:'诗集直联 · 姑苏行迹',verse:'「桃溪葳蕤迷雁返 / 姑苏云泽揽鹤归 / 赤霞引笛晚花和 / 驻足且听萧萧音」'},
-  poemAlt:{slug:'poem-029',title:'《初冬即兴（其一）·昆曲》',verse:'「梧桐舟寄芊芊语，荻花箫弄绵绵风 / 谁人复吟水磨调、赚得竹笙絮絮鸣」'}
+  hydro:'太湖流域 · 江南运河水网',
+  desc:'姑苏云泽、水巷与晚花笛声。在江南初冬的梧桐舟与荻花箫声里，写下了《初冬即兴（其一）·昆曲》。'
+ },
+ '华阴':{
+  hydro:'秦岭太华北麓 · 渭河入黄口',
+  desc:'西岳华山脚下、渭水汇入黄河之地。曾在秋雨寒风的夜色里拄杖攀登太华绝险，于孤灯铁索间写下《夜登华山记》。'
+ },
+ '南宁':{
+  hydro:'珠江水系 · 郁江（邕江）河谷',
+  desc:'绿城水岸与邕江晚风。顺郁江东去可抵贵港与桂东南故地，是一路向南与向西行旅的枢纽。',
+  nearPoemCity:'玉林'
+ },
+ '北海':{
+  hydro:'北部湾畔 · 南流江入海口南翼',
+  desc:'北部湾畔的潮声、银滩与晚风。向南望去是蔚蓝天海与深褐礁岸，留存着南方海岸线的呼吸感。',
+  nearPoemCity:'玉林'
+ },
+ '防城港':{
+  hydro:'十万大山南麓 · 北部湾深水港湾',
+  desc:'山海相接的边境港湾，海风掠过湿润的岸线与红树林，留下一段安静的南方海岸记忆。',
+  nearPoemCity:'玉林'
+ },
+ '贵港':{
+  hydro:'西江黄金水道 · 郁江与黔江交汇',
+  desc:'西江水系流经的荷城，与毗邻的玉林、南宁同属桂东南至桂中的熟悉风土。',
+  nearPoemCity:'玉林'
  },
  '杭州':{
-  desc:'湖山与晚榭相映的江南城池。秋夜微凉时，木樨香气与水岸灯影总让人想起旧友与长亭。',
-  poem:{slug:'poem-028',title:'《鹧鸪天·忆旧中密友》',tag:'诗意共鸣 · 晚榭木樨',verse:'「晚榭灯疏木樨香 / 池承霞影雁颉颃 / 欲寻今时梧桐巷，却闻昔载暮笛伤。」'}
+  hydro:'钱塘江畔 · 西子湖与京杭运河南端',
+  desc:'湖山与晚榭相映的江南城池。秋夜微凉时，木樨香气与水岸灯影总与沪苏一带的江南行迹相连。',
+  nearPoemCity:'苏州'
  },
  '无锡':{
-  desc:'太湖水畔的温润一驿，与姑苏、申城的江南行迹相连，留存着水岸与春风的片段。',
-  poem:{slug:'poem-025',title:'《蝶恋花·情人节赠诸友》',tag:'诗意共鸣 · 亭月桥柳',verse:'「春讯登檐迎燕返 / 曾几倾心 / 风共柔云转 / 亭月桥柳萤辉暖」'}
+  hydro:'太湖北岸 · 江南古运河水道',
+  desc:'太湖水畔的温润一驿，紧邻苏州，水岸与春风串联起太湖至吴淞江的江南旅途。',
+  nearPoemCity:'苏州'
  },
  '济南':{
-  desc:'泉城北望，柳色与秋水共长天。在由南向北的旅途中，记下了泉石与清寒晨风。',
-  poem:{slug:'poem-015',title:'《苍穹·落雨》',tag:'诗意共鸣 · 溪行石没',verse:'「更深露凝息万物，溪行石没入琳琅。/ 北辰将逝启黎元，远帆渐明航清江。」'}
+  hydro:'黄河下游南岸 · 泰山北麓泉域',
+  desc:'南依泰山、北临黄河的泉城。在由南向北跨越黄河的旅途中，记下了泉石与清寒晨风。',
+  nearPoemCity:'上海'
  },
  '西安':{
-  desc:'长安古意与秦岭巍峨并存。曾在秋雨寒风的夜色里拄杖攀登太华绝险，于孤灯铁索间仰望群仙桥与南峰。',
-  poem:{slug:'poem-030',title:'《夜登华山记》',tag:'诗集直联 · 秦岭太华',verse:'「太华巉立横绝险，玉泉香火映神迹 / 霏雨连珠雾海旷，独径伏龙深林隐……或若访得剑客踪、北山烟雨南峰桥」'}
+  hydro:'关中平原 · 渭河南岸、秦岭北麓',
+  desc:'八水绕长安的古都风烟，向东沿秦岭北麓即达华阴与西岳太华山，是夜登华山前的重要驿站。',
+  nearPoemCity:'华阴'
  },
  '洛阳':{
-  desc:'伊洛河畔的古都风烟，与中原西行的旅途相连，在历史回响与暮色间留下一枚坐标。',
-  poem:{slug:'poem-016',title:'《无韵（远黛近暝昏）》',tag:'诗意共鸣 · 九州烟火',verse:'「浅溪鳞渐息，秋叶露复凝 / 残茶一掬月，余夏一抹荧 / 复忆凡烟火，九州灿燎天」'}
+  hydro:'黄河中游南岸 · 伊洛河盆地',
+  desc:'伊洛河畔、崤函古道东端的千年古都，与华阴、西安同处黄河与渭洛水系串联的中原走廊。',
+  nearPoemCity:'华阴'
  },
  '郑州':{
-  desc:'中原腹地的交汇驿站，南来北往的列车在此停靠，把不同季节的风景串联成网。',
-  poem:{slug:'poem-020',title:'《启梦（无韵）》',tag:'诗意共鸣 · 万里行途',verse:'「踟蹰踏遍踌躇路 / 回首 / 蹊径已成万里途」'}
+  hydro:'黄河中下游分界 · 中原腹地',
+  desc:'黄河之滨的中原交汇驿站，南来北往的列车在此停靠，把江南、岭南与关中的旅途织成网络。',
+  nearPoemCity:'华阴'
  },
  '武汉':{
-  desc:'大江东去、百湖交错的江城。在浩荡江风与夜色灯火之间，感受过山河之阔。',
-  poem:{slug:'poem-026',title:'《破阵子》',tag:'诗意共鸣 · 泱莽山河',verse:'「笔赋三秋叶落，纸倾学海云疆 / 泱莽山河何其阔 / 神骥飞横声名扬」'}
+  hydro:'长江中游 · 汉江入江口与江汉平原',
+  desc:'大江东去、汉水来汇的百湖江城。在浩荡长江风浪与夜色灯火之间，感受过楚天山河之阔。',
+  nearPoemCity:'上海'
  },
  '长沙':{
-  desc:'湘江夜色与橘子洲头的晚风，热烈的人间烟火与旧友欢聚的笑谈都在此定格。',
-  poem:{slug:'poem-022',title:'《清平乐·闲》',tag:'诗意共鸣 · 车流灯酣',verse:'「坐观霞逸云翻，行渡车流灯酣 / 即唤胜友共聚，笑谈盛世万般」'}
+  hydro:'湘江下游 · 洞庭湖水系南翼',
+  desc:'湘江北去、岳麓山映衬的星城夜色，热烈的人间烟火与旧友欢聚的笑谈都在此定格。',
+  nearPoemCity:'玉林'
  },
  '张家界':{
-  desc:'奇峰千仞、云海吞吐的武陵山脉。薄雾漫过石峰与深林时，天地如同一幅未干的水墨。',
-  poem:{slug:'poem-008',title:'《挽岚（序）》',tag:'诗意共鸣 · 山岚青墨',verse:'「橘橙与青墨的轮转 / 在荣枯的素宣上 / 写下峥嵘的命谱 / 轻挽流动的音符 / 山岚与我 / 各倾筝竽」'}
+  hydro:'武陵山脉腹地 · 澧水发源地',
+  desc:'奇峰千仞、云海吞吐的武陵山脉。薄雾漫过石英砂岩峰林时，天地如同一幅未干的青墨山水。',
+  nearPoemCity:'玉林'
  },
  '贵阳':{
-  desc:'黔中群山环抱的凉爽夏夜，林城多雨的屋檐与青苔，适合安放慢下来的思绪。',
-  poem:{slug:'poem-001',title:'《墨檐·（序章）》',tag:'诗意共鸣 · 青苔足迹',verse:'「细数四季的颜色，/ 那一沙漏的墨，/ 栖息在青苔侵占的墙角上 / 埋藏在旅者的足迹里」'}
+  hydro:'云贵高原东斜坡 · 乌江流域与苗岭',
+  desc:'黔中群山环抱的凉爽夏夜，林城多雨的屋檐与青苔，是西南行旅中安静的一站。',
+  nearPoemCity:'玉林'
  },
  '昆明':{
-  desc:'高原澄澈的阳光与四季不败的花木，云影低垂，风里带着西南特有的疏朗。',
-  poem:{slug:'poem-002',title:'《墨檐（其五）·残虹》',tag:'诗意共鸣 · 云旅痕迹',verse:'「透过鸟的羽翼 / 看见云旅行的痕迹……指尖掠过的光 / 不再是虹和霞的重奏」'}
+  hydro:'云贵高原滇池盆地 · 金沙江与南盘江分水岭',
+  desc:'高原澄澈的阳光与四季不败的花木，滇池云影低垂，风里带着西南特有的疏朗。',
+  nearPoemCity:'玉林'
  },
  '大理':{
-  desc:'苍山雪影与洱海月光交汇之地。风吹过坝子与古镇屋檐，时间在这里变得格外轻缓。',
-  poem:{slug:'poem-014',title:'《霞间暮霭有感》',tag:'诗意共鸣 · 薄雾钟鸣',verse:'「寻一池桃花影 / 饮千年酒香茗 / 览漫山薄雾海 / 听彻夜寺钟鸣 / 惟愿一笛 / 可伴长行」'}
+  hydro:'横断山脉南延 · 点苍山与洱海盆地',
+  desc:'苍山十九峰与洱海月光交汇之地。风吹过坝子与古镇屋檐，时间在这里变得格外轻缓。',
+  nearPoemCity:'玉林'
  },
  '丽江':{
-  desc:'雪山脚下的古道与清冽溪流，抬头可见高原夜空里格外清亮的星河与孤月。',
-  poem:{slug:'poem-027',title:'《鹊桥仙·云霞聚》',tag:'诗意共鸣 · 玄云弦月',verse:'「玄云熔金，风牵银绮，鹊驾今逢兰夜。/ 人间未必尽相逢，漫托秋声寄弦月。」'}
+  hydro:'横断山脉腹地 · 金沙江虎跳峡大拐弯',
+  desc:'玉龙雪山脚下、长江上游金沙江急转东流之处，抬头可见高原夜空里格外清亮的星河。',
+  nearPoemCity:'玉林'
  },
  '北京':{
-  desc:'北方辽阔的秋空、红墙与朔风。站在北国高处回望来路，万里山河尽收眼底。',
-  poem:{slug:'poem-017',title:'《无题（抚星火如岁月鎏金）》',tag:'诗意共鸣 · 万里乾坤',verse:'「更吹落 / 夜舞千树花 / 东风映鱼龙熠熠万里遥！」'}
+  hydro:'太行山与燕山交汇 · 华北平原北端',
+  desc:'太行北端与燕山怀抱的北国都城。站在高处回望来路，万里山河与南北风物尽收眼底。',
+  nearPoemCity:'华阴'
  }
 };
-
-const DIRECT_POEM_CITIES=new Set(['玉林','南宁','上海','苏州','西安']);
 
 const PLACES=[
  ['玉林',110.15,22.63,'华南'],['北海',109.12,21.48,'华南'],['南宁',108.32,22.82,'华南'],['防城港',108.35,21.69,'华南'],['贵港',109.60,23.11,'华南'],
  ['贵阳',106.63,26.65,'西南'],['昆明',102.72,25.04,'西南'],['丽江',100.23,26.87,'西南'],['大理',100.27,25.60,'西南'],
  ['武汉',114.30,30.59,'华中'],['长沙',112.94,28.23,'华中'],['张家界',110.48,29.13,'华中'],
  ['杭州',120.15,30.27,'华东'],['苏州',120.60,31.30,'华东'],['无锡',120.31,31.49,'华东'],['上海',121.47,31.23,'华东'],['济南',116.99,36.67,'华东'],
- ['郑州',113.62,34.75,'中原与西北'],['洛阳',112.45,34.62,'中原与西北'],['西安',108.94,34.34,'中原与西北'],['北京',116.40,39.90,'华北']
+ ['郑州',113.62,34.75,'中原与西北'],['洛阳',112.45,34.62,'中原与西北'],['华阴',110.09,34.57,'中原与西北'],['西安',108.94,34.34,'中原与西北'],['北京',116.40,39.90,'华北']
 ].map(([name,lon,lat,group])=>({name,lon,lat,group,hasDirectPoem:DIRECT_POEM_CITIES.has(name)}));
+
 const project=(lon,lat)=>({x:32+(lon-73.2)*14,y:28+(54-lat)*16.2});
 const el=(tag,attrs={},text='')=>{const n=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,String(v));if(text)n.textContent=text;return n;};
+
+// Convert an array of [lon, lat] waypoints into a smooth Catmull-Rom / quadratic SVG path in map coordinates
+function geoSpline(pts,dx=0,dy=0){
+ const p=pts.map(([lon,lat])=>{const c=project(lon,lat);return {x:c.x+dx,y:c.y+dy};});
+ if(!p.length)return '';
+ if(p.length===1)return `M ${p[0].x.toFixed(1)} ${p[0].y.toFixed(1)}`;
+ let d=`M ${p[0].x.toFixed(1)} ${p[0].y.toFixed(1)}`;
+ for(let i=0;i<p.length-1;i++){
+  const p0=p[Math.max(0,i-1)],p1=p[i],p2=p[i+1],p3=p[Math.min(p.length-1,i+2)];
+  const c1x=p1.x+(p2.x-p0.x)/6,c1y=p1.y+(p2.y-p0.y)/6;
+  const c2x=p2.x-(p3.x-p1.x)/6,c2y=p2.y-(p3.y-p1.y)/6;
+  d+=` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+ }
+ return d;
+}
+
+// Geographically projected Chinese River Systems & Mountain Ranges
+const RIVERS=[
+ {name:'长江',labelAt:[111.8,30.2],main:true,pts:[[91.8,34.4],[95.8,33.0],[98.8,31.2],[99.8,28.2],[100.2,26.8],[101.9,26.5],[103.2,27.2],[104.6,28.8],[106.6,29.6],[108.4,30.8],[111.3,30.7],[113.1,29.5],[114.3,30.6],[116.0,29.8],[117.8,31.2],[118.8,32.1],[120.3,31.9],[121.6,31.4]]},
+ {name:'黄河',labelAt:[108.8,38.8],main:true,pts:[[96.0,34.8],[99.2,34.6],[101.2,35.6],[103.8,36.1],[105.8,37.6],[106.8,39.8],[108.6,40.8],[111.2,40.2],[110.4,36.8],[110.3,34.6],[112.4,34.8],[113.6,34.9],[115.4,35.4],[117.0,36.7],[118.8,37.8]]},
+ {name:'西江·郁江',labelAt:[107.2,22.2],main:true,pts:[[103.6,25.4],[105.2,24.4],[106.6,23.8],[108.3,22.8],[109.6,23.1],[111.3,23.5],[112.8,23.1],[113.6,22.5]]},
+ // Key tributaries connecting visited cities: 渭河 (Xi'an/Huayin), 汉江 (Wuhan), 湘江 (Changsha), 南流江 (Yulin/Beihai)
+ {name:'渭河',main:false,pts:[[104.8,34.7],[107.2,34.4],[108.9,34.4],[110.3,34.6]]},
+ {name:'汉江',main:false,pts:[[106.8,33.2],[109.5,32.7],[112.1,32.0],[114.3,30.6]]},
+ {name:'湘江',main:false,pts:[[110.8,25.4],[112.6,26.9],[112.9,28.2],[113.1,29.4]]},
+ {name:'南流江',main:false,pts:[[110.4,22.9],[110.15,22.63],[109.6,22.0],[109.12,21.55]]}
+];
+
+const MOUNTAINS=[
+ {name:'秦岭·太华',labelAt:[107.6,33.3],pts:[[103.8,33.7],[106.2,33.8],[108.5,33.9],[110.1,34.4],[111.8,34.1]]},
+ {name:'横断·苍山',labelAt:[98.5,27.2],pts:[[98.6,31.2],[99.4,28.6],[100.1,26.8],[100.3,25.5],[101.0,23.9]]},
+ {name:'太行·燕山',labelAt:[113.6,38.4],pts:[[112.7,35.3],[113.6,37.2],[114.6,39.2],[116.2,40.4],[118.2,40.6]]},
+ {name:'武陵山脉',labelAt:[108.8,28.5],pts:[[107.6,27.4],[109.2,28.4],[110.5,29.2],[111.5,30.0]]},
+ {name:'南岭',labelAt:[111.8,24.8],pts:[[109.8,25.1],[111.6,25.0],[113.4,25.2],[115.0,25.5]]}
+];
+
 window.initChinaFootprints=function(){
  const svg=document.querySelector('#china-footprint-map'),list=document.querySelector('#china-city-list'),nearby=document.querySelector('#china-nearby');if(!svg||!list||!nearby)return()=>{};
  const land=document.querySelector('#china-mainland'),shadow=document.querySelector('.china-land-shadow'),clip=document.querySelector('#china-clip-shape');
  const hainan=document.querySelector('#china-hainan'),taiwan=document.querySelector('#china-taiwan');
  land.setAttribute('d',OUTLINE);clip.setAttribute('d',OUTLINE);shadow.setAttribute('d',OUTLINE);hainan.setAttribute('d',HAINAN);taiwan.setAttribute('d',TAIWAN);
  const depth=svg.querySelector('.china-land-depth');
+ depth.replaceChildren();
  for(let y=30;y>=3;y-=3) for(const outline of [OUTLINE,HAINAN,TAIWAN]) depth.appendChild(el('path',{d:outline,transform:`translate(0 ${y})`}));
+
+ // Populate true geographic rivers & mountain contours inside #china-topography
+ const topo=document.querySelector('#china-topography');
+ if(topo){
+  topo.replaceChildren();
+  // Mountain ranges: 3 layered ink-wash ridge contour lines per range
+  MOUNTAINS.forEach(m=>{
+   [-5,0,5].forEach((offset,idx)=>{
+    topo.appendChild(el('path',{
+     d:geoSpline(m.pts,offset*.7,offset),
+     class:idx===1?'china-mountain-ridge':'china-mountain-echo'
+    }));
+   });
+   if(m.labelAt){
+    const lp=project(m.labelAt[0],m.labelAt[1]);
+    topo.appendChild(el('text',{x:lp.x.toFixed(1),y:lp.y.toFixed(1),class:'china-geo-label is-mountain'},m.name));
+   }
+  });
+  // River systems: soft glow understroke + crisp water course
+  RIVERS.forEach(r=>{
+   const d=geoSpline(r.pts);
+   if(r.main){
+    topo.appendChild(el('path',{d,class:'china-river-glow'}));
+    topo.appendChild(el('path',{d,class:'china-river-major'}));
+   }else{
+    topo.appendChild(el('path',{d,class:'china-river-tributary'}));
+   }
+   if(r.labelAt){
+    const lp=project(r.labelAt[0],r.labelAt[1]);
+    topo.appendChild(el('text',{x:lp.x.toFixed(1),y:lp.y.toFixed(1),class:'china-geo-label is-river'},r.name));
+   }
+  });
+ }
+
  const network=document.querySelector('#china-network'),points=document.querySelector('#china-city-points');
+ network.replaceChildren();points.replaceChildren();
  const coords=new Map(PLACES.map(p=>[p.name,{...project(p.lon,p.lat),place:p}]));
  // A geographic proximity network, not a claimed travel itinerary.
  const remaining=new Set(PLACES.slice(1).map(p=>p.name)),connected=new Set([PLACES[0].name]);
@@ -124,44 +218,113 @@ window.initChinaFootprints=function(){
   network.appendChild(el('path',{d:`M ${a.x.toFixed(1)} ${a.y.toFixed(1)} Q ${mx.toFixed(1)} ${my.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`,class:'china-link'}));
   connected.add(b.place.name);remaining.delete(b.place.name);
  }
+
+ const allNotes=(window.ARCHIVE&&window.ARCHIVE.notes)||[];
+ const poemsByCity=city=>allNotes.filter(n=>n.place===city);
+
  const nodeByName=new Map();
  PLACES.forEach((p)=>{
-  const {x,y}=coords.get(p.name),g=el('g',{class:'china-city'+(p.hasDirectPoem?' has-poem':''),transform:`translate(${x.toFixed(1)} ${y.toFixed(1)})`,tabindex:'0',role:'button','aria-label':`选择城市：${p.name}${p.hasDirectPoem?'（含关联诗篇）':''}`,'aria-pressed':'false','data-city':p.name});
+  const cityPoems=poemsByCity(p.name);
+  const {x,y}=coords.get(p.name),g=el('g',{class:'china-city'+(p.hasDirectPoem?' has-poem':''),transform:`translate(${x.toFixed(1)} ${y.toFixed(1)})`,tabindex:'0',role:'button','aria-label':`选择城市：${p.name}${cityPoems.length?`（写有 ${cityPoems.length} 首诗篇）`:''}`,'aria-pressed':'false','data-city':p.name});
   g.appendChild(el('circle',{r:32,fill:'transparent','aria-hidden':'true'}));
   g.appendChild(el('circle',{r:17,class:'city-halo'}));
   if(p.hasDirectPoem)g.appendChild(el('circle',{r:11.5,class:'city-poem-ring'}));
   g.appendChild(el('circle',{r:7,class:'city-pulse'}));
-  g.appendChild(el('circle',{r:p.hasDirectPoem?3.6:3.1,class:'city-core'}));
-  const label=el('text',{x:13,y:-12,class:'city-label'},p.name);g.appendChild(label);points.appendChild(g);nodeByName.set(p.name,g);
+  g.appendChild(el('circle',{r:p.hasDirectPoem?3.8:3.1,class:'city-core'}));
+  const label=el('text',{x:13,y:-12,class:'city-label'},p.name+(cityPoems.length?` · ${cityPoems.length}首`:''));
+  g.appendChild(label);points.appendChild(g);nodeByName.set(p.name,g);
  });
+
  const title=document.querySelector('#china-selected-title'),desc=document.querySelector('#china-selected-description'),poemSlot=document.querySelector('#china-poem-slot');
- const renderPoemCard=(p)=>{
+ let currentCity=null,currentPoemIdx=0;
+
+ const renderPoemCard=(p,poemIdx=0)=>{
   if(!poemSlot)return;
-  const m=CITY_MEMORIES[p.name];
-  if(!m||!m.poem){poemSlot.hidden=true;poemSlot.innerHTML='';return;}
-  const alt=m.poemAlt?`<div class="china-poem-alt"><span>同城另一篇：</span><a href="#/notes/${m.poemAlt.slug}">${m.poemAlt.title} ↗</a></div>`:'';
-  poemSlot.innerHTML=`<div class="china-poem-card"><div class="china-poem-meta"><span>✦ ${m.poem.tag||'诗集联动'}</span><span>${p.group} · ${p.name}</span></div><h3><a href="#/notes/${m.poem.slug}">${m.poem.title}</a></h3><blockquote>${m.poem.verse}</blockquote><div class="china-poem-foot"><a class="china-poem-link" href="#/notes/${m.poem.slug}">在诗集中翻阅全诗 ↗</a>${alt}</div></div>`;
-  poemSlot.hidden=false;
+  const m=CITY_MEMORIES[p.name]||{};
+  const cityPoems=poemsByCity(p.name);
+  if(cityPoems.length>0){
+   const idx=Math.max(0,Math.min(poemIdx,cityPoems.length-1));
+   currentPoemIdx=idx;
+   const poem=cityPoems[idx];
+   const rawLines=(poem.body||[]).join('\n').split('\n').map(s=>s.trim()).filter(Boolean);
+   const previewLines=rawLines.slice(0,3).join(' / ');
+   const switcher=cityPoems.length>1?`
+    <div class="china-poem-switcher" role="group" aria-label="${p.name}诗稿切换（共 ${cityPoems.length} 首）">
+      <div class="china-poem-switcher-head">
+        <span>写于${p.name} · 第 ${String(idx+1).padStart(2,'0')} / ${String(cityPoems.length).padStart(2,'0')} 首</span>
+        <div class="china-poem-step">
+          <button type="button" data-poem-step="-1" ${idx===0?'disabled':''} aria-label="上一首">←</button>
+          <button type="button" data-poem-step="1" ${idx===cityPoems.length-1?'disabled':''} aria-label="下一首">→</button>
+        </div>
+      </div>
+      <div class="china-poem-pills">
+        ${cityPoems.map((cp,i)=>`<button type="button" data-poem-idx="${i}" aria-pressed="${i===idx}" title="${cp.title}">${String(i+1).padStart(2,'0')} · ${cp.title.replace(/^《|》$/g,'').slice(0,8)}</button>`).join('')}
+      </div>
+    </div>`:'';
+   poemSlot.innerHTML=`<div class="china-poem-card">
+    <div class="china-poem-meta"><span>✦ 诗稿创作地 · ${p.name}（共 ${cityPoems.length} 首）</span><span>${poem.category} · ${poem.genre||'诗稿'}</span></div>
+    ${m.hydro?`<div class="china-hydro-tag">山河坐标：${m.hydro}</div>`:''}
+    <h3><a href="#/notes/${poem.slug}">《${poem.title}》</a></h3>
+    <blockquote>「${previewLines}」</blockquote>
+    ${switcher}
+    <div class="china-poem-foot">
+      <a class="china-poem-link" href="#/notes/${poem.slug}">在诗集中翻阅全诗 ↗</a>
+      <span class="china-poem-date">${poem.date||'逐页复核稿'}</span>
+    </div>
+   </div>`;
+   poemSlot.hidden=false;
+  }else{
+   // Visited city without poems written there: display clean geographic/hydrological coordinate card without misattributed poems
+   const near=m.nearPoemCity||'上海';
+   const nearCount=poemsByCity(near).length;
+   poemSlot.innerHTML=`<div class="china-poem-card is-geo-only">
+    <div class="china-poem-meta"><span>○ 行旅足迹坐标 · 暂无写于当地诗稿</span><span>${p.group} · ${p.name}</span></div>
+    ${m.hydro?`<div class="china-hydro-tag">山河水文：${m.hydro}</div>`:''}
+    <p class="china-poem-hint-text">此地为真实到访的行旅足迹点，30 首诗稿均归档于实际创作地（<strong>上海 17 首、玉林 11 首、苏州 1 首、华阴 1 首</strong>）。</p>
+    <div class="china-poem-foot">
+      <button type="button" class="china-jump-city" data-city="${near}">查看邻近创作地：${near}（${nearCount} 首）→</button>
+    </div>
+   </div>`;
+   poemSlot.hidden=false;
+  }
  };
- const select=(p)=>{
+
+ const select=(p,poemIdx=0)=>{
   nearby.hidden=true;nearby.replaceChildren();
+  currentCity=p;
   const m=CITY_MEMORIES[p.name];
-  title.textContent=p.name;
+  const cityPoems=poemsByCity(p.name);
+  title.textContent=cityPoems.length?`${p.name} · ${cityPoems.length} 首诗篇`:p.name;
   desc.textContent=m?.desc||`${p.name} · 一座真实走过的城市。这里可以继续收藏与它有关的照片、食物和路上的记忆。`;
-  renderPoemCard(p);
+  renderPoemCard(p,poemIdx);
   nodeByName.forEach((node,name)=>{const active=name===p.name;node.classList.toggle('is-selected',active);node.setAttribute('aria-pressed',String(active));});
   list.querySelectorAll('button[data-city]').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.city===p.name));});
  };
+
  const groups=[...new Set(PLACES.map(p=>p.group))];
- list.innerHTML=groups.map(group=>`<section class="china-city-group"><h3>${group}</h3><div class="china-city-pills">${PLACES.filter(p=>p.group===group).map(p=>`<button type="button" data-city="${p.name}" aria-pressed="false" class="${p.hasDirectPoem?'has-poem-pill':''}">${p.name}${p.hasDirectPoem?'<span class="pill-star" aria-hidden="true">✦</span>':''}</button>`).join('')}</div></section>`).join('');
- // Show default overview with a gentle prompt in poemSlot, or select Shanghai if hash specifies
+ list.innerHTML=groups.map(group=>`<section class="china-city-group"><h3>${group}</h3><div class="china-city-pills">${PLACES.filter(p=>p.group===group).map(p=>{
+  const cnt=poemsByCity(p.name).length;
+  return `<button type="button" data-city="${p.name}" aria-pressed="false" class="${p.hasDirectPoem?'has-poem-pill':''}">${p.name}${cnt?`<span class="pill-star" aria-hidden="true">✦${cnt}</span>`:''}</button>`;
+ }).join('')}</div></section>`).join('');
+
  if(poemSlot){
-  poemSlot.innerHTML=`<div class="china-poem-card is-hint"><div class="china-poem-meta"><span>✦ 足迹 × 诗集联动</span><span>5 座纪行诗城 · 21 处诗意共鸣</span></div><p class="china-poem-hint-text">点选任意城市，即可展开对应的旅途印象与诗集笺注。标有 <strong>✦</strong> 的城市（<strong>玉林、南宁、苏州、上海、西安</strong>）收录了直接写于当地的纪行诗篇。</p></div>`;
+  poemSlot.innerHTML=`<div class="china-poem-card is-hint"><div class="china-poem-meta"><span>✦ 山河足迹 × 诗稿创作地归档</span><span>4 座创作地 · 30 首原稿全收录</span></div><p class="china-poem-hint-text">点选任意城市可查看山河水文位置。标有 <strong>✦</strong> 的四座地点按实际创作地精确收录全部 30 首作品：<strong>上海（17 首）</strong>、<strong>玉林（11 首）</strong>、<strong>苏州（1 首）</strong>、<strong>华阴（1 首）</strong>。</p></div>`;
   poemSlot.hidden=false;
  }
+
+ const onPoemSlotClick=e=>{
+  const idxBtn=e.target.closest('[data-poem-idx]');
+  if(idxBtn&&currentCity){renderPoemCard(currentCity,Number(idxBtn.dataset.poemIdx));return;}
+  const stepBtn=e.target.closest('[data-poem-step]');
+  if(stepBtn&&currentCity){renderPoemCard(currentCity,currentPoemIdx+Number(stepBtn.dataset.poemStep));return;}
+  const jumpBtn=e.target.closest('[data-city]');
+  if(jumpBtn){const target=PLACES.find(item=>item.name===jumpBtn.dataset.city);if(target)select(target,0);}
+ };
+ poemSlot?.addEventListener('click',onPoemSlotClick);
+
  let pointerType='',opener=null;
  const onPointerDown=e=>{pointerType=e.pointerType;};
- const showNearby=(places,node)=>{opener=node;nearby.innerHTML='<p>这里有几座相近的城市，选择一座：</p><div class="china-city-pills">'+places.map(p=>'<button type="button" data-city="'+p.name+'">'+p.name+'</button>').join('')+'<button type="button" data-nearby-close>收起</button></div>';nearby.hidden=false;nearby.scrollIntoView({block:'nearest'});};
+ const showNearby=(places,node)=>{opener=node;nearby.innerHTML='<p>这里有几座相近的地点，选择一处：</p><div class="china-city-pills">'+places.map(p=>'<button type="button" data-city="'+p.name+'">'+p.name+(poemsByCity(p.name).length?' ✦':'')+'</button>').join('')+'<button type="button" data-nearby-close>收起</button></div>';nearby.hidden=false;nearby.scrollIntoView({block:'nearest'});};
  const click=e=>{
   if(e.target.closest('[data-nearby-close]')){nearby.hidden=true;nearby.replaceChildren();if(e.detail===0)opener?.focus();return;}
   const node=e.target.closest('[data-city]');if(!node)return;
@@ -177,11 +340,11 @@ window.initChinaFootprints=function(){
     p=distances[0]?.place||p;
    }
   }
-  if(p){const keyboardChoice=nearby.contains(node)&&e.detail===0;select(p);if(keyboardChoice)nodeByName.get(p.name)?.focus();}
+  if(p){const keyboardChoice=nearby.contains(node)&&e.detail===0;select(p,0);if(keyboardChoice)nodeByName.get(p.name)?.focus();}
  };
- const key=e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.china-city')){e.preventDefault();const p=PLACES.find(item=>item.name===e.target.dataset.city);if(p)select(p);}};
+ const key=e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('.china-city')){e.preventDefault();const p=PLACES.find(item=>item.name===e.target.dataset.city);if(p)select(p,0);}};
  const onNearbyKey=e=>{if(e.key==='Escape'&&!nearby.hidden){nearby.hidden=true;nearby.replaceChildren();opener?.focus();}};
  list.addEventListener('click',click);nearby.addEventListener('click',click);document.addEventListener('keydown',onNearbyKey);svg.addEventListener('pointerdown',onPointerDown);svg.addEventListener('click',click);svg.addEventListener('keydown',key);
- return ()=>{list.removeEventListener('click',click);nearby.removeEventListener('click',click);document.removeEventListener('keydown',onNearbyKey);svg.removeEventListener('pointerdown',onPointerDown);svg.removeEventListener('click',click);svg.removeEventListener('keydown',key);};
+ return ()=>{poemSlot?.removeEventListener('click',onPoemSlotClick);list.removeEventListener('click',click);nearby.removeEventListener('click',click);document.removeEventListener('keydown',onNearbyKey);svg.removeEventListener('pointerdown',onPointerDown);svg.removeEventListener('click',click);svg.removeEventListener('keydown',key);};
 };
 })();

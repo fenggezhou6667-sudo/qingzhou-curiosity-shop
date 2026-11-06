@@ -165,7 +165,7 @@ function starfieldMarkup(kind='collection',count=190){
 function works(){
   const first=A.works[0];
   const themes=A.works.map((w,i)=>'<button type="button" class="cosmos-theme'+(i===0?' is-active':'')+'" data-theme="'+i+'" aria-pressed="'+(i===0)+'">'+esc(w.title)+'</button>').join('');
-  return '<div class="cosmos-room"><div class="cosmos-heading wrap"><div><p>一片银河，几段记忆</p><h1>星空暗房</h1><span>每一组影像，都有一片可以靠近的星空。</span></div><small>图库选读 · 银河与黑洞为艺术示意</small></div><section class="cosmos" aria-label="摄影星系"><div class="cosmos-themes" aria-label="选择相册星团">'+themes+'</div><div class="cosmos-layout"><div class="cosmos-scene"><canvas class="cosmos-canvas" tabindex="0" aria-label="三维星系，拖动旋转；点击后滚轮缩放，触屏可双指缩放"></canvas><p class="cosmos-instructions"><span class="cosmos-hint-desktop">拖动旋转 · 点击后滚轮缩放 · 点击小星系靠近 · ↺ 回到银河</span><span class="cosmos-hint-touch">单指旋转 · 双指缩放 · 点击小星系靠近 · ↺ 返回</span></p><div class="cosmos-zoom"><button type="button" data-zoom="in" aria-label="放大星系">＋</button><button type="button" data-zoom="out" aria-label="缩小星系">−</button><button type="button" data-zoom="reset" aria-label="重置视角">↺</button></div><p class="cosmos-fallback" hidden>当前设备无法显示三维星系，可以使用右侧按钮浏览影像。</p></div><aside class="cosmos-panel"><span class="cosmos-kicker">主题影像</span><h2>'+esc(first.title)+'</h2><p class="cosmos-intro">'+esc(first.intro)+'</p><div class="cosmos-picture">'+photo(first.photos[0],true,'card')+'</div><p class="cosmos-caption" aria-live="polite">'+esc(first.captions[0])+'</p><div class="cosmos-frames" aria-label="选择影像"></div><a class="cosmos-enter" href="#/works/'+esc(first.slug)+'">进入这组影像 ↗</a><small>图库选读 · 非个人作品</small></aside></div></section><p class="cosmos-end wrap">光会留下它经过的地方。</p></div>';
+  return '<div class="cosmos-room"><div class="cosmos-heading wrap"><div><p>一片银河，几段记忆</p><h1>星空暗房</h1><span>每一组影像，都有一片可以靠近的星空。</span></div><small>图库选读 · 银河、恒星系与黑洞为艺术示意</small></div><section class="cosmos" aria-label="摄影星系"><div class="cosmos-themes" aria-label="选择相册星团">'+themes+'</div><div class="cosmos-layout"><div class="cosmos-scene"><canvas class="cosmos-canvas" tabindex="0" aria-label="三维星系，拖动旋转；点击后滚轮缩放，触屏可双指缩放"></canvas><p class="cosmos-instructions"><span class="cosmos-hint-desktop">拖动旋转 · 点击后滚轮缩放 · 点击恒星系靠近 · ↺ 回到银河</span><span class="cosmos-hint-touch">单指旋转 · 双指缩放 · 点击恒星系靠近 · ↺ 返回</span></p><div class="cosmos-zoom"><button type="button" data-zoom="in" aria-label="放大星系">＋</button><button type="button" data-zoom="out" aria-label="缩小星系">−</button><button type="button" data-zoom="reset" aria-label="重置视角">↺</button></div><p class="cosmos-fallback" hidden>当前设备无法显示三维星系，可以使用右侧按钮浏览影像。</p></div><aside class="cosmos-panel"><span class="cosmos-kicker">主题影像</span><h2>'+esc(first.title)+'</h2><p class="cosmos-intro">'+esc(first.intro)+'</p><div class="cosmos-picture">'+photo(first.photos[0],true,'card')+'</div><p class="cosmos-caption" aria-live="polite">'+esc(first.captions[0])+'</p><div class="cosmos-frames" aria-label="选择影像"></div><a class="cosmos-enter" href="#/works/'+esc(first.slug)+'">进入这组影像 ↗</a><small>图库选读 · 非个人作品</small></aside></div></section><p class="cosmos-end wrap">光会留下它经过的地方。</p></div>';
 }
 function bindCosmos(){
   const root=document.querySelector('.cosmos'),pic=root.querySelector('.cosmos-picture img'),frames=root.querySelector('.cosmos-frames');let theme=0,selected=0,disposed=false,stop=()=>{};
@@ -218,7 +218,8 @@ function toggleSealState(slug){
 function bookPage(n){
   const paragraphs=n.body.map(p=>'<p>'+esc(p)+'</p>').join('');
   const sealed=getSealState(n.slug);
-  return '<div class="book-poem-wrap"><div class="book-poem-header"><span class="book-leaf-meta">'+esc(n.category)+' / '+esc(n.genre)+'</span><h2>'+esc(n.title)+'</h2><span class="book-date">'+esc(n.date||'')+'</span></div><div class="book-poem-body">'+paragraphs+'</div>'+poemVignette(n)+'<div class="book-poem-actions"><a class="book-permalink" href="#/notes/'+esc(n.slug)+'">单独打开这首诗 ↗</a><button type="button" class="poem-seal-btn '+(sealed?'is-sealed':'')+'" data-seal-slug="'+esc(n.slug)+'" aria-pressed="'+sealed+'"><span class="seal-mark" aria-hidden="true">清舟</span><span class="seal-text">'+(sealed?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻')+'</span></button></div></div>';
+  const placeTag=n.place?' · 写于'+esc(n.place):'';
+  return '<div class="book-poem-wrap"><div class="book-poem-header"><span class="book-leaf-meta">'+esc(n.category)+' / '+esc(n.genre)+placeTag+'</span><h2>'+esc(n.title)+'</h2><span class="book-date">'+esc(n.date||'')+'</span></div><div class="book-poem-body">'+paragraphs+'</div>'+poemVignette(n)+'<div class="book-poem-actions"><a class="book-permalink" href="#/notes/'+esc(n.slug)+'">单独打开这首诗 ↗</a><button type="button" class="poem-seal-btn '+(sealed?'is-sealed':'')+'" data-seal-slug="'+esc(n.slug)+'" aria-pressed="'+sealed+'"><span class="seal-mark" aria-hidden="true">清舟</span><span class="seal-text">'+(sealed?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻')+'</span></button></div></div>';
 }
 function renderBook(){
   const entries=bookEntries(),cur=entries[Math.min(bookState.index,entries.length-1)];
@@ -262,7 +263,8 @@ function bindBook(){
 function article(n){
   const list=A.notes.includes(n)?A.notes:(A.legacyNotes||[]),i=list.indexOf(n),prev=list[(i+list.length-1)%list.length],next=list[(i+1)%list.length];
   const sealed=getSealState(n.slug);
-  return '<div class="wrap"><article class="article poetry-reading '+(n.poem?'poem':'')+'"><a class="quiet-link" href="#/notes">← 回到诗集</a><div class="reading-marker"><span>'+String(i+1).padStart(2,'0')+' / '+esc(n.category)+' · '+esc(n.genre||'未分类')+'</span><span>'+(n.demo!==false?'演示文字':'逐页复核稿')+'</span></div><h1>'+esc(n.title)+'</h1>'+(n.en?'<p class="lead">'+esc(n.en)+'</p>':'')+'<div class="body book-poem-wrap">'+n.body.map(p=>'<p>'+esc(p)+'</p>').join('')+poemVignette(n)+'</div><div class="book-poem-actions"><p class="reading-colophon">'+(n.demo!==false?'此页为原型创作样例，尚非所有者真实作品。':esc((n.sourceMeta||[]).join(' / ')||'来源：诗歌电子稿逐页复核版'))+'</p><button class="poem-seal-btn '+(sealed?'is-sealed':'')+'" type="button" data-seal-slug="'+esc(n.slug)+'" aria-pressed="'+sealed+'"><span class="seal-mark" aria-hidden="true">清舟</span><span class="seal-text">'+(sealed?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻')+'</span></button></div><div class="article-nav"><a href="#/notes/'+prev.slug+'">← '+esc(prev.title)+'</a><a href="#/notes/'+next.slug+'">'+esc(next.title)+' →</a></div></article></div>';
+  const placeTag=n.place?' · 写于'+esc(n.place):'';
+  return '<div class="wrap"><article class="article poetry-reading '+(n.poem?'poem':'')+'"><a class="quiet-link" href="#/notes">← 回到诗集</a><div class="reading-marker"><span>'+String(i+1).padStart(2,'0')+' / '+esc(n.category)+' · '+esc(n.genre||'未分类')+placeTag+'</span><span>'+(n.demo!==false?'演示文字':'逐页复核稿')+'</span></div><h1>'+esc(n.title)+'</h1>'+(n.en?'<p class="lead">'+esc(n.en)+'</p>':'')+'<div class="body book-poem-wrap">'+n.body.map(p=>'<p>'+esc(p)+'</p>').join('')+poemVignette(n)+'</div><div class="book-poem-actions"><p class="reading-colophon">'+(n.demo!==false?'此页为原型创作样例，尚非所有者真实作品。':esc((n.sourceMeta||[]).join(' / ')||'来源：诗歌电子稿逐页复核版'))+'</p><button class="poem-seal-btn '+(sealed?'is-sealed':'')+'" type="button" data-seal-slug="'+esc(n.slug)+'" aria-pressed="'+sealed+'"><span class="seal-mark" aria-hidden="true">清舟</span><span class="seal-text">'+(sealed?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻')+'</span></button></div><div class="article-nav"><a href="#/notes/'+prev.slug+'">← '+esc(prev.title)+'</a><a href="#/notes/'+next.slug+'">'+esc(next.title)+' →</a></div></article></div>';
 }
 function labDiagram(slug){
   if(slug==='rongrong'){
@@ -341,14 +343,15 @@ function openViewer(){if(!currentWork||box.open)return;returnFocus=document.acti
 
 function traces(){
   return `<section class="china-footprints"><div class="wrap china-wrap">
-    <header class="china-intro"><span class="eyebrow">TRACES / PLACES I KEEP</span><h1>走过的地方</h1><p>每一盏微光，都来自真实走过的城市。</p></header>
+    <header class="china-intro"><span class="eyebrow">TRACES / PLACES I KEEP</span><h1>走过的地方</h1><p>每一盏微光，都来自真实走过的城市；山脉与长河之间，留着写诗的坐标。</p></header>
     <div class="china-layout">
       <div class="china-map-stage">
-        <div class="china-map-caption"><span>中国 · 足迹图</span><span>21 CITIES / LIVED MEMORIES</span></div>
-        <svg class="china-map" id="china-footprint-map" viewBox="0 0 930 650" role="group" aria-label="中国足迹地图，标记二十一座到访城市">
+        <div class="china-map-caption"><span>中国 · 山河足迹舆图</span><span>22 PLACES / RIVERS, MOUNTAINS & POEMS</span></div>
+        <svg class="china-map" id="china-footprint-map" viewBox="0 0 930 650" role="group" aria-label="中国山河足迹地图，标记二十二处到访城市与山河水系">
           <defs>
             <linearGradient id="chinaLandFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#254943"/><stop offset=".52" stop-color="#183a37"/><stop offset="1" stop-color="#102a2c"/></linearGradient>
             <linearGradient id="chinaLandEdge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8da98a"/><stop offset=".55" stop-color="#d0bd83"/><stop offset="1" stop-color="#6f9a8a"/></linearGradient>
+            <linearGradient id="chinaRiverStroke" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7ebbb2" stop-opacity=".28"/><stop offset=".5" stop-color="#b9d8c9" stop-opacity=".62"/><stop offset="1" stop-color="#e8d59e" stop-opacity=".78"/></linearGradient>
             <radialGradient id="chinaCityGlow"><stop offset="0" stop-color="#ffe7a2" stop-opacity=".9"/><stop offset=".28" stop-color="#f1ca78" stop-opacity=".35"/><stop offset="1" stop-color="#f1ca78" stop-opacity="0"/></radialGradient>
             <filter id="chinaSoftGlow" x="-300%" y="-300%" width="700%" height="700%"><feGaussianBlur stdDeviation="4"/></filter>
             <clipPath id="china-land-clip"><path id="china-clip-shape" d=""/></clipPath>
@@ -360,26 +363,19 @@ function traces(){
           <path class="china-land" id="china-mainland" d=""/>
           <path class="china-island" id="china-hainan" d=""/>
           <path class="china-island" id="china-taiwan" d=""/>
-          <g class="china-topography" clip-path="url(#china-land-clip)" aria-hidden="true">
-            <path d="M85 195 C175 130 235 210 295 190 S420 118 495 165 S610 214 700 145 S820 150 880 125"/>
-            <path d="M75 228 C170 163 240 244 305 222 S420 150 500 197 S610 245 710 178 S820 184 890 157"/>
-            <path d="M92 285 C185 220 245 302 325 275 S450 210 535 255 S655 300 745 232 S840 235 900 213"/>
-            <path d="M100 365 C190 300 270 383 350 350 S470 292 560 330 S670 370 770 309 S850 308 900 292"/>
-            <path d="M125 435 C220 372 295 450 385 415 S505 362 590 399 S700 434 795 382 S860 382 900 364"/>
-            <path d="M180 500 C270 445 340 510 430 480 S550 432 630 465 S730 492 810 450"/>
-          </g>
+          <g class="china-topography" id="china-topography" clip-path="url(#china-land-clip)" aria-hidden="true"></g>
           <g class="china-network" id="china-network" aria-hidden="true"></g>
           <g class="china-city-points" id="china-city-points"></g>
           </g>
         </svg>
         <div class="china-nearby" id="china-nearby" role="group" aria-label="选择附近城市" aria-live="polite" hidden></div>
-        <p class="china-map-note">光点代表到访地点；细线仅用于呈现足迹网络，不代表实际旅行顺序。</p>
+        <p class="china-map-note">底纹绘出长江、黄河、西江·郁江三大水系与秦岭、横断、武陵、南岭、太行山脉；标有 ✦ 的四座地点（上海、玉林、苏州、华阴）收录了写于当地的 30 首诗篇。</p>
       </div>
       <aside class="china-story">
-        <span class="china-count">PLACES / 21</span><h2 id="china-selected-title">去过的地方</h2>
-        <p id="china-selected-description">点亮的城市，来自我真实走过的路。选择一座城市，看看它在地图上的位置。</p>
+        <span class="china-count">PLACES / 22 · POEMS / 30</span><h2 id="china-selected-title">去过的地方</h2>
+        <p id="china-selected-description">点亮的城市，来自我真实走过的路。选择一座城市，查看它的山河水文位置与写于当地的诗稿。</p>
         <div id="china-poem-slot" class="china-poem-slot" hidden></div>
-        <p class="china-disclaimer">城市位置按公开地理数据近似定位。日期、路线、照片与美食记录，等你慢慢补上。</p>
+        <p class="china-disclaimer">城市位置与山河水系按公开地理数据近似投影。诗歌创作地点依逐页复核稿精确归档。</p>
         <div class="china-city-list" id="china-city-list" aria-label="按城市选择足迹"></div>
       </aside>
     </div>
@@ -521,24 +517,39 @@ function initSoundDock(){
   const dock=document.querySelector('#music-dock'),audio=document.querySelector('#dock-audio'),toggle=document.querySelector('#dock-toggle'),panel=document.querySelector('#dock-panel'),play=document.querySelector('#dock-play'),progress=document.querySelector('#dock-progress'),elapsed=document.querySelector('#dock-elapsed'),duration=document.querySelector('#dock-duration');
   if(!dock||!audio)return;
   const fmt=t=>Number.isFinite(t)?Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0'):'0:00';
-  const update=()=>{elapsed.textContent=fmt(audio.currentTime);if(Number.isFinite(audio.duration))duration.textContent=fmt(audio.duration);progress.value=audio.duration>0?String(Math.round(audio.currentTime/audio.duration*1000)):'0';progress.style.setProperty('--fill',(Number(progress.value)/10)+'%');play.textContent=audio.paused?'▶':'Ⅱ';play.setAttribute('aria-label',(audio.paused?'播放':'暂停')+'《有光的地方》');dock.classList.toggle('is-playing',!audio.paused);};
-  const open=v=>{panel.hidden=!v;toggle.setAttribute('aria-expanded',String(v));toggle.setAttribute('aria-label',v?'收起音乐播放器':'展开音乐播放器');if(v)play.focus();else toggle.focus();};
+  const update=()=>{
+    play.textContent=audio.paused?'▶':'Ⅱ';
+    play.setAttribute('aria-label',(audio.paused?'播放':'暂停')+'《有光的地方》');
+    dock.classList.toggle('is-playing',!audio.paused);
+    if(!panel.hidden){
+      elapsed.textContent=fmt(audio.currentTime);
+      if(Number.isFinite(audio.duration))duration.textContent=fmt(audio.duration);
+      progress.value=audio.duration>0?String(Math.round(audio.currentTime/audio.duration*1000)):'0';
+      progress.style.setProperty('--fill',(Number(progress.value)/10)+'%');
+    }
+  };
+  const open=v=>{panel.hidden=!v;if(v)update();toggle.setAttribute('aria-expanded',String(v));toggle.setAttribute('aria-label',v?'收起音乐播放器':'展开音乐播放器');if(v)play.focus();else toggle.focus();};
   toggle.addEventListener('click',()=>open(panel.hidden));
   document.querySelector('#dock-close').addEventListener('click',()=>open(false));
   play.addEventListener('click',async()=>{if(audio.paused){try{await audio.play();}catch(err){play.setAttribute('aria-label','播放未成功，请检查浏览器音频设置');}}else audio.pause();update();});
   progress.addEventListener('input',()=>{if(audio.duration>0&&Number.isFinite(audio.duration))audio.currentTime=audio.duration*Number(progress.value)/1000;update();});
   let audioCtx=null,analyser=null,dataArray=null,rafId=0;
   const pumpAudioEnergy=()=>{
-    if(audio.paused||!analyser){window.__qzAudioEnergy=0;document.documentElement.style.setProperty('--audio-energy','0');return;}
-    analyser.getByteFrequencyData(dataArray);
-    let sum=0;for(let i=0;i<24;i++)sum+=dataArray[i];
-    const energy=Math.min(1,Math.max(0,(sum/(24*255)-.08)*1.85));
-    window.__qzAudioEnergy=energy;
-    document.documentElement.style.setProperty('--audio-energy',energy.toFixed(3));
+    if(audio.paused||document.body.dataset.room!=='photography'){
+      window.__qzAudioEnergy=0;
+      rafId=0;
+      return;
+    }
+    if(!analyser)ensureAudioAnalyser();
+    if(analyser){
+      analyser.getByteFrequencyData(dataArray);
+      let sum=0;for(let i=0;i<24;i++)sum+=dataArray[i];
+      window.__qzAudioEnergy=Math.min(1,Math.max(0,(sum/(24*255)-.08)*1.85));
+    }
     rafId=requestAnimationFrame(pumpAudioEnergy);
   };
   const ensureAudioAnalyser=()=>{
-    if(audioCtx||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    if(audioCtx||matchMedia('(prefers-reduced-motion: reduce)').matches||matchMedia('(max-width: 900px)').matches)return;
     try{
       const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;
       audioCtx=new Ctx();const src=audioCtx.createMediaElementSource(audio);
@@ -548,9 +559,9 @@ function initSoundDock(){
     }catch(e){}
   };
   audio.addEventListener('timeupdate',update);audio.addEventListener('loadedmetadata',update);
-  audio.addEventListener('play',()=>{update();ensureAudioAnalyser();if(audioCtx?.state==='suspended')audioCtx.resume();cancelAnimationFrame(rafId);pumpAudioEnergy();});
-  audio.addEventListener('pause',()=>{update();cancelAnimationFrame(rafId);window.__qzAudioEnergy=0;document.documentElement.style.setProperty('--audio-energy','0');});
-  audio.addEventListener('ended',()=>{update();cancelAnimationFrame(rafId);window.__qzAudioEnergy=0;document.documentElement.style.setProperty('--audio-energy','0');});
+  audio.addEventListener('play',()=>{update();if(document.body.dataset.room==='photography'){ensureAudioAnalyser();if(audioCtx?.state==='suspended')audioCtx.resume();cancelAnimationFrame(rafId);pumpAudioEnergy();}});
+  audio.addEventListener('pause',()=>{update();cancelAnimationFrame(rafId);rafId=0;window.__qzAudioEnergy=0;});
+  audio.addEventListener('ended',()=>{update();cancelAnimationFrame(rafId);rafId=0;window.__qzAudioEnergy=0;});
   audio.addEventListener('error',()=>{play.disabled=true;play.textContent='!';});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)open(false);});
   update();
