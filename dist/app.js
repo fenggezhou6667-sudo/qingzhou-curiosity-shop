@@ -513,7 +513,7 @@ function traces(){
             <clipPath id="china-land-clip"><path id="china-clip-shape" d=""/></clipPath>
           </defs>
           <g class="china-grid" aria-hidden="true"><path d="M30 160 Q465 80 900 160 M20 300 Q465 235 910 300 M25 440 Q465 375 905 440 M70 570 Q465 515 860 570"/><path d="M220 25 Q180 320 220 620 M400 20 Q385 320 400 630 M580 20 Q595 320 580 630 M760 25 Q800 320 760 620"/></g>
-          <g class="china-map-plane" transform="matrix(.97 -.02 .02 .92 14 28)">
+          <g class="china-map-plane" transform="matrix(.94 -.08 .10 .74 -5 105)">
           <path class="china-land-shadow" d="" aria-hidden="true"/>
           <g class="china-land-depth" aria-hidden="true"></g>
           <path class="china-land" id="china-mainland" d=""/>

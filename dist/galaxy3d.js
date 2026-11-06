@@ -174,8 +174,8 @@ export function mountGalaxy(root,archive){
   const starsMaterial=new THREE.ShaderMaterial({
     transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,
     uniforms:{scale:{value:dpr},visibility:{value:1}},
-    vertexShader:'varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(17.5*scale/(-p.z),1.0,5.2);gl_Position=projectionMatrix*p;}',
-    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=pow(1.0-d*2.0,1.9)*0.95*visibility;gl_FragColor=vec4(vColor,a);\n#include <colorspace_fragment>\n}'
+    vertexShader:'varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(24.0*scale/(-p.z),1.2,5.5);gl_Position=projectionMatrix*p;}',
+    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=(1.0-smoothstep(0.08,0.5,d))*0.92*visibility;gl_FragColor=vec4(vColor,a);\n#include <colorspace_fragment>\n}'
   });
   galaxy.add(new THREE.Points(geometry,starsMaterial));
 
@@ -194,28 +194,20 @@ export function mountGalaxy(root,archive){
   const cloudMaterial=new THREE.ShaderMaterial({
     transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,
     uniforms:{scale:{value:dpr},visibility:{value:1}},
-    vertexShader:'varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(110.0*scale/(-p.z),5.0,38.0);gl_Position=projectionMatrix*p;}',
-    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=pow(1.0-d*2.0,2.3)*0.082*visibility;gl_FragColor=vec4(vColor,a);\n#include <colorspace_fragment>\n}'
+    vertexShader:'varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(160.0*scale/(-p.z),6.0,46.0);gl_Position=projectionMatrix*p;}',
+    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=pow(max(0.0,1.0-d*2.0),2.2)*0.075*visibility;gl_FragColor=vec4(vColor,a);\n#include <colorspace_fragment>\n}'
   });
   galaxy.add(new THREE.Points(cloudGeometry,cloudMaterial));
 
-  const coreMaterial=new THREE.SpriteMaterial({map:glowTexture,color:0xfff6dd,transparent:true,opacity:.88,depthWrite:false,blending:THREE.AdditiveBlending});
+    const coreMaterial=new THREE.SpriteMaterial({map:glowTexture,color:0xffdfa4,transparent:true,opacity:.35,depthWrite:false,blending:THREE.AdditiveBlending});
   const core=new THREE.Sprite(coreMaterial);
-  core.scale.set(4.6,4.6,1);
+  core.scale.set(3.2,3.2,1);
   galaxy.add(core);
 
-  const coronaMat=new THREE.SpriteMaterial({map:glowTexture,color:0xffd588,transparent:true,opacity:.58,depthWrite:false,blending:THREE.AdditiveBlending});
-  const corona=new THREE.Sprite(coronaMat);
-  corona.scale.set(7.6,7.6,1);
-  galaxy.add(corona);
 
-  const spikeMat=new THREE.SpriteMaterial({map:spikeTexture,color:0xfffaeb,transparent:true,opacity:.72,depthWrite:false,blending:THREE.AdditiveBlending});
-  const spike=new THREE.Sprite(spikeMat);
-  spike.scale.set(5.2,5.2,1);
-  galaxy.add(spike);
 
-  const holeGeometry=new THREE.SphereGeometry(.008,20,20);
-  const holeMaterial=new THREE.MeshBasicMaterial({color:0x020409});
+  const holeGeometry=new THREE.SphereGeometry(.56,28,20);
+  const holeMaterial=new THREE.MeshBasicMaterial({color:0x000104});
   const blackHole=new THREE.Mesh(holeGeometry,holeMaterial);
   galaxy.add(blackHole);
 
@@ -825,10 +817,9 @@ export function mountGalaxy(root,archive){
       cloudMaterial.uniforms.visibility.value=starsMaterial.uniforms.visibility.value;
       haloMat.uniforms.visibility.value=THREE.MathUtils.lerp(haloMat.uniforms.visibility.value,focusIndex>=0?.28:1,1-Math.exp(-4.5*dt));
       deepMat.uniforms.visibility.value=THREE.MathUtils.lerp(deepMat.uniforms.visibility.value,focusIndex>=0?.75:1,1-Math.exp(-4.5*dt));
-      coreMaterial.opacity=(.88+audioBoost*.16)*starsMaterial.uniforms.visibility.value;
-      core.scale.setScalar(4.6+audioBoost*.55);
-      if(typeof coronaMat!=='undefined'){coronaMat.opacity=(.58+audioBoost*.2)*starsMaterial.uniforms.visibility.value;corona.scale.setScalar(7.6+audioBoost*.7);}
-      if(typeof spikeMat!=='undefined'){spikeMat.opacity=(.72+audioBoost*.18)*starsMaterial.uniforms.visibility.value;spike.scale.setScalar(5.2+audioBoost*.5);}
+      coreMaterial.opacity=(.35+audioBoost*.12)*starsMaterial.uniforms.visibility.value;
+      core.scale.setScalar(3.2+audioBoost*.35);
+      
 
       markers.forEach((m,i)=>{
         const isFocus=i===focusIndex,isLock=i===locked;
@@ -915,7 +906,7 @@ export function mountGalaxy(root,archive){
     pickGeometry.dispose();pickMaterial.dispose();
     holeGeometry.dispose();holeMaterial.dispose();
     waveGeometry.dispose();waves.forEach(w=>w.material.dispose());
-    coreMaterial.dispose();if(typeof coronaMat!=="undefined")coronaMat.dispose();if(typeof spikeMat!=="undefined")spikeMat.dispose();glowTexture.dispose();spikeTexture.dispose();
+    coreMaterial.dispose();holeGeometry.dispose();holeMaterial.dispose();glowTexture.dispose();spikeTexture.dispose();
     renderer.dispose();
   };
 }
