@@ -143,7 +143,7 @@ export function mountGalaxy(root,archive){
   disposables.push(haloGeo,haloMat);
 
   // 1. Main Milky Way Galaxy
-  const count=16000;
+  const count=28000;
   const positions=new Float32Array(count*3),colors=new Float32Array(count*3);
   const inside=new THREE.Color('#fff2cf'),mid=new THREE.Color('#d8c796'),outside=new THREE.Color('#6f96b8'),dust=new THREE.Color('#476779');
   let seed=42071;
@@ -164,7 +164,7 @@ export function mountGalaxy(root,archive){
     const t=Math.min(1,radius/12.2);
     const c=inside.clone().lerp(mid,Math.min(1,t*1.55)).lerp(outside,Math.max(0,(t-.28)/.72));
     if(i%6===0)c.lerp(dust,.48);
-    const brightness=inCore?.58+rand()*.34:.3+rand()*.62;
+    const brightness=inCore?.88+rand()*.42:.42+rand()*.78;
     colors[i3]=c.r*brightness;colors[i3+1]=c.g*brightness;colors[i3+2]=c.b*brightness;
   }
 
@@ -174,19 +174,19 @@ export function mountGalaxy(root,archive){
   const starsMaterial=new THREE.ShaderMaterial({
     transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,
     uniforms:{scale:{value:dpr},visibility:{value:1}},
-    vertexShader:'varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(15.5*scale/(-p.z),1.0,4.8);gl_Position=projectionMatrix*p;}',
-    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=pow(1.0-d*2.0,2.2)*0.68*visibility;gl_FragColor=vec4(vColor,a);\n#include <colorspace_fragment>\n}'
+    vertexShader:'varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(17.5*scale/(-p.z),1.0,5.2);gl_Position=projectionMatrix*p;}',
+    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=pow(1.0-d*2.0,1.9)*0.95*visibility;gl_FragColor=vec4(vColor,a);\n#include <colorspace_fragment>\n}'
   });
   galaxy.add(new THREE.Points(geometry,starsMaterial));
 
-  const cloudCount=200,cloudPositions=new Float32Array(cloudCount*3),cloudColors=new Float32Array(cloudCount*3);
+  const cloudCount=380,cloudPositions=new Float32Array(cloudCount*3),cloudColors=new Float32Array(cloudCount*3);
   for(let i=0;i<cloudCount;i++){
     const i3=i*3,arm=i%4,radius=1.1+Math.pow(rand(),.82)*9.2,angle=(arm/4)*Math.PI*2+radius*1.28+normal()*.28;
     cloudPositions[i3]=Math.cos(angle)*radius+normal()*.55;
     cloudPositions[i3+1]=normal()*.18;
     cloudPositions[i3+2]=Math.sin(angle)*radius+normal()*.55;
     const c=inside.clone().lerp(outside,Math.min(1,radius/10));
-    cloudColors[i3]=c.r*.42;cloudColors[i3+1]=c.g*.44;cloudColors[i3+2]=c.b*.5;
+    cloudColors[i3]=c.r*.65;cloudColors[i3+1]=c.g*.68;cloudColors[i3+2]=c.b*.78;
   }
   const cloudGeometry=new THREE.BufferGeometry();
   cloudGeometry.setAttribute('position',new THREE.BufferAttribute(cloudPositions,3));
@@ -194,15 +194,25 @@ export function mountGalaxy(root,archive){
   const cloudMaterial=new THREE.ShaderMaterial({
     transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,
     uniforms:{scale:{value:dpr},visibility:{value:1}},
-    vertexShader:'varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(88.0*scale/(-p.z),4.0,28.0);gl_Position=projectionMatrix*p;}',
-    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=pow(1.0-d*2.0,2.8)*0.025*visibility;gl_FragColor=vec4(vColor,a);\n#include <colorspace_fragment>\n}'
+    vertexShader:'varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(110.0*scale/(-p.z),5.0,38.0);gl_Position=projectionMatrix*p;}',
+    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=pow(1.0-d*2.0,2.3)*0.082*visibility;gl_FragColor=vec4(vColor,a);\n#include <colorspace_fragment>\n}'
   });
   galaxy.add(new THREE.Points(cloudGeometry,cloudMaterial));
 
-  const coreMaterial=new THREE.SpriteMaterial({map:glowTexture,color:0xffe4ae,transparent:true,opacity:.42,depthWrite:false,blending:THREE.AdditiveBlending});
+  const coreMaterial=new THREE.SpriteMaterial({map:glowTexture,color:0xfff6dd,transparent:true,opacity:.88,depthWrite:false,blending:THREE.AdditiveBlending});
   const core=new THREE.Sprite(coreMaterial);
-  core.scale.set(3.3,3.3,1);
+  core.scale.set(4.6,4.6,1);
   galaxy.add(core);
+
+  const coronaMat=new THREE.SpriteMaterial({map:glowTexture,color:0xffd588,transparent:true,opacity:.58,depthWrite:false,blending:THREE.AdditiveBlending});
+  const corona=new THREE.Sprite(coronaMat);
+  corona.scale.set(7.6,7.6,1);
+  galaxy.add(corona);
+
+  const spikeMat=new THREE.SpriteMaterial({map:spikeTexture,color:0xfffaeb,transparent:true,opacity:.72,depthWrite:false,blending:THREE.AdditiveBlending});
+  const spike=new THREE.Sprite(spikeMat);
+  spike.scale.set(5.2,5.2,1);
+  galaxy.add(spike);
 
   const holeGeometry=new THREE.SphereGeometry(.008,20,20);
   const holeMaterial=new THREE.MeshBasicMaterial({color:0x020409});
@@ -815,8 +825,10 @@ export function mountGalaxy(root,archive){
       cloudMaterial.uniforms.visibility.value=starsMaterial.uniforms.visibility.value;
       haloMat.uniforms.visibility.value=THREE.MathUtils.lerp(haloMat.uniforms.visibility.value,focusIndex>=0?.28:1,1-Math.exp(-4.5*dt));
       deepMat.uniforms.visibility.value=THREE.MathUtils.lerp(deepMat.uniforms.visibility.value,focusIndex>=0?.75:1,1-Math.exp(-4.5*dt));
-      coreMaterial.opacity=(.42+audioBoost*.16)*starsMaterial.uniforms.visibility.value;
-      core.scale.setScalar(3.3+audioBoost*.45);
+      coreMaterial.opacity=(.88+audioBoost*.16)*starsMaterial.uniforms.visibility.value;
+      core.scale.setScalar(4.6+audioBoost*.55);
+      if(typeof coronaMat!=='undefined'){coronaMat.opacity=(.58+audioBoost*.2)*starsMaterial.uniforms.visibility.value;corona.scale.setScalar(7.6+audioBoost*.7);}
+      if(typeof spikeMat!=='undefined'){spikeMat.opacity=(.72+audioBoost*.18)*starsMaterial.uniforms.visibility.value;spike.scale.setScalar(5.2+audioBoost*.5);}
 
       markers.forEach((m,i)=>{
         const isFocus=i===focusIndex,isLock=i===locked;
@@ -903,7 +915,7 @@ export function mountGalaxy(root,archive){
     pickGeometry.dispose();pickMaterial.dispose();
     holeGeometry.dispose();holeMaterial.dispose();
     waveGeometry.dispose();waves.forEach(w=>w.material.dispose());
-    coreMaterial.dispose();glowTexture.dispose();spikeTexture.dispose();
+    coreMaterial.dispose();if(typeof coronaMat!=="undefined")coronaMat.dispose();if(typeof spikeMat!=="undefined")spikeMat.dispose();glowTexture.dispose();spikeTexture.dispose();
     renderer.dispose();
   };
 }

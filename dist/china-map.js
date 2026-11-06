@@ -208,16 +208,8 @@ window.initChinaFootprints=function(){
  const network=document.querySelector('#china-network'),points=document.querySelector('#china-city-points');
  network.replaceChildren();points.replaceChildren();
  const coords=new Map(PLACES.map(p=>[p.name,{...project(p.lon,p.lat),place:p}]));
- // A geographic proximity network, not a claimed travel itinerary.
- const remaining=new Set(PLACES.slice(1).map(p=>p.name)),connected=new Set([PLACES[0].name]);
- while(remaining.size){
-  let best=null,bestDist=Infinity;
-  for(const aName of connected){const a=coords.get(aName);for(const bName of remaining){const b=coords.get(bName),d=(a.x-b.x)**2+(a.y-b.y)**2;if(d<bestDist){bestDist=d;best=[a,b];}}}
-  if(!best)break;
-  const [a,b]=best,dx=b.x-a.x,dy=b.y-a.y,len=Math.max(1,Math.hypot(dx,dy)),bend=Math.min(13,len*.08),mx=(a.x+b.x)/2-dy/len*bend,my=(a.y+b.y)/2+dx/len*bend;
-  network.appendChild(el('path',{d:`M ${a.x.toFixed(1)} ${a.y.toFixed(1)} Q ${mx.toFixed(1)} ${my.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`,class:'china-link'}));
-  connected.add(b.place.name);remaining.delete(b.place.name);
- }
+ // Clean cartography: removed cluttered spiderweb paths. Network layer reserved for clean regional aura.
+ network.replaceChildren();
 
  const allNotes=(window.ARCHIVE&&window.ARCHIVE.notes)||[];
  const poemsByCity=city=>allNotes.filter(n=>n.place===city);
@@ -225,13 +217,23 @@ window.initChinaFootprints=function(){
  const nodeByName=new Map();
  PLACES.forEach((p)=>{
   const cityPoems=poemsByCity(p.name);
-  const {x,y}=coords.get(p.name),g=el('g',{class:'china-city'+(p.hasDirectPoem?' has-poem':''),transform:`translate(${x.toFixed(1)} ${y.toFixed(1)})`,tabindex:'0',role:'button','aria-label':`选择城市：${p.name}${cityPoems.length?`（写有 ${cityPoems.length} 首诗篇）`:''}`,'aria-pressed':'false','data-city':p.name});
-  g.appendChild(el('circle',{r:32,fill:'transparent','aria-hidden':'true'}));
-  g.appendChild(el('circle',{r:17,class:'city-halo'}));
-  if(p.hasDirectPoem)g.appendChild(el('circle',{r:11.5,class:'city-poem-ring'}));
-  g.appendChild(el('circle',{r:7,class:'city-pulse'}));
-  g.appendChild(el('circle',{r:p.hasDirectPoem?3.8:3.1,class:'city-core'}));
-  const label=el('text',{x:13,y:-12,class:'city-label'},p.name+(cityPoems.length?` · ${cityPoems.length}首`:''));
+  const {x,y}=coords.get(p.name),g=el('g',{
+    class:'china-city'+(p.hasDirectPoem?' has-poem is-major':' is-minor'),
+    transform:`translate(${x.toFixed(1)} ${y.toFixed(1)})`,
+    tabindex:'0',
+    role:'button',
+    'aria-label':`选择城市：${p.name}${cityPoems.length?`（写有 ${cityPoems.length} 首诗篇）`:''}`,
+    'aria-pressed':'false',
+    'data-city':p.name,
+    'data-group':p.group
+  });
+  g.appendChild(el('circle',{r:30,fill:'transparent','aria-hidden':'true'}));
+  g.appendChild(el('circle',{r:18,class:'city-halo'}));
+  if(p.hasDirectPoem)g.appendChild(el('circle',{r:12.5,class:'city-poem-ring'}));
+  g.appendChild(el('circle',{r:7.5,class:'city-pulse'}));
+  g.appendChild(el('circle',{r:p.hasDirectPoem?4.2:3.2,class:'city-core'}));
+  const labelText=p.hasDirectPoem?(p.name+` · ${cityPoems.length}首`):p.name;
+  const label=el('text',{x:12,y:-10,class:'city-label'},labelText);
   g.appendChild(label);points.appendChild(g);nodeByName.set(p.name,g);
  });
 
@@ -300,6 +302,24 @@ window.initChinaFootprints=function(){
   nodeByName.forEach((node,name)=>{const active=name===p.name;node.classList.toggle('is-selected',active);node.setAttribute('aria-pressed',String(active));});
   list.querySelectorAll('button[data-city]').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.city===p.name));});
  };
+
+ // Region Filter Tabs Integration
+ const regionTabs=document.querySelectorAll('.region-tab');
+ const applyRegionFilter=(regionKey)=>{
+   regionTabs.forEach(tab=>tab.classList.toggle('is-active',tab.dataset.region===regionKey));
+   PLACES.forEach(p=>{
+     const node=nodeByName.get(p.name);
+     if(!node)return;
+     const match=regionKey==='all'||p.group===regionKey;
+     node.classList.toggle('region-match',match);
+     node.classList.toggle('region-dim',!match);
+   });
+   const targetCity=PLACES.find(p=>(regionKey==='all'?p.name==='上海':(p.group===regionKey&&(p.hasDirectPoem||true))));
+   if(targetCity)select(targetCity,0);
+ };
+ regionTabs.forEach(tab=>{
+   tab.addEventListener('click',()=>applyRegionFilter(tab.dataset.region));
+ });
 
  const groups=[...new Set(PLACES.map(p=>p.group))];
  list.innerHTML=groups.map(group=>`<section class="china-city-group"><h3>${group}</h3><div class="china-city-pills">${PLACES.filter(p=>p.group===group).map(p=>{

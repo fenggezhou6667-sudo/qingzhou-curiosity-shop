@@ -36,13 +36,16 @@ function getPoemSealCount(slug){
     return (counts[slug]||0)+(seeds[slug]||38);
   }catch{return 38;}
 }
-function recordPoemSeal(slug){
+function setPoemSealDelta(slug, delta){
   try{
     const counts=JSON.parse(localStorage.getItem('qz_poem_seal_counts')||'{}');
-    counts[slug]=(counts[slug]||0)+1;
+    counts[slug]=Math.max(0,(counts[slug]||0)+delta);
     localStorage.setItem('qz_poem_seal_counts',JSON.stringify(counts));
     return getPoemSealCount(slug);
-  }catch{return 39;}
+  }catch{return 38;}
+}
+function recordPoemSeal(slug){
+  return setPoemSealDelta(slug, 1);
 }
 function getPoemAnnotations(slug){
   try{
@@ -161,14 +164,10 @@ function home(){
           <path class="river-reflection" fill="none" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/>
           <path class="river-bloom" fill="none" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/>
           <path class="river-core" fill="none" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/>
-          <path class="river-current" fill="none" pathLength="100" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/><path class="river-flowline flowline-wide" fill="none" pathLength="1000" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/><path class="river-flowline flowline-mid" fill="none" pathLength="1000" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/><path class="river-flowline flowline-fine" fill="none" pathLength="1000" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/>
+          <path class="river-current" fill="none" pathLength="100" d="M 270 850 C 365 760 424 703 515 660 C 625 608 758 593 845 541 C 920 496 966 449 925 402 C 887 358 792 333 800 273 C 807 220 886 184 927 126 C 956 84 963 38 961 -45"/><path class="river-flowline flowline-wide" fill="none" pathLength="1000" d="M 961 -45 C 963 38 956 84 927 126 C 886 184 807 220 800 273 C 792 333 887 358 925 402 C 966 449 920 496 845 541 C 758 593 625 608 515 660 C 424 703 365 760 270 850"/><path class="river-flowline flowline-mid" fill="none" pathLength="1000" d="M 961 -45 C 963 38 956 84 927 126 C 886 184 807 220 800 273 C 792 333 887 358 925 402 C 966 449 920 496 845 541 C 758 593 625 608 515 660 C 424 703 365 760 270 850"/><path class="river-flowline flowline-fine" fill="none" pathLength="1000" d="M 961 -45 C 963 38 956 84 927 126 C 886 184 807 220 800 273 C 792 333 887 358 925 402 C 966 449 920 496 845 541 C 758 593 625 608 515 660 C 424 703 365 760 270 850"/>
           <g class="river-ripples" fill="none" aria-hidden="true"><path d="M322 784q31 -12 53 -5"/><path d="M463 680q35 -14 60 -7"/><path d="M635 616q23 -11 55 -8"/><path d="M796 554q23 -8 47 -4"/><path d="M912 468q13 -13 30 -14"/><path d="M867 382q26 -2 41 5"/><path d="M774 274q13 -12 27 -12"/><path d="M896 138q19 -5 30 -3"/></g>
           </g>
           <g class="external-branches" clip-path="url(#riverClipDesktop)">${tributaries}</g>
-          <g class="river-drifting-verses" aria-hidden="true">
-            <text class="river-drift-text drift-a" x="840" y="240">胸藏星斗回光</text>
-            <text class="river-drift-text drift-b" x="620" y="585">一叶扁舟入暮云</text>
-          </g>
         </g>
         <g class="scene-points"><circle cx="514" cy="660" r="7"/><circle cx="514" cy="660" r="22" class="point-halo"/><circle cx="924" cy="402" r="4.5"/><circle cx="924" cy="402" r="17" class="point-halo"/><circle cx="927" cy="126" r="3.5"/><circle cx="927" cy="126" r="14" class="point-halo"/><circle class="river-glint glint-a" cx="650" cy="610" r="1.6"/><circle class="river-glint glint-b" cx="754" cy="578" r="1.2"/><circle class="river-glint glint-c" cx="896" cy="478" r="1.6"/><circle class="river-glint glint-d" cx="826" cy="326" r="1.2"/><circle class="river-glint glint-e" cx="875" cy="211" r="1.5"/><circle class="river-glint glint-f" cx="950" cy="72" r="1.1"/></g>
         <g class="scene-stars">${stars}</g>
@@ -339,7 +338,7 @@ function bindBook(){
     if(e.target.closest('#book-back')){bookState.view='contents';renderBook();return;}
     if(e.target.closest('#book-prev')){bookState.index=Math.max(0,bookState.index-1);bookState.view='poem';renderBook();document.querySelector('#book-prev')?.focus();return;}
     if(e.target.closest('#book-next')){bookState.index=Math.min(bookEntries().length-1,bookState.index+1);bookState.view='poem';renderBook();document.querySelector('#book-next')?.focus();return;}
-    const sealBtn=e.target.closest('[data-seal-slug]');if(sealBtn){const on=toggleSealState(sealBtn.dataset.sealSlug);sealBtn.classList.toggle('is-sealed',on);sealBtn.setAttribute('aria-pressed',String(on));const txt=sealBtn.querySelector('.seal-text');if(txt)txt.textContent=on?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻';}
+    const sealBtn=e.target.closest('[data-seal-slug]');if(sealBtn){const slug=sealBtn.dataset.sealSlug;const on=toggleSealState(slug);const newCount=setPoemSealDelta(slug,on?1:-1);sealBtn.classList.toggle('is-sealed',on);sealBtn.setAttribute('aria-pressed',String(on));const txt=sealBtn.querySelector('.seal-text');if(txt)txt.textContent=on?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻';const badge=sealBtn.querySelector('.seal-count-badge');if(badge)badge.textContent=newCount+' 人落印';}
   };
   root.addEventListener('click',click);
   const keyboard=e=>{if(e.altKey||e.ctrlKey||e.metaKey||/INPUT|TEXTAREA|BUTTON/.test(e.target.tagName)||!document.querySelector('.book-open')?.contains(e.target))return;if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();bookState.index=Math.max(0,Math.min(bookEntries().length-1,bookState.index+(e.key==='ArrowRight'?1:-1)));bookState.view='poem';renderBook();}};
@@ -378,7 +377,7 @@ function bindArticle(slug){
   const sealBtn=art.querySelector('[data-seal-slug]');
   const onSeal=()=>{
     const on=toggleSealState(slug);
-    const newCount=recordPoemSeal(slug);
+    const newCount=setPoemSealDelta(slug, on ? 1 : -1);
     sealBtn.classList.toggle('is-sealed',on);
     sealBtn.setAttribute('aria-pressed',String(on));
     const txt=sealBtn.querySelector('.seal-text');
@@ -495,6 +494,14 @@ function traces(){
     <header class="china-intro"><span class="eyebrow">TRACES / PLACES I KEEP</span><h1>走过的地方</h1><p>每一盏微光，都来自真实走过的城市；山脉与长河之间，留着写诗的坐标。</p></header>
     <div class="china-layout">
       <div class="china-map-stage">
+        <div class="china-region-tabs" role="tablist" aria-label="山河行迹区域导航">
+          <button type="button" class="region-tab is-active" data-region="all">✦ 全览舆图 (22)</button>
+          <button type="button" class="region-tab" data-region="中原与西北">关陕中原 · 华岳风云</button>
+          <button type="button" class="region-tab" data-region="华东">江南水乡 · 沪杭太湖</button>
+          <button type="button" class="region-tab" data-region="华南">岭南山海 · 郁江北部湾</button>
+          <button type="button" class="region-tab" data-region="西南">滇黔西南 · 苍山洱海</button>
+          <button type="button" class="region-tab" data-region="华中">楚天荆襄 · 长江百湖</button>
+        </div>
         <div class="china-map-caption"><span>中国 · 山河足迹舆图</span><span>22 PLACES / RIVERS, MOUNTAINS & POEMS</span></div>
         <svg class="china-map" id="china-footprint-map" viewBox="0 0 930 650" role="group" aria-label="中国山河足迹地图，标记二十二处到访城市与山河水系">
           <defs>
@@ -506,7 +513,7 @@ function traces(){
             <clipPath id="china-land-clip"><path id="china-clip-shape" d=""/></clipPath>
           </defs>
           <g class="china-grid" aria-hidden="true"><path d="M30 160 Q465 80 900 160 M20 300 Q465 235 910 300 M25 440 Q465 375 905 440 M70 570 Q465 515 860 570"/><path d="M220 25 Q180 320 220 620 M400 20 Q385 320 400 630 M580 20 Q595 320 580 630 M760 25 Q800 320 760 620"/></g>
-          <g class="china-map-plane" transform="matrix(.94 -.08 .10 .74 -5 105)">
+          <g class="china-map-plane" transform="matrix(.97 -.02 .02 .92 14 28)">
           <path class="china-land-shadow" d="" aria-hidden="true"/>
           <g class="china-land-depth" aria-hidden="true"></g>
           <path class="china-land" id="china-mainland" d=""/>
@@ -553,32 +560,188 @@ function setAtmosphere(room){
   if(explore)paintAtmosphere(explore,A.backgrounds.explore);
 }
 
-// --- 檐下留言簿页面 ---
+// --- 檐下留言簿页面（真实建筑屋檐、风铃清音、眠猫与趣味许愿木牌） ---
+function playChimeSound(){
+  try{
+    const AudioCtx=window.AudioContext||window.webkitAudioContext;
+    if(!AudioCtx)return;
+    const ctx=new AudioCtx();
+    const osc=ctx.createOscillator(),gain=ctx.createGain();
+    osc.type='sine';
+    osc.frequency.setValueAtTime(1318.5,ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1760,ctx.currentTime+0.09);
+    gain.gain.setValueAtTime(0.2,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1.5);
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.start();osc.stop(ctx.currentTime+1.5);
+  }catch{}
+}
+function playWoodTapSound(){
+  try{
+    const AudioCtx=window.AudioContext||window.webkitAudioContext;
+    if(!AudioCtx)return;
+    const ctx=new AudioCtx();
+    const osc=ctx.createOscillator(),gain=ctx.createGain();
+    osc.type='triangle';
+    osc.frequency.setValueAtTime(360,ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(90,ctx.currentTime+0.1);
+    gain.gain.setValueAtTime(0.28,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.12);
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.start();osc.stop(ctx.currentTime+0.13);
+  }catch{}
+}
+
 function guestbook(){
   const notes=getGuestbookNotes();
-  return '<div class="wrap guestbook-room"><header class="room-heading"><span class="eyebrow">GUESTBOOK / 06</span><h1>檐下留言簿</h1><p>夜深时留一盏暖灯，在屋檐下挂一枚木牌，留下一行字迹与行客的名字。</p></header><div class="guestbook-stage"><section class="guestbook-composer"><div class="composer-lamp" aria-hidden="true"></div><h2>挂一枚木牌 / 留一纸心意</h2><p class="composer-intro">选一枚心仪的印记，写下你在此刻的停驻：</p><form id="guestbook-form" class="guestbook-form"><div class="seal-picker" role="radiogroup" aria-label="挑选印记"><label class="seal-opt"><input type="radio" name="seal" value="舟" checked><span>舟 · 孤舟</span></label><label class="seal-opt"><input type="radio" name="seal" value="星"><span>星 · 星河</span></label><label class="seal-opt"><input type="radio" name="seal" value="松"><span>松 · 松针</span></label><label class="seal-opt"><input type="radio" name="seal" value="猫"><span>猫 · 眠猫</span></label><label class="seal-opt"><input type="radio" name="seal" value="叶"><span>叶 · 秋叶</span></label></div><div class="form-row"><input type="text" id="gb-name" placeholder="你的称谓（如：山行客）" maxlength="16" required><input type="text" id="gb-place" placeholder="来自何处（如：江南 / 杭州）" maxlength="16"></div><textarea id="gb-content" placeholder="写下你想对小店说的话，或读诗看画的心绪..." required rows="3" maxlength="240"></textarea><button type="submit" class="gb-submit-btn"><span class="btn-seal">清舟</span> 挂上屋檐</button></form></section><section class="guestbook-eaves" aria-label="檐下挂牌"><div class="eaves-beam" aria-hidden="true"><span class="beam-glow"></span></div><div class="eaves-plaques" id="eaves-plaques">'+notes.map((note,idx)=>'<div class="eaves-card plaque-seal-'+esc(note.seal)+'"><div class="plaque-string" aria-hidden="true"></div><div class="plaque-inner"><div class="plaque-top"><span class="plaque-seal-mark">'+esc(note.seal)+'</span><strong class="plaque-name">'+esc(note.name)+'</strong><small class="plaque-place">'+(note.place?'写于 '+esc(note.place):'')+'</small></div><p class="plaque-text">'+esc(note.text)+'</p><div class="plaque-foot"><span class="plaque-date">'+esc(note.date)+'</span><span class="plaque-num">#'+(idx+1)+'</span></div></div></div>').join('')+'</div></section></div></div>';
+  const presets=[
+    '给掌柜沏一杯热茶 🍵',
+    '夜深了，愿小店长明 🌙',
+    '刚在诗集读完《破阵子》，很有骨力 🍂',
+    '在星空暗房里迷了路，微缩行星系很美 ✨',
+    '偷偷摸一下屋顶上的猫 🐾'
+  ];
+  return '<div class="wrap guestbook-room">'
+    + '<header class="room-heading"><span class="eyebrow">GUESTBOOK / 06</span><h1>檐下留言簿</h1><p>青瓦飞檐下挂一串铜风铃，案头留有各色木牌与素笺；留下你的停驻，风吹过时会一起轻响。</p></header>'
+    + '<div class="eaves-pavilion-structure">'
+      + '<div class="eaves-skyline">'
+        + '<svg class="eaves-roof-svg" viewBox="0 0 1100 95" preserveAspectRatio="none" aria-hidden="true">'
+          + '<defs>'
+            + '<linearGradient id="roofTileGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#244943"/><stop offset="55%" stop-color="#112926"/><stop offset="100%" stop-color="#071716"/></linearGradient>'
+            + '<linearGradient id="roofWoodBeam" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#2c1d14"/><stop offset="50%" stop-color="#4e3424"/><stop offset="100%" stop-color="#26170e"/></linearGradient>'
+          + '</defs>'
+          + '<path d="M 0 42 Q 280 12 550 14 Q 820 12 1100 42 L 1100 68 Q 820 38 550 40 Q 280 38 0 68 Z" fill="url(#roofTileGrad)"/>'
+          + '<path d="M 30 42 C 60 22 120 16 220 18 C 340 20 450 16 550 16 C 650 16 760 20 880 18 C 980 16 1040 22 1070 42" stroke="#d4b77a" stroke-width="1.2" stroke-opacity=".35" fill="none"/>'
+          + '<rect x="0" y="68" width="1100" height="12" fill="url(#roofWoodBeam)"/>'
+          + '<line x1="0" y1="80" x2="1100" y2="80" stroke="#d4b77a" stroke-width="1" stroke-opacity=".3"/>'
+        + '</svg>'
+        + '<button type="button" class="roof-cat" id="roof-cat" aria-label="屋檐上的眠猫 · 点击摸一摸" title="屋檐上的眠猫 · 点击摸摸它"><span class="cat-emote" aria-hidden="true">🐱💤</span><span class="cat-popover" id="cat-popover">呼噜噜... 檐下避风，小店长明。</span></button>'
+        + '<button type="button" class="roof-windchime" id="roof-windchime" aria-label="檐下青铜风铃 · 拂动聆听" title="青铜风铃 · 点击拂响"><span class="chime-bell" aria-hidden="true">🎐</span><span class="chime-clapper" aria-hidden="true"></span><span class="chime-ribbon" aria-hidden="true">风吹心安</span></button>'
+      + '</div>'
+      + '<div class="eaves-pavilions-caption"><span>屋檐下共悬挂了 <strong id="eaves-total-count">'+notes.length+'</strong> 枚行客木牌 · 风吹过时轻响</span><span class="eaves-hint">点击风铃可拂动清音，摸摸眠猫会打哈欠</span></div>'
+    + '</div>'
+    + '<div class="guestbook-stage">'
+      + '<section class="guestbook-composer">'
+        + '<div class="composer-lamp" aria-hidden="true"></div>'
+        + '<h2>执笔案台 / 挂一纸心意</h2>'
+        + '<p class="composer-intro">挑选牌笺质感与专属印章，写下你在此刻的停驻：</p>'
+        + '<form id="guestbook-form" class="guestbook-form">'
+          + '<div class="material-picker" role="radiogroup" aria-label="选择牌笺质感">'
+            + '<span class="picker-label">质地：</span>'
+            + '<label class="material-opt"><input type="radio" name="material" value="wood" checked><span>🪵 杉木许愿牌</span></label>'
+            + '<label class="material-opt"><input type="radio" name="material" value="bamboo"><span>🎋 湘妃竹简</span></label>'
+            + '<label class="material-opt"><input type="radio" name="material" value="xuan"><span>📜 洒金宣笺</span></label>'
+            + '<label class="material-opt"><input type="radio" name="material" value="night"><span>🌌 幽蓝星纸</span></label>'
+          + '</div>'
+          + '<div class="seal-picker" role="radiogroup" aria-label="挑选印章图腾">'
+            + '<span class="picker-label">印记：</span>'
+            + '<label class="seal-opt"><input type="radio" name="seal" value="猫" checked><span>🐾 眠猫</span></label>'
+            + '<label class="seal-opt"><input type="radio" name="seal" value="舟"><span>⛵ 孤舟</span></label>'
+            + '<label class="seal-opt"><input type="radio" name="seal" value="星"><span>⭐ 摘星</span></label>'
+            + '<label class="seal-opt"><input type="radio" name="seal" value="茶"><span>🍵 浮生</span></label>'
+            + '<label class="seal-opt"><input type="radio" name="seal" value="叶"><span>🍂 霜叶</span></label>'
+          + '</div>'
+          + '<div class="form-row">'
+            + '<input type="text" id="gb-name" placeholder="你的名号（如：山行客 / 夜归人）" maxlength="16" required>'
+            + '<input type="text" id="gb-place" placeholder="来自何处（如：江南 / 杭州 / 蜀中）" maxlength="16">'
+          + '</div>'
+          + '<div class="preset-chips" aria-label="快捷心语灵感">'
+            + '<span class="preset-label">轻点填入：</span>'
+            + presets.map(p=>'<button type="button" class="preset-chip" data-preset="'+esc(p)+'">'+esc(p)+'</button>').join('')
+          + '</div>'
+          + '<textarea id="gb-content" placeholder="写下你想对小店说的话，或读诗看画的心绪..." required rows="3" maxlength="240"></textarea>'
+          + '<button type="submit" class="gb-submit-btn"><span class="btn-seal">清舟</span> 敲钉挂上屋檐</button>'
+        + '</form>'
+      + '</section>'
+      + '<section class="guestbook-eaves" aria-label="檐下挂牌">'
+        + '<div class="eaves-plaques" id="eaves-plaques">'
+          + notes.map((note,idx)=>{
+            const mat=note.material||'wood';
+            const sealIcon=note.seal==='猫'?'🐾':(note.seal==='舟'?'⛵':(note.seal==='星'?'⭐':(note.seal==='茶'?'🍵':(note.seal==='叶'?'🍂':'✦'))));
+            return '<div class="eaves-card plaque-mat-'+esc(mat)+' plaque-seal-'+esc(note.seal)+'">'
+              + '<div class="plaque-top-cord" aria-hidden="true"><span class="cord-knot"></span></div>'
+              + '<div class="plaque-inner">'
+                + '<div class="plaque-top">'
+                  + '<span class="plaque-seal-mark">'+sealIcon+'</span>'
+                  + '<strong class="plaque-name">'+esc(note.name)+'</strong>'
+                  + '<small class="plaque-place">'+(note.place?'写于 '+esc(note.place):'')+'</small>'
+                + '</div>'
+                + '<p class="plaque-text">'+esc(note.text)+'</p>'
+                + '<div class="plaque-foot">'
+                  + '<span class="plaque-date">'+esc(note.date)+'</span>'
+                  + '<span class="plaque-num">#'+(idx+1)+'</span>'
+                + '</div>'
+              + '</div>'
+            + '</div>';
+          }).join('')
+        + '</div>'
+      + '</section>'
+    + '</div>'
+  + '</div>';
 }
+
 function bindGuestbook(){
   const form=document.querySelector('#guestbook-form');
   const plaques=document.querySelector('#eaves-plaques');
+  const chime=document.querySelector('#roof-windchime');
+  const cat=document.querySelector('#roof-cat');
+  const catPop=document.querySelector('#cat-popover');
+  const totalCountEl=document.querySelector('#eaves-total-count');
+
+  if(chime){
+    const ringChime=()=>{
+      chime.classList.remove('is-ringing');void chime.offsetWidth;chime.classList.add('is-ringing');
+      playChimeSound();
+    };
+    chime.addEventListener('click',ringChime);
+  }
+  if(cat&&catPop){
+    const petCat=()=>{
+      cat.classList.remove('is-purring');void cat.offsetWidth;cat.classList.add('is-purring');
+      catPop.classList.add('show-pop');
+      playWoodTapSound();
+      setTimeout(()=>catPop.classList.remove('show-pop'),3200);
+    };
+    cat.addEventListener('click',petCat);
+  }
+
+  // Quick preset chips
+  document.querySelectorAll('.preset-chip').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const text=btn.dataset.preset;
+      const area=document.querySelector('#gb-content');
+      if(area){
+        area.value=text;
+        area.focus();
+      }
+    });
+  });
+
   if(!form||!plaques)return()=>{};
+
   const onSubmit=e=>{
     e.preventDefault();
     const sealEl=form.querySelector('input[name="seal"]:checked');
-    const seal=sealEl?sealEl.value:'舟';
+    const seal=sealEl?sealEl.value:'猫';
+    const matEl=form.querySelector('input[name="material"]:checked');
+    const material=matEl?matEl.value:'wood';
     const name=document.querySelector('#gb-name').value.trim()||'过路客';
     const place=document.querySelector('#gb-place').value.trim()||'';
     const text=document.querySelector('#gb-content').value.trim();
     if(!text)return;
     const now=new Date();
     const date=now.getFullYear()+'.'+String(now.getMonth()+1).padStart(2,'0')+'.'+String(now.getDate()).padStart(2,'0');
-    const newNote={id:'gb-'+Date.now(),name,place,seal,date,text};
+    const newNote={id:'gb-'+Date.now(),name,place,seal,material,date,text};
     addGuestbookNote(newNote);
+    playWoodTapSound();
+
+    const sealIcon=seal==='猫'?'🐾':(seal==='舟'?'⛵':(seal==='星'?'⭐':(seal==='茶'?'🍵':(seal==='叶'?'🍂':'✦'))));
     const card=document.createElement('div');
-    card.className='eaves-card plaque-seal-'+seal+' is-new';
-    card.innerHTML='<div class="plaque-string" aria-hidden="true"></div><div class="plaque-inner"><div class="plaque-top"><span class="plaque-seal-mark">'+esc(seal)+'</span><strong class="plaque-name">'+esc(name)+'</strong><small class="plaque-place">'+(place?'写于 '+esc(place):'')+'</small></div><p class="plaque-text">'+esc(text)+'</p><div class="plaque-foot"><span class="plaque-date">'+esc(date)+'</span><span class="plaque-num">刚刚</span></div></div>';
+    card.className='eaves-card plaque-mat-'+material+' plaque-seal-'+seal+' is-new';
+    card.innerHTML='<div class="plaque-top-cord" aria-hidden="true"><span class="cord-knot"></span></div><div class="plaque-inner"><div class="plaque-top"><span class="plaque-seal-mark">'+sealIcon+'</span><strong class="plaque-name">'+esc(name)+'</strong><small class="plaque-place">'+(place?'写于 '+esc(place):'')+'</small></div><p class="plaque-text">'+esc(text)+'</p><div class="plaque-foot"><span class="plaque-date">'+esc(date)+'</span><span class="plaque-num">刚刚</span></div></div>';
     plaques.insertBefore(card,plaques.firstChild);
     form.reset();
+    if(totalCountEl)totalCountEl.textContent=getGuestbookNotes().length;
     card.scrollIntoView({behavior:'smooth',block:'nearest'});
   };
   form.addEventListener('submit',onSubmit);
@@ -675,11 +838,9 @@ function render(){
   document.body.classList.toggle('in-geography',room==='traces');
   document.querySelector('meta[name=theme-color]').content='#0b211f';
   main.innerHTML=html;setAtmosphere(room);
-  if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&((fromRoom==='home'&&room==='poems')||(fromRoom==='poems'&&room==='home'))){
-    main.dataset.routeBridge=fromRoom==='home'?'night-to-paper':'paper-to-night';
-    main.classList.remove('route-bridge-active');void main.offsetWidth;main.classList.add('route-bridge-active');
-    main.addEventListener('animationend',()=>{main.classList.remove('route-bridge-active');delete main.dataset.routeBridge;},{once:true});
-  } else if(fromHome&&room!=='home'&&!matchMedia('(prefers-reduced-motion: reduce)').matches){main.animate([{opacity:.76},{opacity:1}],{duration:260,easing:'ease-out'});}
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    main.animate([{opacity:.82},{opacity:1}],{duration:180,easing:'ease-out'});
+  }
   document.title=label+' · 清舟的杂货铺 / Qingzhou’s Curiosity Shop';
   document.querySelectorAll('[data-nav]').forEach(a=>{if(a.dataset.nav===(page||'index'))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   window.scrollTo({top:0,left:0,behavior:'instant'});if(currentWork)setPhoto(0);bind();revealImages();

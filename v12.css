@@ -1,0 +1,1416 @@
+
+/* v1.2 — one continuous night palette, unified river branches, and the China footprint map. */
+:root{--ink:#e7e6d9;--muted:#aab8af;--line:#304a43;--red:#d4b77a;--paper:#0b211f}
+html{background:#0b211f}
+body{background:#0b211f!important;color:#e7e6d9;--ink:#e7e6d9;--muted:#aab8af;--line:#304a43;--red:#d4b77a;--paper:#0b211f}
+body:before{opacity:.055;background-image:radial-gradient(ellipse at 20% 12%,#4d786b33,transparent 46%),radial-gradient(ellipse at 83% 68%,#c1a56b12,transparent 42%)}
+a{color:inherit}
+.site-header{color:#e7e6d9!important;border-bottom-color:#345047!important;isolation:isolate;position:relative;background:transparent!important}
+.site-header::before{content:"";position:absolute;z-index:-1;pointer-events:none;inset:0 0 -18px;background:linear-gradient(180deg,rgba(8,29,28,.99) 0%,rgba(10,33,31,.94) 64%,rgba(10,33,31,.62) 86%,rgba(10,33,31,0) 100%);opacity:1!important}
+.site-header::after{opacity:0!important}
+.site-header nav a,.site-header .brand,.site-header .edition{color:#e7e6d9!important}
+.site-header nav a[aria-current=page]:after{background:#d4b77a}
+.site-header nav a:after{background:#aab8af}
+footer{border-top-color:#304a43!important;color:#aab8af!important}
+.footer-title{color:#d4b77a}
+footer a:hover{color:#e8d7a6}
+.eyebrow{color:#aab8af}
+.room-heading h1,.page-title h1,.article h1,.poetry-heading h1{color:#e7e6d9}
+.room-heading>p,.page-title>p,.article .lead{color:#aab8af}
+.note-row,.poetry-shelf,.poetry-room,.personal-lab,.about-room,.credits-room{background:transparent!important;color:#e7e6d9}
+.note-row{border-color:#304a43!important}
+.note-row h3,.note-row a,.article .article-nav a{color:#e7e6d9}
+.note-row .note-meta,.note-row .arrow,.article .article-nav{color:#aab8af}
+.lab-teaser{background:linear-gradient(135deg,#102f2c,#0b211f)!important;color:#e7e6d9!important;border-block:1px solid #345047}
+.darkroom,.in-darkroom{background:#0b211f!important;color:#e7e6d9!important;--ink:#e7e6d9;--paper:#0b211f;--muted:#aab8af;--line:#304a43}
+.in-darkroom:before{opacity:.055}
+body[data-room=poems] .poetry-room-v09{background:transparent!important;color:#e7e6d9}
+body[data-room=poems] .poetry-room-v09 .poetry-heading h1{color:#e7d1a3!important;font-family:"STKaiti","KaiTi","Kaiti SC",serif;font-weight:400;letter-spacing:.06em}
+body[data-room=poems] .poetry-room-v09 .poetry-overline{color:#d4b77a}
+body[data-room=poems] .poetry-heading{color:#e7e6d9}
+body[data-room=poems] footer .footer-title{color:#d4b77a}
+.book-toolbar{color:#e7e6d9}
+.book-toolbar .poetry-switch button{color:#d7d9cf;border-color:#476057}
+.book-toolbar .poetry-switch button[aria-pressed=true]{color:#f0d79c;border-color:#b89b64}
+.book-count{color:#aab8af}
+.book-handhint{color:#aab8af}
+.poetry-source-details{color:#aab8af;border-color:#304a43}
+.poetry-source-details summary{color:#d4b77a}
+.book-open{box-shadow:0 30px 55px #020b0a66,0 6px 12px #020b0a55,inset 0 0 0 2px #a18b7099}
+/* Preserve the warm, tactile paper itself while the surrounding room remains night-green. */
+.book-poem-body,.article.poetry-reading .body{font-family:"FangSong","STFangsong","FangSong SC",serif;letter-spacing:.045em}
+.book-sheet{--ink:#3c3025;--paper:#f7f0e2;--muted:#776a59;--line:#d5c8b5;color:#3c3025}
+.book-cover{color:#4a3628}
+body[data-room=lab] .life-stage{background:transparent!important}
+body[data-room=lab] .life-fog{opacity:.5}
+body[data-room=traces] .china-footprints{color:#e7e6d9;background:radial-gradient(ellipse at 32% 36%,#173d37 0%,#0c2927 42%,#081d1d 84%);min-height:78vh;padding:42px 0 82px;overflow:hidden}
+.china-wrap{max-width:1600px}
+.china-intro{padding:16px 0 34px}
+.china-intro .eyebrow{color:#d4b77a;letter-spacing:.16em}
+.china-intro h1{font:400 clamp(44px,6vw,82px)/1.25 var(--serif);margin:14px 0 10px;color:#e7e6d9}
+.china-intro p{font:17px/1.9 var(--serif);color:#b7c5bb;margin:0}
+.china-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.72fr);gap:clamp(28px,5vw,84px);align-items:center}
+.china-map-stage{position:relative;min-width:0;padding:18px 14px 12px;background:radial-gradient(ellipse at 48% 48%,#234b402c,transparent 68%);border-top:1px solid #355149;border-bottom:1px solid #355149}
+.china-map-caption{display:flex;justify-content:space-between;gap:12px;color:#d5c18b;font-size:10px;letter-spacing:.13em;text-transform:uppercase;padding:0 7px 7px}
+.china-map-caption span:first-child{font-family:var(--serif);font-size:13px;letter-spacing:.08em;text-transform:none;color:#d8e1d7}
+.china-map{display:block;width:100%;height:auto;overflow:visible;max-height:70vh}
+.china-grid{fill:none;stroke:#8eafa31a;stroke-width:1}
+.china-land-shadow{fill:#020c0b;opacity:.55;transform:translate(0 10px);filter:blur(12px)}
+.china-land-depth{fill:#2d554b;stroke:none;opacity:.85}
+.china-land{fill:url(#chinaLandFill);stroke:url(#chinaLandEdge);stroke-width:1.4;stroke-linejoin:round;vector-effect:non-scaling-stroke;filter:drop-shadow(0 0 15px #7eaa8b18)}
+.china-island{fill:url(#chinaLandFill);stroke:#a5b68f88;stroke-width:1.1;vector-effect:non-scaling-stroke}
+.china-topography{fill:none;stroke:#9cb5a04b;stroke-width:1.15;stroke-linecap:round}
+.china-network{fill:none;stroke:#d3bb7a;stroke-width:1.2;stroke-opacity:.23;stroke-dasharray:2 7;stroke-linecap:round}
+.china-link{animation:china-link-breathe 8s ease-in-out infinite alternate}
+@keyframes china-link-breathe{from{stroke-opacity:.12}to{stroke-opacity:.34}}
+.china-city{cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
+.china-city .city-halo{fill:url(#chinaCityGlow);opacity:.38;transform-box:fill-box;transform-origin:center;transition:opacity .25s,transform .25s}
+.china-city .city-pulse{fill:#e8c67d;opacity:.3}
+.china-city .city-core{fill:#f5dca0;stroke:#f5dca0;stroke-width:1;filter:drop-shadow(0 0 4px #f2d18a88)}
+.china-city .city-label{font:15px var(--serif);fill:#f3e8c7;paint-order:stroke;stroke:#0b211f;stroke-width:4px;stroke-linejoin:round;opacity:0;pointer-events:none}
+.china-city:hover .city-halo,.china-city:focus-visible .city-halo,.china-city.is-selected .city-halo{opacity:1;transform:scale(1.55)}
+.china-city:hover .city-pulse,.china-city:focus-visible .city-pulse,.china-city.is-selected .city-pulse{opacity:.9}
+.china-city.is-selected .city-core{fill:#fff2bf;stroke:#fff8d9;stroke-width:1.4}
+.china-city.is-selected .city-label{opacity:1}
+.china-city:focus-visible{outline:none}
+.china-city:focus-visible .city-core{stroke:#fff;stroke-width:2.5}
+.china-nearby{margin:4px 8px 12px;padding:12px 14px;border-left:1px solid #b99f6d;background:#15383280;color:#d8e1d7}
+.china-nearby[hidden]{display:none}
+.china-nearby p{margin:0 0 8px;font:13px/1.6 var(--serif)}
+.china-nearby .china-city-pills button{min-height:40px}
+.china-map-note{font-size:11px;line-height:1.8;color:#90a99e;margin:8px 8px 0}
+.china-story{padding:10px 0}
+.china-count{font-size:11px;letter-spacing:.16em;color:#d4b77a}
+.china-story h2{font:400 clamp(30px,3.3vw,43px)/1.45 var(--serif);margin:12px 0;color:#e7e6d9}
+.china-story>p{font:14px/2 var(--serif);color:#b7c5bb}
+.china-story .china-disclaimer{border-left:1px solid #b99f6d;padding-left:13px;color:#8fa69b;font:11px/1.9 var(--sans);margin:18px 0 26px}
+.china-city-list{display:grid;gap:15px}
+.china-city-group h3{font-size:11px;letter-spacing:.08em;color:#8fa69b;font-weight:400;margin:0 0 8px}
+.china-city-pills{display:flex;flex-wrap:wrap;gap:7px}
+.china-city-pills button{appearance:none;background:#153832aa;border:1px solid #47665a;border-radius:999px;color:#cbd6ca;padding:7px 12px;font:12px var(--sans);cursor:pointer;transition:background .2s,border-color .2s,color .2s,transform .2s}
+.china-city-pills button:hover,.china-city-pills button:focus-visible{background:#214a3e;border-color:#d2b77a;color:#f4e5bd;transform:translateY(-1px)}
+.china-city-pills button[aria-pressed=true]{background:#d1b67820;border-color:#d4b77a;color:#f1d99c}
+.china-footer{text-align:center;color:#b5c4b8;font:15px/2 var(--serif);margin:45px 0 0}
+body[data-room=home] .desktop-scene-art .river-body{filter:none}
+body[data-room=home] .mobile-scene-art .river-body{filter:none}
+body[data-room=home] .branch-water-surface{opacity:.92}
+body[data-room=home] .river-distributary{pointer-events:none}
+body[data-room=home] .river-distributary .branch-haze{stroke:#e4d19a;stroke-width:24;opacity:.06;filter:blur(8px)}
+body[data-room=home] .river-distributary .tributary{stroke:#e4d19a;stroke-width:1.1;opacity:0}
+body[data-room=home] .river-distributary .branch-waterline{stroke:#f0dda5;stroke-width:1.1;opacity:.07}
+body[data-room=home] .river-distributary .branch-ripples path{fill:none;stroke:#f0dca6;stroke-width:1;opacity:.1}
+body[data-room=home] .river-distributary .branch-current{stroke:#fff0bf;stroke-width:1.4;stroke-dasharray:30 180;opacity:.32;filter:blur(2px)}
+body[data-room=home] .river-distributary .branch-spark{stroke:#fff0bc;stroke-width:1.05;stroke-dasharray:6 118;opacity:0}
+body[data-room=home] .river-distributary:focus-within .branch-haze,body[data-room=home] .roaming-night:has(.wander-node:hover) .branch-haze{opacity:.2}
+@media(max-width:850px){.china-layout{grid-template-columns:1fr;gap:26px}.china-map{max-height:none}.china-map-stage{padding:14px 0}.china-story{padding:0 2px}.china-intro{padding-bottom:22px}.china-city-list{grid-template-columns:repeat(2,minmax(0,1fr));display:grid;gap:14px}}
+@media(max-width:520px){.china-footprints{padding-top:24px!important}.china-map-caption span:last-child{font-size:8px}.china-map-note{font-size:10px}.china-city-pills button{padding:7px 10px}.site-header{background:transparent!important}}
+@media(prefers-reduced-motion:reduce){.china-link{animation:none}.china-city .city-halo,.china-city-pills button{transition:none}}
+
+body[data-text-scheme=dark]{background:#0b211f!important;color:#e7e6d9;--ink:#e7e6d9;--muted:#aab8af;--line:#304a43;--red:#d4b77a;--paper:#0b211f}
+body[data-room=home]:before{opacity:.055!important}
+.dock-toggle{background:#12342fe8!important;border-color:#d8c99a87!important;color:#f1dfb3!important}
+.dock-toggle:hover{background:#1d4a3e!important;border-color:#f0d597!important}
+.dock-panel{background:linear-gradient(155deg,#173b32fa,#0a211ffc)!important;border-color:#d8bf8455!important;color:#eae6d9}
+
+/* — Artistic & Interactive Upgrades: Poetry Marginalia & Cinnabar Seal, Night Desk Workbench, China Map Rivers/Mountains & Poem Switcher, Mobile GPU Optimization — */
+@keyframes river-mobile-glow-breathe{0%,100%{opacity:.22}50%{opacity:.62}}
+@keyframes node-mobile-opacity-breathe{0%,100%{opacity:.55}50%{opacity:1}}
+@media(max-width:900px){
+ body[data-room=home] .mobile-scene-art,
+ body[data-room=home] .mobile-scene-art *,
+ body[data-room=home] .tablet-scene-art,
+ body[data-room=home] .tablet-scene-art *{filter:none!important}
+ body[data-room=home] .mobile-river-revealed{mask:none!important;-webkit-mask:none!important}
+ body[data-room=home] .scene-mist{display:none!important;animation:none!important}
+ body[data-room=home] .motion-toggle,
+ body[data-room=home] .dock-toggle,
+ body[data-room=home] .dock-panel,
+ .dock-toggle,.dock-panel{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+ body[data-room=home] .mobile-scene-art .river-current,
+ body[data-room=home] .mobile-scene-art .river-flowline,
+ body[data-room=home] .mobile-scene-art .branch-current,
+ body[data-room=home] .mobile-scene-art .branch-spark,
+ body[data-room=home] .mobile-scene-art .external-branches .tributary,
+ body[data-room=home] .mobile-scene-art .river-ripples,
+ body[data-room=home] .mobile-scene-art .river-ripples path,
+ body[data-room=home] .mobile-scene-art .scene-dust,
+ body[data-room=home] .mobile-scene-art .river-glint{
+  animation:none!important;
+ }
+ body[data-room=home] .roaming-night[data-running="true"] .mobile-scene-art .river-current,
+ body[data-room=home] .roaming-night[data-running="true"] .mobile-scene-art .branch-current{
+  stroke-dasharray:none!important;
+  animation:river-mobile-glow-breathe 4.2s ease-in-out infinite!important;
+  animation-play-state:running!important;
+ }
+ body[data-room=home] .wander-node .node-point{
+  box-shadow:none!important;
+  animation:node-mobile-opacity-breathe 5s ease-in-out infinite!important;
+  animation-play-state:paused!important;
+ }
+ body[data-room=home] .roaming-night[data-running="true"] .wander-node .node-point{
+  animation-play-state:running!important;
+ }
+ .music-dock.is-playing .dock-pulse{box-shadow:none!important}
+}
+
+.china-topography .china-mountain-ridge{fill:none;stroke:#c8b68266;stroke-width:1.45;stroke-dasharray:8 5 2 5;stroke-linecap:round}
+.china-topography .china-mountain-echo{fill:none;stroke:#8fae9c36;stroke-width:.95;stroke-dasharray:4 7;stroke-linecap:round}
+.china-topography .china-river-glow{fill:none;stroke:#7ec4b838;stroke-width:5.2;stroke-linecap:round;stroke-linejoin:round}
+.china-topography .china-river-major{fill:none;stroke:url(#chinaRiverStroke);stroke-width:1.85;stroke-linecap:round;stroke-linejoin:round}
+.china-topography .china-river-tributary{fill:none;stroke:#8ec6ba66;stroke-width:1.15;stroke-dasharray:6 3;stroke-linecap:round}
+.china-topography .china-geo-label{font:11px var(--serif);letter-spacing:.14em;pointer-events:none;paint-order:stroke;stroke:#102b28;stroke-width:3px;stroke-linejoin:round}
+.china-topography .china-geo-label.is-river{fill:#9ed4c8aa}
+.china-topography .china-geo-label.is-mountain{fill:#d2be8888;font-size:10.5px}
+
+.book-poem-wrap{position:relative;padding-bottom:8px}
+.poem-vignette{position:absolute;right:12px;top:68px;width:132px;height:112px;color:#7d6245;opacity:.42;pointer-events:none;transition:opacity .35s ease,transform .35s ease}
+.book-sheet:hover .poem-vignette{opacity:.56;transform:translateY(-2px)}
+.poetry-reading .book-poem-wrap .poem-vignette{color:#d4b77a;opacity:.34;right:4px;top:24px}
+.book-poem-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;padding-top:14px;border-top:1px dashed rgba(138,113,86,.32)}
+.poetry-reading .book-poem-actions{border-top-color:rgba(212,183,122,.24);margin-top:26px}
+.book-poem-actions .book-colophon,.book-poem-actions .reading-colophon{margin:0!important}
+.poem-seal-btn{appearance:none;display:inline-flex;align-items:center;gap:9px;padding:6px 13px 6px 8px;border-radius:3px;border:1px solid rgba(168,62,49,.42);background:rgba(168,62,49,.06);color:#7b3228;font:12px/1.3 var(--serif);letter-spacing:.06em;cursor:pointer;transition:background .22s,border-color .22s,transform .22s,color .22s}
+.poetry-reading .poem-seal-btn{color:#e6bdb4;border-color:rgba(205,92,76,.48);background:rgba(168,62,49,.14)}
+.poem-seal-btn:hover,.poem-seal-btn:focus-visible{background:rgba(168,62,49,.13);border-color:#a83e31;transform:translateY(-1px)}
+.poetry-reading .poem-seal-btn:hover{background:rgba(185,68,54,.24);border-color:#d96b5c}
+.poem-seal-btn .seal-mark{display:inline-grid;place-items:center;width:24px;height:24px;border:1.5px solid #a83e31;border-radius:2px;font-family:"STKaiti","KaiTi",var(--serif);font-size:10px;line-height:1;letter-spacing:0;color:#a83e31;background:rgba(255,247,238,.55);transition:transform .25s,background .25s,color .25s,box-shadow .25s}
+.poetry-reading .poem-seal-btn .seal-mark{background:rgba(30,14,12,.55);color:#e06c5c;border-color:#cd5c4c}
+.poem-seal-btn.is-sealed{border-color:#a6382b;background:rgba(166,56,43,.12);color:#8f291e}
+.poetry-reading .poem-seal-btn.is-sealed{color:#f5d0c8;border-color:#d85a4a;background:rgba(179,57,43,.24)}
+.poem-seal-btn.is-sealed .seal-mark{background:#b03528;color:#fbf2e6;border-color:#9e2c20;transform:rotate(-5deg) scale(1.05);box-shadow:0 2px 10px rgba(176,53,40,.35)}
+
+#lab-desk{position:relative;--lamp-x:50%;--lamp-y:24%;isolation:isolate}
+.lab-lamp-glow{position:Absolute;inset:-36px -3vw;pointer-events:none;z-index:-1;background:radial-gradient(540px circle at var(--lamp-x) var(--lamp-y),rgba(232,199,126,.13),rgba(69,124,108,.05) 46%,transparent 74%);transition:background .15s ease-out}
+.lab-workbench{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(18px,2.4vw,30px);margin-top:26px}
+.lab-card{display:flex;flex-direction:column;justify-content:space-between;padding:22px 22px 20px;background:linear-gradient(160deg,rgba(19,50,45,.82),rgba(10,29,28,.94));border:1px solid rgba(206,180,122,.28);border-radius:4px;box-shadow:0 18px 38px rgba(3,12,11,.42);text-decoration:none;color:#e7e6d9;transition:transform .26s ease,border-color .26s ease,box-shadow .26s ease}
+.lab-card:hover,.lab-card:focus-visible{transform:translateY(-4px);border-color:rgba(230,202,138,.66);box-shadow:0 24px 48px rgba(2,10,9,.6),0 0 26px rgba(212,183,122,.1)}
+.lab-card-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;letter-spacing:.1em;color:#9eb3a8}
+.lab-card-id{color:#d4b77a;font-weight:500}
+.lab-card-status{color:#a8beb2;font-size:11px}
+.lab-card-diagram{margin:16px 0 15px;padding:12px 10px 6px;background:radial-gradient(ellipse at 50% 50%,rgba(37,84,74,.38),rgba(8,24,23,.62));border:1px dashed rgba(170,192,178,.24);border-radius:3px;color:#e4cb90}
+.lab-blueprint{display:block;width:100%;height:auto;max-height:114px}
+.lab-card-body h2{font:400 clamp(22px,2.1vw,27px)/1.35 var(--serif);margin:0 0 4px;color:#f1ead8}
+.lab-card-body small{display:block;font-size:12px;letter-spacing:.05em;color:#95aca0;margin-bottom:11px}
+.lab-card-body p{font:14px/1.85 var(--serif);color:#c3d0c6;margin:0 0 18px}
+.lab-card-enter{font-size:12px;letter-spacing:.1em;color:#e3ca8e;padding-top:12px;border-top:1px solid rgba(168,190,175,.16);display:inline-flex;align-items:center;justify-content:space-between}
+
+.lab-interactive-box{margin-top:38px;padding:26px 28px;background:linear-gradient(155deg,rgba(19,51,46,.76),rgba(10,29,28,.9));border:1px solid rgba(212,183,122,.35);border-radius:4px;box-shadow:0 16px 36px rgba(3,12,11,.36)}
+.lab-interactive-box h2{font:400 clamp(22px,2.3vw,29px)/1.35 var(--serif);margin:10px 0 6px;color:#f0ead8}
+.lab-proto-desc{font:14px/1.85 var(--serif);color:#b6c5bb;margin:0 0 16px}
+.herb-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.herb-pill{appearance:none;background:rgba(20,54,48,.75);border:1px solid #48685c;border-radius:999px;color:#cbd6ca;padding:7px 14px;font:12.5px var(--serif);letter-spacing:.05em;cursor:pointer;transition:background .2s,border-color .2s,color .2s}
+.herb-pill:hover,.herb-pill:focus-visible{background:#214a3e;border-color:#d2b77a;color:#f4e5bd}
+.herb-pill[aria-pressed=true]{background:rgba(212,183,122,.16);border-color:#d4b77a;color:#f3dc9f}
+.herb-card{padding:18px 20px;background:rgba(9,26,25,.68);border:1px solid rgba(168,190,175,.2);border-left:3px solid #d4b77a;border-radius:3px}
+.herb-card-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px dashed rgba(168,190,175,.18)}
+.herb-card-head span{font:italic 14px var(--serif);color:#e4cb90;letter-spacing:.04em}
+.herb-card-head small{font-size:12px;color:#96ada1}
+.herb-card p{font:14px/1.9 var(--serif);color:#d7dfd8;margin:0 0 12px}
+.herb-card blockquote{margin:0;padding:8px 14px;background:rgba(212,183,122,.07);border-left:2px solid rgba(212,183,122,.5);font:14.5px/1.85 "STKaiti","KaiTi",var(--serif);color:#f0deb0}
+
+.china-city .city-poem-ring{fill:none;stroke:#f2d68d;stroke-width:1.1;stroke-dasharray:2.5 3.5;opacity:.75;pointer-events:none}
+.china-city.is-selected .city-poem-ring{stroke:#fff3c4;opacity:1;stroke-dasharray:none}
+.china-city-pills button.has-poem-pill{border-color:rgba(212,183,122,.52)}
+.china-city-pills button .pill-star{color:#e6cb87;margin-left:4px;font-size:10px}
+.china-poem-slot{margin:16px 0 18px}
+.china-poem-card{padding:15px 17px;background:linear-gradient(145deg,rgba(23,57,50,.82),rgba(12,33,31,.92));border:1px solid rgba(212,183,122,.36);border-left:3px solid #d4b77a;border-radius:3px;box-shadow:0 12px 28px rgba(3,12,11,.32)}
+.china-poem-meta{display:flex;justify-content:space-between;gap:8px;font-size:11px;letter-spacing:.08em;color:#d4b77a;margin-bottom:6px}
+.china-poem-card h3{font:400 18px/1.4 var(--serif);margin:0 0 8px;color:#f2ead7}
+.china-poem-card h3 a{text-decoration:none}
+.china-poem-card h3 a:hover{color:#f5dc9c;text-decoration:underline}
+.china-poem-card blockquote{margin:0 0 10px;padding:0;font:13.5px/1.85 "STKaiti","KaiTi",var(--serif);color:#dce4dd}
+.china-poem-hint-text{margin:0;font:13px/1.85 var(--serif);color:#c7d4cb}
+.china-poem-hint-text strong{color:#f0d89a;font-weight:400}
+.china-poem-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding-top:8px;border-top:1px dashed rgba(168,190,175,.2);font-size:12px}
+.china-poem-link{color:#e6cb87;text-decoration:none;letter-spacing:.05em}
+.china-poem-link:hover{text-decoration:underline;color:#fff0c2}
+.china-poem-date{font-size:11px;color:#8fa69b}
+.china-hydro-tag{font:11.5px/1.5 var(--serif);color:#9ec5b8;margin-bottom:7px;padding:3px 8px;background:rgba(18,52,47,.65);border-left:2px solid #7ab5a6;border-radius:2px}
+.china-poem-switcher{margin:10px 0 12px;padding-top:9px;border-top:1px dashed rgba(168,190,175,.18)}
+.china-poem-switcher-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px;font-size:11px;color:#b2c4b9}
+.china-poem-step{display:inline-flex;gap:5px}
+.china-poem-step button{appearance:none;background:rgba(21,56,50,.85);border:1px solid #48685c;border-radius:3px;color:#e4d3a4;padding:2px 8px;font-size:11px;cursor:pointer}
+.china-poem-step button:disabled{opacity:.35;cursor:default}
+.china-poem-step button:not(:disabled):hover{border-color:#d4b77a;background:#214a3e}
+.china-poem-pills{display:flex;flex-wrap:wrap;gap:5px;max-height:112px;overflow-y:auto;padding-right:2px}
+.china-poem-pills button{appearance:none;background:rgba(15,41,38,.78);border:1px solid rgba(138,168,154,.32);border-radius:999px;color:#bfd0c5;padding:3.5px 9px;font:11px/1.3 var(--serif);cursor:pointer;transition:background .18s,border-color .18s,color .18s}
+.china-poem-pills button:hover{border-color:#d4b77a;color:#f3e3b6}
+.china-poem-pills button[aria-pressed=true]{background:rgba(212,183,122,.22);border-color:#e2c483;color:#fff1c7}
+.china-jump-city{appearance:none;background:transparent;border:none;padding:0;color:#e6cb87;font:12px var(--serif);letter-spacing:.04em;cursor:pointer;text-decoration:underline}
+.china-jump-city:hover{color:#fff0c2}
+
+@media(max-width:860px){
+ .lab-workbench{grid-template-columns:1fr;gap:18px}
+ .lab-interactive-box{padding:20px 18px}
+ .poem-vignette{width:96px;height:74px;opacity:.24}
+}
+
+
+/* ==========================================================================
+   v1.3: Floating Glass Compass, Progressive River Flow, Tactile Poem Paper,
+   Vertical/Horizontal Mode, Cinnabar Counters, and Eaves Guestbook
+   ========================================================================== */
+
+/* 1. Floating Glass Compass Navigation (悬浮琉璃罗盘导航) */
+.site-header{
+  position:fixed!important;
+  top:0;left:0;right:0;
+  z-index:100;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:14px 4.2%!important;
+  border-bottom:none!important;
+  background:transparent!important;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  pointer-events:none;
+  transition:opacity .35s ease,transform .35s ease;
+}
+.site-header::before,.site-header::after{
+  display:none!important;
+}
+.site-header a,.site-header button,.site-header input{
+  pointer-events:auto;
+}
+.site-header .brand{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  background:rgba(9,26,25,.68);
+  border:1px solid rgba(212,183,122,.28);
+  border-radius:999px;
+  padding:5px 16px 5px 12px;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  box-shadow:0 6px 20px rgba(0,0,0,.42);
+  text-decoration:none;
+  transition:background .25s,border-color .25s,transform .25s;
+}
+.site-header .brand:hover{
+  background:rgba(16,42,40,.82);
+  border-color:#dfc282;
+  transform:translateY(-1px);
+}
+.site-header .brand .cat-mark{
+  width:42px;
+  height:32px;
+}
+.site-header .brand span{
+  font-family:var(--serif);
+  font-size:15px;
+  color:#f2ecda;
+  letter-spacing:.06em;
+}
+.site-header .brand small{
+  display:block;
+  font-size:9.5px;
+  letter-spacing:.12em;
+  color:#9eb5a8;
+}
+
+.header-compass{
+  display:inline-flex;
+  align-items:center;
+  gap:12px;
+  background:rgba(9,26,25,.75);
+  border:1px solid rgba(212,183,122,.32);
+  border-radius:999px;
+  padding:4px 8px 4px 18px;
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  box-shadow:0 8px 24px rgba(2,10,9,.5);
+}
+.header-compass nav{
+  display:flex;
+  align-items:center;
+  gap:clamp(10px,1.8vw,24px);
+}
+.header-compass nav a{
+  color:#cbdad0!important;
+  font:13px/1.4 var(--sans);
+  letter-spacing:.04em;
+  padding:6px 2px;
+  position:relative;
+  text-decoration:none;
+  transition:color .22s;
+}
+.header-compass nav a:after{display:none!important}
+.header-compass nav a:hover{
+  color:#fff2c7!important;
+}
+.header-compass nav a[aria-current=page]{
+  color:#ffeaab!important;
+  font-weight:500;
+}
+.header-compass nav a[aria-current=page]::before{
+  content:"";
+  position:absolute;
+  bottom:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#f2d591;
+  box-shadow:0 0 8px #ffd986;
+}
+
+/* Header auto-dim when reading or moving */
+body:not([data-room=home]) main{
+  padding-top:76px;
+}
+body[data-room=home] main{
+  padding-top:0;
+}
+
+/* 2. Progressive River Flow from One End to Another (一气呵成的整体漫流) */
+body[data-room="home"] .roaming-night .river-reveal-trace{
+  stroke-dasharray:100;
+  stroke-dashoffset:0;
+}
+body[data-room="home"] .roaming-night[data-intro="pending"] .river-reveal-trace{
+  stroke-dashoffset:100;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .river-main-trace{
+  stroke-dashoffset:100;
+  animation:river-progressive-reveal 4.4s cubic-bezier(.22,.1,.22,1) forwards;
+  animation-play-state:running;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-reveal-photos,
+body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-photos{
+  stroke-dashoffset:100;
+  animation:river-progressive-reveal 1.4s cubic-bezier(.22,.1,.22,1) 0.85s forwards;
+  animation-play-state:running;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-reveal-poems,
+body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-poems{
+  stroke-dashoffset:100;
+  animation:river-progressive-reveal 1.4s cubic-bezier(.22,.1,.22,1) 1.75s forwards;
+  animation-play-state:running;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-reveal-traces,
+body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-traces{
+  stroke-dashoffset:100;
+  animation:river-progressive-reveal 1.4s cubic-bezier(.22,.1,.22,1) 2.65s forwards;
+  animation-play-state:running;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-reveal-lab,
+body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-lab{
+  stroke-dashoffset:100;
+  animation:river-progressive-reveal 1.4s cubic-bezier(.22,.1,.22,1) 3.45s forwards;
+  animation-play-state:running;
+}
+@keyframes river-progressive-reveal{
+  from{stroke-dashoffset:100;}
+  to{stroke-dashoffset:0;}
+}
+
+/* Staggered Destination Arrivals matching river crest arrival */
+body[data-room="home"] .roaming-night[data-intro="pending"] .wander-node{
+  opacity:0;
+  transform:translateY(12px);
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .node-photos{
+  animation:destination-arrival-v08 .75s ease-out 1.45s forwards;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .node-poems{
+  animation:destination-arrival-v08 .75s ease-out 2.35s forwards;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .node-traces{
+  animation:destination-arrival-v08 .75s ease-out 3.25s forwards;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .node-lab{
+  animation:destination-arrival-v08 .75s ease-out 4.05s forwards;
+}
+
+/* Drifting Water Verses in River Curves */
+.river-drifting-verses{
+  pointer-events:none;
+}
+.drift-verse{
+  font-family:"STKaiti","KaiTi",var(--serif);
+  font-size:13.5px;
+  letter-spacing:.24em;
+  fill:#ffeac0;
+  opacity:.26;
+  filter:drop-shadow(0 0 6px rgba(228,203,138,.45));
+  animation:drift-verse-breathe 8s ease-in-out infinite alternate;
+}
+.drift-verse.drift-b{
+  animation-delay:-4s;
+}
+@keyframes drift-verse-breathe{
+  0%{opacity:.16;transform:translate(0,0);}
+  50%{opacity:.52;transform:translate(4px,-2px);}
+  100%{opacity:.22;transform:translate(-3px,2px);}
+}
+
+/* Interactive Water Ripple Particle on pointer move */
+.water-ripple-particle{
+  position:absolute;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  border:1.2px solid rgba(235,210,142,.7);
+  box-shadow:0 0 10px rgba(235,210,142,.5);
+  pointer-events:none;
+  z-index:6;
+  transform:translate(-50%,-50%) scale(1);
+  animation:water-ripple-expand 1.15s cubic-bezier(0.1,0.4,0.3,1) forwards;
+}
+@keyframes water-ripple-expand{
+  0%{transform:translate(-50%,-50%) scale(1);opacity:.85;}
+  100%{transform:translate(-50%,-50%) scale(6.2);opacity:0;}
+}
+
+/* 3. Single Poem View: Tactile Paper, Dark Pine-Smoke Ink & Vertical Mode */
+body[data-room=poems] .article.poetry-reading{
+  position:relative;
+  max-width:760px;
+  margin:24px auto 72px;
+  padding:0;
+  border-radius:6px;
+  background:#f8f2e4;
+  background-image:
+    radial-gradient(ellipse at 88% 12%,rgba(212,183,122,.18),transparent 45%),
+    linear-gradient(135deg,#f5ece0 0%,#fdf9f0 50%,#f4ebe0 100%);
+  box-shadow:0 24px 60px rgba(0,0,0,.55),0 4px 14px rgba(0,0,0,.32),inset 0 0 0 1px rgba(186,160,124,.45);
+  color:#2b2118!important;
+  --ink:#2b2118;
+  --paper:#f8f2e4;
+  --muted:#6e5e4e;
+  --line:#d8c7b0;
+  transition:all .3s ease;
+}
+.paperweight-bar{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:22px;
+  background:linear-gradient(180deg,#1c2625 0%,#0d1716 100%);
+  border-radius:6px 6px 0 0;
+  border-bottom:1px solid rgba(212,183,122,.35);
+  box-shadow:0 4px 10px rgba(0,0,0,.25);
+  position:relative;
+}
+.paperweight-bar .weight-label{
+  font-family:"STKaiti","KaiTi",var(--serif);
+  font-size:11px;
+  letter-spacing:.26em;
+  color:#d4b77a;
+  text-shadow:0 1px 2px #000;
+}
+.poem-read-toolbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px clamp(18px,4vw,34px) 10px;
+  border-bottom:1px dashed rgba(186,160,124,.35);
+}
+.poem-read-toolbar .quiet-link{
+  color:#7d6b58!important;
+  font-size:13px;
+  text-decoration:none;
+  letter-spacing:.04em;
+}
+.poem-read-toolbar .quiet-link:hover{
+  color:#241c14!important;
+  text-decoration:underline;
+}
+.dir-toggle-btn{
+  appearance:none;
+  background:rgba(186,160,124,.18);
+  border:1px solid rgba(186,160,124,.45);
+  color:#5c4838;
+  border-radius:4px;
+  padding:4px 11px;
+  font:12px/1.3 "STKaiti","KaiTi",var(--serif);
+  letter-spacing:.06em;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  transition:all .2s;
+}
+.dir-toggle-btn:hover{
+  background:rgba(186,160,124,.32);
+  border-color:#a88a64;
+  color:#241c14;
+}
+.poetry-paper-inner{
+  padding:26px clamp(20px,5vw,62px) 34px;
+}
+body[data-room=poems] .article.poetry-reading h1{
+  color:#241c14!important;
+  font-family:"STKaiti","KaiTi",var(--serif);
+  font-size:clamp(32px,4.5vw,46px);
+  font-weight:400;
+  letter-spacing:.08em;
+  margin:18px 0 24px;
+}
+body[data-room=poems] .article.poetry-reading .reading-marker{
+  color:#7a6652!important;
+  font-size:12px;
+  letter-spacing:.08em;
+  display:flex;
+  justify-content:space-between;
+  border-bottom:none!important;
+}
+body[data-room=poems] .article.poetry-reading .body{
+  border-top:1px dashed rgba(186,160,124,.4);
+  padding-top:24px;
+}
+body[data-room=poems] .article.poetry-reading .body p{
+  color:#241c14!important;
+  font-family:"FangSong","STFangsong","FangSong SC",serif;
+  font-size:17px;
+  line-height:2.35;
+  margin-bottom:20px;
+  letter-spacing:.05em;
+}
+body[data-room=poems] .article.poetry-reading .reading-colophon{
+  color:#85725e!important;
+  font-size:11.5px;
+}
+body[data-room=poems] .article.poetry-reading .book-poem-actions{
+  border-top-color:rgba(186,160,124,.35);
+}
+body[data-room=poems] .article.poetry-reading .poem-seal-btn{
+  color:#7b3228;
+  border-color:rgba(168,62,49,.42);
+  background:rgba(168,62,49,.08);
+}
+body[data-room=poems] .article.poetry-reading .poem-seal-btn .seal-mark{
+  background:rgba(255,247,238,.65);
+  color:#a83e31;
+  border-color:#a83e31;
+}
+body[data-room=poems] .article.poetry-reading .poem-seal-btn.is-sealed{
+  background:rgba(166,56,43,.14);
+  color:#8f291e;
+  border-color:#a6382b;
+}
+body[data-room=poems] .article.poetry-reading .poem-seal-btn.is-sealed .seal-mark{
+  background:#b03528;
+  color:#fbf2e6;
+  border-color:#9e2c20;
+}
+.seal-count-badge{
+  font-size:10.5px;
+  color:#9a5b4c;
+  background:rgba(168,62,49,.1);
+  padding:2px 6px;
+  border-radius:999px;
+  margin-left:4px;
+}
+
+/* Vertical Reading Mode (古笺竖排) */
+body[data-room=poems] .article.poetry-reading.is-vertical .poetry-paper-inner{
+  display:flex;
+  flex-direction:column;
+}
+body[data-room=poems] .article.poetry-reading.is-vertical h1{
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+  float:right;
+  margin:0 0 0 20px;
+  max-height:55vh;
+}
+body[data-room=poems] .article.poetry-reading.is-vertical .body.book-poem-wrap{
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+  overflow-x:auto;
+  min-height:380px;
+  max-height:60vh;
+  padding:14px 20px;
+  margin:6px 0 16px;
+  border-top:none;
+  border-right:1px dashed rgba(186,160,124,.4);
+  background-image:repeating-linear-gradient(to left,transparent,transparent 34px,rgba(198,72,58,.08) 35px,transparent 36px);
+}
+body[data-room=poems] .article.poetry-reading.is-vertical .body p{
+  margin-bottom:0;
+  margin-left:18px;
+  line-height:2.4;
+}
+
+/* Poem Annotations (朱笔夹笺) */
+.poem-annotations{
+  margin-top:24px;
+  padding-top:16px;
+  border-top:1px dashed rgba(186,160,124,.35);
+}
+.poem-annotations summary{
+  cursor:pointer;
+  font:13px var(--serif);
+  color:#6c5746;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 0;
+}
+.poem-annotations summary:hover{
+  color:#241c14;
+}
+.anno-box{
+  margin:14px 0;
+  display:grid;
+  gap:9px;
+  max-height:240px;
+  overflow-y:auto;
+  padding-right:4px;
+}
+.anno-card{
+  padding:9px 13px;
+  background:rgba(255,250,242,.7);
+  border:1px solid rgba(186,160,124,.32);
+  border-left:3px solid #b03528;
+  border-radius:3px;
+  font-size:12.5px;
+}
+.anno-head{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  font-size:11px;
+  color:#826c59;
+  margin-bottom:4px;
+}
+.anno-card p{
+  margin:0;
+  font:13px/1.8 "STKaiti","KaiTi",var(--serif);
+  color:#2e241c;
+}
+.anno-empty{
+  font:12px var(--serif);
+  color:#8a7662;
+  font-style:italic;
+  margin:8px 0;
+}
+.anno-form{
+  margin-top:12px;
+  padding:12px 14px;
+  background:rgba(240,230,214,.55);
+  border:1px dashed rgba(186,160,124,.45);
+  border-radius:4px;
+}
+.anno-form-row{
+  display:flex;
+  gap:9px;
+  margin-bottom:8px;
+}
+.anno-input{
+  flex:1;
+  background:#fffdf9;
+  border:1px solid rgba(186,160,124,.5);
+  border-radius:3px;
+  padding:5px 9px;
+  font:12px var(--serif);
+  color:#2b2118;
+}
+.anno-textarea{
+  width:100%;
+  box-sizing:border-box;
+  background:#fffdf9;
+  border:1px solid rgba(186,160,124,.5);
+  border-radius:3px;
+  padding:6px 9px;
+  font:12.5px/1.7 var(--serif);
+  color:#2b2118;
+  resize:vertical;
+}
+.anno-submit-btn{
+  margin-top:8px;
+  appearance:none;
+  background:#b03528;
+  color:#fffaf5;
+  border:none;
+  border-radius:3px;
+  padding:6px 13px;
+  font:12px var(--serif);
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  transition:background .2s;
+}
+.anno-submit-btn:hover{
+  background:#c23c2d;
+}
+.btn-seal{
+  border:1px solid #ffded8;
+  padding:0 3px;
+  border-radius:2px;
+  font-size:10px;
+}
+
+/* 4. Guestbook Page: Eaves Plaques & Hanging Breeze (檐下留言簿) */
+.guestbook-room{
+  min-height:75vh;
+  padding-bottom:85px;
+}
+.guestbook-stage{
+  display:grid;
+  grid-template-columns:minmax(280px,360px) minmax(0,1fr);
+  gap:clamp(22px,4vw,56px);
+  align-items:start;
+  margin-top:28px;
+}
+.guestbook-composer{
+  position:relative;
+  padding:24px 24px 22px;
+  background:linear-gradient(155deg,rgba(18,48,44,.86),rgba(8,24,24,.95));
+  border:1px solid rgba(212,183,122,.32);
+  border-radius:6px;
+  box-shadow:0 18px 40px rgba(0,0,0,.45);
+}
+.composer-lamp{
+  position:absolute;
+  top:-20px;
+  right:20px;
+  width:64px;
+  height:64px;
+  background:radial-gradient(circle,rgba(240,210,138,.35),transparent 70%);
+  pointer-events:none;
+}
+.guestbook-composer h2{
+  font:400 clamp(20px,2vw,25px)/1.35 var(--serif);
+  color:#f2ead7;
+  margin:0 0 6px;
+}
+.composer-intro{
+  font:13px/1.7 var(--serif);
+  color:#b2c5ba;
+  margin:0 0 16px;
+}
+.seal-picker{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-bottom:14px;
+}
+.seal-opt{
+  display:inline-flex;
+  align-items:center;
+  cursor:pointer;
+}
+.seal-opt input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+.seal-opt span{
+  display:inline-block;
+  padding:4px 10px;
+  background:rgba(24,58,52,.75);
+  border:1px solid rgba(186,206,192,.28);
+  border-radius:999px;
+  color:#c7d6cb;
+  font:11.5px var(--serif);
+  transition:all .2s;
+}
+.seal-opt input:checked + span{
+  background:rgba(212,183,122,.22);
+  border-color:#e4c784;
+  color:#fff2c7;
+  box-shadow:0 0 10px rgba(212,183,122,.2);
+}
+.guestbook-form .form-row{
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
+}
+.guestbook-form input,
+.guestbook-form textarea{
+  background:rgba(9,28,26,.8);
+  border:1px solid rgba(178,202,188,.28);
+  border-radius:4px;
+  padding:8px 12px;
+  color:#e7e6d9;
+  font:13px/1.6 var(--serif);
+  width:100%;
+  box-sizing:border-box;
+  transition:border-color .2s;
+}
+.guestbook-form input:focus,
+.guestbook-form textarea:focus{
+  outline:none;
+  border-color:#d4b77a;
+}
+.guestbook-form textarea{
+  resize:vertical;
+  margin-bottom:12px;
+}
+.gb-submit-btn{
+  appearance:none;
+  width:100%;
+  background:linear-gradient(135deg,#c44030,#982a1d);
+  color:#fff7f2;
+  border:1px solid rgba(255,210,195,.45);
+  border-radius:4px;
+  padding:9px 18px;
+  font:13.5px var(--serif);
+  letter-spacing:.08em;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  box-shadow:0 4px 14px rgba(152,42,29,.42);
+  transition:transform .2s,box-shadow .2s;
+}
+.gb-submit-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 6px 18px rgba(152,42,29,.58);
+}
+
+.guestbook-eaves{
+  position:relative;
+  padding-top:18px;
+}
+.eaves-beam{
+  height:10px;
+  background:linear-gradient(180deg,#243b35 0%,#11201d 100%);
+  border-radius:5px;
+  border-bottom:1px solid rgba(212,183,122,.45);
+  box-shadow:0 6px 16px rgba(0,0,0,.6);
+  position:relative;
+  margin-bottom:22px;
+}
+.eaves-beam .beam-glow{
+  position:absolute;
+  inset:-4px 0;
+  background:radial-gradient(ellipse at 50% 50%,rgba(212,183,122,.2),transparent 65%);
+  pointer-events:none;
+}
+.eaves-plaques{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+  gap:18px;
+}
+.eaves-card{
+  position:relative;
+  padding-top:14px;
+  animation:plaque-sway 7s ease-in-out infinite alternate;
+  transform-origin:top center;
+}
+.eaves-card:nth-child(even){
+  animation-duration:8.2s;
+  animation-delay:-3s;
+}
+.eaves-card.is-new{
+  animation:plaque-drop .65s cubic-bezier(0.18,0.89,0.32,1.28) forwards;
+}
+@keyframes plaque-drop{
+  from{opacity:0;transform:translateY(-24px) scale(.92);}
+  to{opacity:1;transform:translateY(0) scale(1);}
+}
+@keyframes plaque-sway{
+  0%{transform:rotate(-1deg);}
+  100%{transform:rotate(1deg);}
+}
+.plaque-string{
+  position:absolute;
+  top:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:1.2px;
+  height:14px;
+  background:rgba(212,183,122,.65);
+}
+.plaque-inner{
+  padding:14px 15px;
+  background:linear-gradient(155deg,#163934,#0e2725);
+  border:1px solid rgba(212,183,122,.32);
+  border-radius:4px;
+  box-shadow:0 8px 24px rgba(0,0,0,.45);
+  color:#e7e6d9;
+}
+.plaque-top{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  margin-bottom:8px;
+}
+.plaque-seal-mark{
+  display:inline-grid;
+  place-items:center;
+  width:20px;
+  height:20px;
+  border-radius:2px;
+  background:rgba(176,53,40,.22);
+  border:1px solid #b03528;
+  color:#ff9e92;
+  font:10px/1 "STKaiti","KaiTi",var(--serif);
+}
+.plaque-name{
+  font:400 14px var(--serif);
+  color:#f2ecdc;
+}
+.plaque-place{
+  font-size:11px;
+  color:#8ea79b;
+  margin-left:auto;
+}
+.plaque-text{
+  font:13px/1.85 var(--serif);
+  color:#d4dfd7;
+  margin:0 0 10px;
+}
+.plaque-foot{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding-top:7px;
+  border-top:1px dashed rgba(168,190,175,.2);
+  font-size:10.5px;
+  color:#8ba397;
+}
+
+@media(max-width:760px){
+  body:not([data-room=home]) main{
+    padding-top:104px;
+  }
+  .site-header{
+    padding:8px 4%!important;
+  }
+  .site-header .brand{
+    padding:4px 10px;
+  }
+  .site-header .brand span{
+    font-size:13.5px;
+  }
+  .site-header .brand small{
+    display:none;
+  }
+  .header-compass{
+    padding:3px 6px 3px 12px;
+    gap:8px;
+  }
+  .header-compass nav{
+    gap:9px;
+  }
+  .header-compass nav a{
+    font-size:11.5px;
+  }
+  .guestbook-stage{
+    grid-template-columns:1fr;
+    gap:26px;
+  }
+  .eaves-plaques{
+    grid-template-columns:1fr;
+  }
+}
+
+
+/* ==========================================================================
+   v1.4: Refined Poetic Paper Texture, Vermilion Grid (朱丝栏), Natural River
+   Flow, Clean Map Regions & Architectural Eaves with Wind Chime
+   ========================================================================== */
+
+/* 1. Permanent removal of routeBridge white flash */
+main.route-bridge-active::before,
+main[data-route-bridge]::before {
+  display: none !important;
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+/* 2. Elevated Single Poem Reading Paper Texture (宣纸笺谱·朱丝栏) */
+body[data-room=poems] .article.poetry-reading {
+  position: relative;
+  max-width: 820px;
+  margin: 36px auto 90px;
+  padding: 0;
+  border-radius: 4px;
+  background: #faf4e8;
+  background-image:
+    radial-gradient(ellipse at 85% 15%, rgba(212, 183, 122, 0.22), transparent 50%),
+    radial-gradient(ellipse at 15% 85%, rgba(200, 168, 110, 0.15), transparent 45%),
+    linear-gradient(135deg, #f7efe2 0%, #fffdf6 48%, #f5ece0 100%);
+  box-shadow:
+    0 2px 0 rgba(255,255,255,0.92) inset,
+    -8px 0 0 -2px #ede2d0,
+    -16px 0 0 -5px #e2d4be,
+    -24px 0 0 -8px #d6c5ad,
+    6px 0 0 -2px #ede2d0,
+    12px 0 0 -5px #e4d7c2,
+    0 32px 84px rgba(0,0,0,0.68),
+    0 8px 24px rgba(0,0,0,0.42);
+  border: 1px solid rgba(198, 172, 134, 0.52);
+  color: #1f1812 !important;
+  --ink: #1f1812;
+  --paper: #faf4e8;
+  --muted: #6e5e4e;
+  --line: #d8c7b0;
+}
+.poetry-paper-inner {
+  padding: 38px clamp(24px, 5vw, 74px) 44px;
+  margin: 10px 16px 16px;
+  border: 1.5px solid rgba(196, 68, 54, 0.38);
+  outline: 0.75px solid rgba(196, 68, 54, 0.2);
+  outline-offset: 5px;
+  background: rgba(255, 255, 255, 0.32);
+  box-shadow: inset 0 0 32px rgba(212, 183, 122, 0.14);
+  position: relative;
+}
+body[data-room=poems] .article.poetry-reading.is-vertical .body.book-poem-wrap {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  overflow-x: auto;
+  min-height: 390px;
+  max-height: 62vh;
+  padding: 16px 24px;
+  margin: 8px 0 18px;
+  border-top: none;
+  border-right: 1px dashed rgba(196, 68, 54, 0.35);
+  background-image: repeating-linear-gradient(to left, transparent, transparent 36px, rgba(196, 68, 54, 0.12) 37px, transparent 38px);
+}
+body[data-room=poems] .article.poetry-reading .body p {
+  color: #241c14 !important;
+  font-family: "FangSong", "STFangsong", "FangSong SC", serif;
+  font-size: 17.5px;
+  line-height: 2.38;
+  letter-spacing: .06em;
+}
+
+/* 3. Natural Organic River Flow ( downstream ribbon & branching currents ) */
+body[data-room="home"] .roaming-night .river-flowline {
+  stroke-dasharray: 140 220 180 260;
+  stroke-dashoffset: 0;
+  animation: natural-river-drift 16s linear infinite;
+}
+body[data-room="home"] .roaming-night .flowline-wide {
+  stroke-width: 3.2;
+  stroke: #fff3c9;
+  opacity: .68;
+  animation-duration: 15s;
+}
+body[data-room="home"] .roaming-night .flowline-mid {
+  stroke-width: 1.8;
+  stroke: #d4b77a;
+  opacity: .52;
+  animation-duration: 20s;
+}
+body[data-room="home"] .roaming-night .flowline-fine {
+  stroke-width: 1.1;
+  stroke: #a2c8be;
+  opacity: .45;
+  animation-duration: 12s;
+}
+@keyframes natural-river-drift {
+  from { stroke-dashoffset: 800; }
+  to { stroke-dashoffset: 0; }
+}
+body[data-room="home"] .river-distributary .branch-current {
+  stroke: #fff0bf;
+  stroke-width: 1.5;
+  stroke-dasharray: 40 160;
+  opacity: .45;
+  animation: branch-river-drift 10s linear infinite;
+}
+@keyframes branch-river-drift {
+  from { stroke-dashoffset: 200; }
+  to { stroke-dashoffset: 0; }
+}
+body[data-room="home"] .river-body-glow {
+  animation: river-caustic-breathe 7s ease-in-out infinite alternate;
+}
+@keyframes river-caustic-breathe {
+  0% { opacity: .55; }
+  50% { opacity: .88; }
+  100% { opacity: .62; }
+}
+  50% { opacity: .88; }
+  100% { opacity: .62; }
+}
+
+/* 4. China Map: Region Tabs & Clean Cartography */
+.china-region-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 0 4px;
+}
+.region-tab {
+  appearance: none;
+  background: rgba(14, 38, 36, 0.7);
+  border: 1px solid rgba(212, 183, 122, 0.25);
+  color: #b7c7be;
+  border-radius: 999px;
+  padding: 4px 13px;
+  font: 12px/1.4 "STKaiti", "KaiTi", var(--serif);
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.region-tab:hover {
+  background: rgba(22, 58, 54, 0.88);
+  color: #f0e2be;
+  border-color: #d4b77a;
+}
+.region-tab.is-active {
+  background: #d4b77a;
+  color: #0d2623;
+  font-weight: 600;
+  border-color: #f2e2be;
+  box-shadow: 0 2px 10px rgba(212, 183, 122, 0.35);
+}
+.china-city.region-dim {
+  opacity: 0.22;
+  transition: opacity 0.35s ease;
+}
+.china-city.region-match {
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+.china-city.is-minor .city-label {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.china-city.is-minor:hover .city-label,
+.china-city.is-minor:focus .city-label,
+.china-city.region-match.is-minor .city-label {
+  opacity: 0.92;
+}
+.china-city.is-major .city-label {
+  opacity: 1;
+  fill: #ffe099;
+  font-weight: 600;
+}
+
+/* 5. Architectural Roof Eaves & Playful Guestbook */
+.eaves-pavilion-structure {
+  position: relative;
+  margin: 18px 0 28px;
+  padding-top: 10px;
+}
+.eaves-skyline {
+  position: relative;
+  width: 100%;
+  height: 85px;
+  overflow: visible;
+}
+.eaves-roof-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,0.55));
+}
+.roof-cat {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 26px;
+  padding: 4px;
+  transition: transform 0.2s;
+  z-index: 5;
+}
+.roof-cat:hover {
+  transform: translateX(-50%) scale(1.15);
+}
+.roof-cat.is-purring {
+  animation: cat-shake 0.4s ease-in-out;
+}
+@keyframes cat-shake {
+  0%, 100% { transform: translateX(-50%) rotate(0); }
+  25% { transform: translateX(-50%) rotate(-8deg); }
+  75% { transform: translateX(-50%) rotate(8deg); }
+}
+.cat-popover {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  background: rgba(14, 38, 36, 0.95);
+  border: 1px solid #d4b77a;
+  border-radius: 6px;
+  padding: 5px 12px;
+  white-space: nowrap;
+  font: 12px var(--serif);
+  color: #f7edd8;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+.cat-popover.show-pop {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.roof-windchime {
+  position: absolute;
+  right: 4.8%;
+  top: 48px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 5;
+  transform-origin: top center;
+  animation: chime-idle-sway 6s ease-in-out infinite alternate;
+}
+.roof-windchime:hover,
+.roof-windchime.is-ringing {
+  animation: chime-ring-sway 0.8s ease-in-out;
+}
+@keyframes chime-idle-sway {
+  from { transform: rotate(-3deg); }
+  to { transform: rotate(3deg); }
+}
+@keyframes chime-ring-sway {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-14deg); }
+  75% { transform: rotate(14deg); }
+}
+.chime-bell { font-size: 21px; line-height: 1; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6)); }
+.chime-ribbon {
+  font: 9.5px "STKaiti", var(--serif);
+  background: rgba(196, 68, 54, 0.88);
+  color: #fff;
+  padding: 2px 4px;
+  border-radius: 2px;
+  writing-mode: vertical-rl;
+  margin-top: 2px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.eaves-pavilions-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #d4b77a;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  padding: 8px 10px 0;
+  border-bottom: 1px dashed rgba(212, 183, 122, 0.25);
+}
+.eaves-hint {
+  font-size: 11px;
+  color: #9cb5a8;
+}
+.preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.preset-label {
+  font-size: 11px;
+  color: #aab8af;
+}
+.preset-chip {
+  appearance: none;
+  background: rgba(212, 183, 122, 0.12);
+  border: 1px solid rgba(212, 183, 122, 0.32);
+  color: #e2d7c0;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font: 11.5px/1.3 var(--serif);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.preset-chip:hover {
+  background: rgba(212, 183, 122, 0.28);
+  color: #fff;
+  border-color: #d4b77a;
+}
+.material-picker, .seal-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.picker-label {
+  font-size: 12px;
+  color: #d4b77a;
+  min-width: 40px;
+}
+.material-opt input, .seal-opt input { display: none; }
+.material-opt span, .seal-opt span {
+  display: inline-block;
+  padding: 3px 9px;
+  font-size: 12px;
+  color: #b7c7be;
+  background: rgba(9, 28, 26, 0.7);
+  border: 1px solid rgba(178, 202, 188, 0.25);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.material-opt input:checked + span,
+.seal-opt input:checked + span {
+  background: rgba(212, 183, 122, 0.25);
+  border-color: #d4b77a;
+  color: #ffe6aa;
+  box-shadow: 0 0 8px rgba(212, 183, 122, 0.22);
+}
+.eaves-card {
+  position: relative;
+  padding-top: 18px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.eaves-card:nth-child(odd) { transform: rotate(-0.8deg); }
+.eaves-card:nth-child(even) { transform: rotate(1.2deg); }
+.eaves-card:hover {
+  transform: rotate(0) translateY(-4px) scale(1.02);
+  z-index: 10;
+}
+.plaque-top-cord {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 20px;
+  background: linear-gradient(180deg, #c44436 0%, #8e2b20 100%);
+  box-shadow: 0 0 4px rgba(196,68,54,0.5);
+}
+.cord-knot {
+  position: absolute;
+  bottom: -2px;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  background: #c44436;
+  border-radius: 50%;
+}
+.eaves-card.plaque-mat-wood .plaque-inner {
+  background: linear-gradient(145deg, #3d291b 0%, #291b12 100%);
+  border: 1px solid rgba(212, 183, 122, 0.38);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.65), inset 0 0 16px rgba(0,0,0,0.45);
+}
+.eaves-card.plaque-mat-bamboo .plaque-inner {
+  background: linear-gradient(145deg, #1f352a 0%, #112019 100%);
+  border: 1px solid rgba(138, 196, 160, 0.35);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.65);
+}
+.eaves-card.plaque-mat-xuan .plaque-inner {
+  background: linear-gradient(145deg, #f7efe2 0%, #ede3d2 100%);
+  border: 1px solid rgba(186, 160, 124, 0.55);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.65);
+  color: #241c14 !important;
+}
+.eaves-card.plaque-mat-xuan .plaque-inner .plaque-name,
+.eaves-card.plaque-mat-xuan .plaque-inner .plaque-text {
+  color: #241c14 !important;
+}
+.eaves-card.plaque-mat-xuan .plaque-inner .plaque-place,
+.eaves-card.plaque-mat-xuan .plaque-inner .plaque-date {
+  color: #6e5e4e !important;
+}
+.eaves-card.plaque-mat-night .plaque-inner {
+  background: linear-gradient(145deg, #0f2038 0%, #08101e 100%);
+  border: 1px solid rgba(130, 180, 240, 0.38);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.7), 0 0 12px rgba(90, 150, 230, 0.18);
+}
