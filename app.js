@@ -1,3 +1,30 @@
+function playWaterSplashSound(){
+  try{
+    const AudioCtx=window.AudioContext||window.webkitAudioContext;
+    if(!AudioCtx)return;
+    const ctx=new AudioCtx();
+    // High-pitched coin glint "ting"
+    const osc1=ctx.createOscillator(), g1=ctx.createGain();
+    osc1.type='sine';
+    osc1.frequency.setValueAtTime(2489, ctx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(1864, ctx.currentTime+0.08);
+    g1.gain.setValueAtTime(0.22, ctx.currentTime);
+    g1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.35);
+    osc1.connect(g1); g1.connect(ctx.destination);
+    osc1.start(); osc1.stop(ctx.currentTime+0.36);
+
+    // Deep water splash "plop-plink"
+    const osc2=ctx.createOscillator(), g2=ctx.createGain();
+    osc2.type='sine';
+    osc2.frequency.setValueAtTime(420, ctx.currentTime+0.04);
+    osc2.frequency.exponentialRampToValueAtTime(140, ctx.currentTime+0.22);
+    g2.gain.setValueAtTime(0.35, ctx.currentTime+0.04);
+    g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.42);
+    osc2.connect(g2); g2.connect(ctx.destination);
+    osc2.start(ctx.currentTime+0.04); osc2.stop(ctx.currentTime+0.45);
+  }catch{}
+}
+
 /* 无框架静态原型。内容来自 content.js；路由可直接收藏、前进与后退。 */
 const A=window.ARCHIVE;
 const main=document.querySelector('main');
@@ -8,14 +35,29 @@ let currentWork=null,photoIndex=0,returnFocus=null;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // --- 留言簿与诗笺批注本地持久化存储 ---
-const DEFAULT_GUESTBOOK=[
-  {id:'gb-1',name:'江客',place:'杭州',seal:'舟',date:'2026.11.05',text:'在光河的转角读到了《破阵子》，很有骨力与共鸣。愿小店长明。'},
-  {id:'gb-2',name:'拾光人',place:'广州',seal:'星',date:'2026.11.04',text:'星空暗房里的恒星系很美，像是一座悬在深空里的琉璃音乐盒。'},
-  {id:'gb-3',name:'云岫',place:'南京',seal:'松',date:'2026.11.03',text:'从玉林的山河到上海的墨檐，诗句读来有一股安静的力量。'},
-  {id:'gb-4',name:'夜渡者',place:'成都',seal:'猫',date:'2026.11.01',text:'很喜欢这间杂货铺的夜色，没有吵闹的卡片，只有河流与星光。'},
-  {id:'gb-5',name:'晚风',place:'苏州',seal:'叶',date:'2026.10.28',text:'停驻良久，给诗集落了一枚朱砂印。'},
-  {id:'gb-6',name:'过路客',place:'北京',seal:'舟',date:'2026.10.26',text:'世界的边缘，往往藏在日常的细节里。很高兴与这间店相遇。'}
+const DEFAULT_RIVER_WISHES=[
+  {id:'w-1', text:'在星空暗房里发了半小时呆，很治愈 ✨', stamp:'✨', date:'昨夜', cheers:18},
+  {id:'w-2', text:'今天下定决心换座城市生活，愿顺水行舟 ⛵', stamp:'⛵', date:'2天前', cheers:24},
+  {id:'w-3', text:'偷偷摸了摸屋檐上打呼噜的小猫，爪爪好软 🐾', stamp:'🐾', date:'3天前', cheers:36},
+  {id:'w-4', text:'夜深了，来光河边散散心。愿所有人都能睡个好觉 🌙', stamp:'🌙', date:'4天前', cheers:42},
+  {id:'w-5', text:'掌柜的，上一壶热龙井，今日摸鱼无罪 🍵', stamp:'🍵', date:'5天前', cheers:15},
+  {id:'w-6', text:'在《墨檐》里读到了乡愁。倚山水暖风走过 🍂', stamp:'🏮', date:'6天前', cheers:29}
 ];
+function getRiverWishes(){
+  try{
+    const stored=JSON.parse(localStorage.getItem('qz_river_wishes')||'[]');
+    return [...stored,...DEFAULT_RIVER_WISHES];
+  }catch{return DEFAULT_RIVER_WISHES;}
+}
+function addRiverWish(text, stamp='✨'){
+  try{
+    const stored=JSON.parse(localStorage.getItem('qz_river_wishes')||'[]');
+    const newW={id:'w-'+Date.now(), text, stamp, date:'刚刚', cheers:1};
+    stored.unshift(newW);
+    localStorage.setItem('qz_river_wishes',JSON.stringify(stored));
+    return newW;
+  }catch{return {id:'w-'+Date.now(), text, stamp, date:'刚刚', cheers:1};}
+}
 function getGuestbookNotes(){
   try{
     const stored=JSON.parse(localStorage.getItem('qz_guestbook_notes')||'[]');
@@ -195,6 +237,71 @@ function home(){
       </svg>
       <div class="scene-vignette"></div><div class="scene-mist mist-one"></div><div class="scene-mist mist-two"></div>
     </div>
+    
+      <!-- 光河许愿池：投铜钱与放水灯（好玩、拟物水声、漂流心愿） -->
+      <aside class="river-wishing-dock" id="river-wishing-dock">
+        <button type="button" class="dock-wish-trigger" id="dock-wish-trigger" aria-label="投一枚铜钱 · 放一叶水灯" title="投一枚铜钱 · 放一叶水灯">
+          <span class="wish-dock-coin-icon" aria-hidden="true">🪙</span>
+          <span class="wish-dock-label">
+            <strong>投枚铜钱 · 许个愿</strong>
+            <small>随光河漂向远方</small>
+          </span>
+          <span class="wish-dock-pulse" aria-hidden="true"></span>
+        </button>
+      </aside>
+
+      <!-- 漂浮在光河上的交互水灯群 -->
+      <div class="river-lanterns-layer" id="river-lanterns-layer" aria-label="光河水灯"></div>
+
+      <!-- 许愿投币交互卡片 -->
+      <dialog class="wish-dialog" id="wish-dialog" aria-labelledby="wish-dialog-title">
+        <div class="wish-dialog-inner">
+          <button type="button" class="wish-dialog-close" id="wish-dialog-close" aria-label="收起">×</button>
+          <div class="wish-dialog-head">
+            <span class="wish-coin-avatar" aria-hidden="true">🪙</span>
+            <div>
+              <h3 id="wish-dialog-title">光河许愿池</h3>
+              <p>投一枚铜钱，放一叶心愿水灯。随水流漂向远方。</p>
+            </div>
+          </div>
+          <div class="wish-stamp-picker" role="radiogroup" aria-label="选择一枚心境印记">
+            <label class="stamp-opt"><input type="radio" name="wishStamp" value="✨" checked><span>✨ 许愿</span></label>
+            <label class="stamp-opt"><input type="radio" name="wishStamp" value="🐟"><span>🐟 摸鱼</span></label>
+            <label class="stamp-opt"><input type="radio" name="wishStamp" value="🍵"><span>🍵 敬茶</span></label>
+            <label class="stamp-opt"><input type="radio" name="wishStamp" value="🐾"><span>🐾 顺毛</span></label>
+            <label class="stamp-opt"><input type="radio" name="wishStamp" value="🌙"><span>🌙 熬夜</span></label>
+            <label class="stamp-opt"><input type="radio" name="wishStamp" value="⛵"><span>⛵ 顺流</span></label>
+          </div>
+          <div class="wish-input-wrap">
+            <textarea id="wish-text" maxlength="60" placeholder="写下一两句心愿、秘密或碎碎念...（匿名，不留名）" rows="3"></textarea>
+            <div class="wish-char-count"><span id="wish-chars">0</span>/60</div>
+          </div>
+          <div class="wish-dialog-actions">
+            <button type="button" class="wish-toss-btn" id="wish-toss-btn">
+              <span>抛出铜钱 · 放水灯</span>
+              <span class="btn-splash-hint">🪙 🌊</span>
+            </button>
+          </div>
+        </div>
+      </dialog>
+
+      <!-- 捞起水灯查看卡片 -->
+      <dialog class="lantern-viewer-dialog" id="lantern-viewer" aria-labelledby="lantern-viewer-text">
+        <div class="lantern-viewer-inner">
+          <button type="button" class="wish-dialog-close" id="lantern-viewer-close" aria-label="放回河中">×</button>
+          <div class="lantern-boat-icon" aria-hidden="true">⛵</div>
+          <span class="lantern-stamp-badge" id="lantern-viewer-stamp">✨</span>
+          <p class="lantern-viewer-text" id="lantern-viewer-text"></p>
+          <div class="lantern-viewer-foot">
+            <span class="lantern-viewer-date" id="lantern-viewer-date">漂流中</span>
+            <button type="button" class="lantern-cheer-btn" id="lantern-cheer-btn">
+              <span>🏮 添一抹亮光</span>
+              <span class="cheer-count" id="lantern-viewer-cheers">1</span>
+            </button>
+          </div>
+        </div>
+      </dialog>
+
     <button class="motion-toggle" id="toggle-roaming" type="button" aria-label="暂停首页动画" aria-pressed="false" title="暂停首页动画"><span aria-hidden="true">Ⅱ</span></button>
     <div class="roaming-network">${nodes}</div>
   </section>
@@ -728,7 +835,7 @@ function bindGuestbook(){
       catQuoteIdx++;
       catPop.classList.add('show-pop');
       playCatPurrSound();
-      setTimeout(()=>catPop.classList.remove('show-pop'), 3400);
+      setTimeout(()=>catPop.classList.remove('show-pop'), 7500);
     };
     cat.addEventListener('click', petCat);
   }
@@ -852,6 +959,129 @@ function bindRoaming(){
   const onToggle=()=>{roamingPaused=!roamingPaused;sync();};
   button.addEventListener('click',onToggle);area.addEventListener('animationend',onComplete);
   preference.addEventListener('change',sync);document.addEventListener('visibilitychange',sync);sync();
+  
+  // --- 光河许愿池与漂流水灯交互逻辑 ---
+  const wishTrigger = document.querySelector('#dock-wish-trigger');
+  const wishDialog = document.querySelector('#wish-dialog');
+  const wishClose = document.querySelector('#wish-dialog-close');
+  const wishTossBtn = document.querySelector('#wish-toss-btn');
+  const wishTextArea = document.querySelector('#wish-text');
+  const wishCharCount = document.querySelector('#wish-chars');
+  const lanternsLayer = document.querySelector('#river-lanterns-layer');
+  const lanternViewer = document.querySelector('#lantern-viewer');
+  const lanternViewerClose = document.querySelector('#lantern-viewer-close');
+  const lanternViewerText = document.querySelector('#lantern-viewer-text');
+  const lanternViewerStamp = document.querySelector('#lantern-viewer-stamp');
+  const lanternViewerDate = document.querySelector('#lantern-viewer-date');
+  const lanternViewerCheers = document.querySelector('#lantern-viewer-cheers');
+  const lanternCheerBtn = document.querySelector('#lantern-cheer-btn');
+
+  let activeLanternData = null;
+
+  // Render floating river lanterns along the river curves
+  const renderRiverLanterns = () => {
+    if (!lanternsLayer) return;
+    const wishes = getRiverWishes();
+    const positions = [
+      { left: '28%', top: '22%', anim: 'float-drift-1', delay: '0s' },
+      { left: '52%', top: '38%', anim: 'float-drift-2', delay: '-3.5s' },
+      { left: '68%', top: '56%', anim: 'float-drift-3', delay: '-1.8s' },
+      { left: '36%', top: '72%', anim: 'float-drift-4', delay: '-5.2s' },
+      { left: '78%', top: '28%', anim: 'float-drift-1', delay: '-7.1s' }
+    ];
+    lanternsLayer.innerHTML = wishes.slice(0, 5).map((w, i) => {
+      const pos = positions[i % positions.length];
+      return '<button type="button" class="river-lantern ' + pos.anim + '" style="left:' + pos.left + ';top:' + pos.top + ';animation-delay:' + pos.delay + ';" data-wish-id="' + esc(w.id) + '" title="捞起这叶水灯看一看">'
+        + '<span class="lantern-flame"></span>'
+        + '<span class="lantern-boat">⛵</span>'
+        + '<span class="lantern-stamp">' + esc(w.stamp) + '</span>'
+      + '</button>';
+    }).join('');
+  };
+  renderRiverLanterns();
+
+  if (wishTrigger && wishDialog) {
+    wishTrigger.addEventListener('click', () => {
+      wishDialog.showModal();
+      wishTextArea?.focus();
+    });
+  }
+  if (wishClose && wishDialog) {
+    wishClose.addEventListener('click', () => wishDialog.close());
+    wishDialog.addEventListener('click', e => { if (e.target === wishDialog) wishDialog.close(); });
+  }
+
+  if (wishTextArea && wishCharCount) {
+    wishTextArea.addEventListener('input', () => {
+      wishCharCount.textContent = wishTextArea.value.length;
+    });
+  }
+
+  // Throw coin & launch river lantern!
+  if (wishTossBtn && wishDialog) {
+    wishTossBtn.addEventListener('click', () => {
+      const text = wishTextArea.value.trim() || '随手掷了一枚铜钱，愿平安喜乐 ✨';
+      const stampEl = wishDialog.querySelector('input[name="wishStamp"]:checked');
+      const stamp = stampEl ? stampEl.value : '✨';
+
+      // 1. Play crystal-clear water splash sound!
+      playWaterSplashSound();
+
+      // 2. Spawn a coin throw arc & splash animation in the river
+      const splash = document.createElement('div');
+      splash.className = 'river-coin-splash';
+      splash.style.left = '42%';
+      splash.style.top = '65%';
+      splash.innerHTML = '<span class="coin-flying">🪙</span><span class="water-ripple r1"></span><span class="water-ripple r2"></span>';
+      area.appendChild(splash);
+      setTimeout(() => splash.remove(), 1600);
+
+      // 3. Save new wish
+      addRiverWish(text, stamp);
+
+      // 4. Reset & close dialog
+      wishTextArea.value = '';
+      if (wishCharCount) wishCharCount.textContent = '0';
+      wishDialog.close();
+
+      // 5. Re-render river lanterns with the newly released lantern!
+      setTimeout(renderRiverLanterns, 600);
+    });
+  }
+
+  // Lantern viewer inspection
+  if (lanternsLayer && lanternViewer) {
+    lanternsLayer.addEventListener('click', e => {
+      const btn = e.target.closest('.river-lantern');
+      if (!btn) return;
+      const id = btn.dataset.wishId;
+      const wishes = getRiverWishes();
+      const w = wishes.find(item => item.id === id);
+      if (!w) return;
+      activeLanternData = w;
+      if (lanternViewerText) lanternViewerText.textContent = w.text;
+      if (lanternViewerStamp) lanternViewerStamp.textContent = w.stamp;
+      if (lanternViewerDate) lanternViewerDate.textContent = w.date || '漂流中';
+      if (lanternViewerCheers) lanternViewerCheers.textContent = w.cheers || 1;
+      playWoodTapSound();
+      lanternViewer.showModal();
+    });
+  }
+  if (lanternViewerClose && lanternViewer) {
+    lanternViewerClose.addEventListener('click', () => lanternViewer.close());
+    lanternViewer.addEventListener('click', e => { if (e.target === lanternViewer) lanternViewer.close(); });
+  }
+  if (lanternCheerBtn) {
+    lanternCheerBtn.addEventListener('click', () => {
+      if (!activeLanternData) return;
+      activeLanternData.cheers = (activeLanternData.cheers || 1) + 1;
+      if (lanternViewerCheers) lanternViewerCheers.textContent = activeLanternData.cheers;
+      lanternCheerBtn.style.transform = 'scale(1.25)';
+      setTimeout(() => lanternCheerBtn.style.transform = '', 200);
+      playChimeSound();
+    });
+  }
+
   return ()=>{disposed=true;area.removeEventListener('pointermove',onPointerRipple);observer.disconnect();window.removeEventListener('resize',sizePortrait);button.removeEventListener('click',onToggle);area.removeEventListener('animationend',onComplete);preference.removeEventListener('change',sync);document.removeEventListener('visibilitychange',sync);};
 }
 
@@ -879,7 +1109,8 @@ function render(){
   }else if(page==='traces'){
     room='traces';label='走过的地方';html=traces();
   }else if(page==='guestbook'){
-    room='guestbook';label='檐下留言簿';html=guestbook();
+    location.replace('#/');
+    return;
   }else if(page==='about'){room='about';html=about();label='关于';}
   else if(page==='credits'){room='about';html=credits();label='版本与来源';}
   if(!html){room='about';html='<div class="wrap">'+title('404','NOT FOUND','这条路，尚未写下。','可以回到入口，重新选一个方向。')+'<a class="quiet-link" href="#/">回到入口 →</a></div>';label='未找到档案';}

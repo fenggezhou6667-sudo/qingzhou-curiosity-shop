@@ -268,10 +268,12 @@ export function mountGalaxy(root,archive){
       z=Math.sin(angle)*rr;
 
       // 3D Vertical Thickness + Graceful S-Curve Relativistic Galactic Warp ("立体翘曲星盘")
-      const diskThickness=Math.max(.09,.54*Math.exp(-radius/4.8));
+      const diskThickness=Math.max(0.32, 0.85*Math.exp(-radius/5.2) + 0.12*(radius/10.0));
       const warp=0.42*Math.sin(angle+0.45)*Math.pow(Math.min(1,radius/11.5),1.85)
                  +0.15*Math.cos(angle*2.0-0.8)*Math.pow(Math.min(1,radius/11.5),1.4);
-      y=normal()*diskThickness+warp;
+      // Natural volumetric scale height with midplane concentration and subtle interstellar dust lane
+      const isDustLane = Math.abs(normal()) < 0.25 && radius > 1.8 && radius < 8.5;
+      y = normal() * diskThickness * (isDustLane ? 0.35 : 1.0) + warp;
     }
 
     positions[i3]=x;
@@ -900,7 +902,7 @@ export function mountGalaxy(root,archive){
           float heat=pow(clamp(1.-(radial-1.02)/3.8,0.,1.),1.3);
           vec3 col=mix(vec3(.88,.24,.04),mix(vec3(1.,.64,.18),vec3(1.,.96,.82),heat),clamp(heat*doppler*.85,0.,1.));
           light+=col*wisps*edge*doppler*1.18;}}
-      previousY=pos.y;if(nr<.62){captured=1.;break;}if(pos.z < -10.)break;
+      previousY=pos.y;if(nr<.22){captured=1.;break;}if(pos.z < -10.)break;
     }
     float photonRing=exp(-pow((minR-.635)/.034,2.0))*(1.0-captured*.92);
     float asym=.75+.45*normalize(q+vec2(.001)).x;
@@ -1064,7 +1066,7 @@ export function mountGalaxy(root,archive){
         lensMaterial.uniforms.eye.value.copy(camera.position).normalize().multiplyScalar(12.25);
         lensMaterial.uniforms.right.value.set(1,0,0).applyQuaternion(camera.quaternion);
         lensMaterial.uniforms.up.value.set(0,1,0).applyQuaternion(camera.quaternion);
-        lensMaterial.uniforms.radius.value=THREE.MathUtils.clamp(.068*16.0/coreDist,.032,.16);
+        lensMaterial.uniforms.radius.value=THREE.MathUtils.clamp(.038*14.0/coreDist,.020,.095);
         lensMaterial.uniforms.strength.value=THREE.MathUtils.clamp((25-coreDist)/9.0,.42,1.0);
         renderer.render(lensScene,lensCamera);
       }
