@@ -317,7 +317,7 @@ function renderBook(){
   const strips=document.querySelector('#book-volumes'),toc=document.querySelector('#book-toc'),page=document.querySelector('#book-current'),book=document.querySelector('#reading-book');
   if(!book||!strips||!toc||!page)return;
   strips.innerHTML=groups.map((g,i)=>'<button class="book-cover '+(bookState.group===g?'is-current':'')+'" data-book-group="'+esc(g)+'" aria-pressed="'+(bookState.group===g)+'"><span class="book-cover-seal">'+String(i+1).padStart(2,'0')+'</span><strong>'+esc(g)+'</strong><small>'+A.notes.filter(n=>(bookState.mode==='genre'?n.genre:n.category)===g).length+' 首</small></button>').join('');
-  toc.innerHTML='<div class="book-page-small">CONTENTS / 目录</div><h2>'+esc(bookState.group)+'</h2><div class="book-index">'+entries.map((n,i)=>'<button class="book-index-item '+(i===bookState.index?'is-selected':'')+'" data-book-index="'+i+'" aria-current="'+(i===bookState.index?'true':'false')+'"><span>'+String(i+1).padStart(2,'0')+'</span><span>'+esc(n.title)+'</span></button>').join('')+'</div>';
+  toc.innerHTML='<div class="book-toc-slip"><span class="slip-char">墨</span><span class="slip-char">檐</span><span class="slip-char">·</span><span class="slip-char">集</span></div><div class="book-page-small">CONTENTS / 目录</div><h2>'+esc(bookState.group)+'</h2><div class="book-index">'+entries.map((n,i)=>'<button class="book-index-item '+(i===bookState.index?'is-selected':'')+'" data-book-index="'+i+'" aria-current="'+(i===bookState.index?'true':'false')+'"><span>'+String(i+1).padStart(2,'0')+'</span><span>'+esc(n.title)+'</span></button>').join('')+'</div>';
   page.innerHTML=cur?bookPage(cur):'<p>这一册尚未收录作品。</p>';
   page.classList.remove('leaf-turn');void page.offsetWidth;page.classList.add('leaf-turn');
   book.classList.toggle('book-show-poem',bookState.view==='poem');
@@ -566,14 +566,17 @@ function playChimeSound(){
     const AudioCtx=window.AudioContext||window.webkitAudioContext;
     if(!AudioCtx)return;
     const ctx=new AudioCtx();
-    const osc=ctx.createOscillator(),gain=ctx.createGain();
-    osc.type='sine';
-    osc.frequency.setValueAtTime(1318.5,ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1760,ctx.currentTime+0.09);
-    gain.gain.setValueAtTime(0.2,ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1.5);
-    osc.connect(gain);gain.connect(ctx.destination);
-    osc.start();osc.stop(ctx.currentTime+1.5);
+    const freqs=[1046.5, 1318.5, 1568.0, 2093.0]; // C6, E6, G6, C7 crystalline chime
+    freqs.forEach((f, idx)=>{
+      const osc=ctx.createOscillator(), gain=ctx.createGain();
+      osc.type='sine';
+      osc.frequency.setValueAtTime(f, ctx.currentTime + idx*0.025);
+      gain.gain.setValueAtTime(0.08 / (idx+1), ctx.currentTime + idx*0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0005, ctx.currentTime + 1.8 + idx*0.2);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + idx*0.025);
+      osc.stop(ctx.currentTime + 2.2);
+    });
   }catch{}
 }
 function playWoodTapSound(){
@@ -581,17 +584,32 @@ function playWoodTapSound(){
     const AudioCtx=window.AudioContext||window.webkitAudioContext;
     if(!AudioCtx)return;
     const ctx=new AudioCtx();
-    const osc=ctx.createOscillator(),gain=ctx.createGain();
+    const osc=ctx.createOscillator(), gain=ctx.createGain();
     osc.type='triangle';
-    osc.frequency.setValueAtTime(360,ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(90,ctx.currentTime+0.1);
-    gain.gain.setValueAtTime(0.28,ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.12);
-    osc.connect(gain);gain.connect(ctx.destination);
-    osc.start();osc.stop(ctx.currentTime+0.13);
+    osc.frequency.setValueAtTime(280, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(95, ctx.currentTime+0.1);
+    gain.gain.setValueAtTime(0.32, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.14);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(); osc.stop(ctx.currentTime+0.15);
   }catch{}
 }
-
+function playCatPurrSound(){
+  try{
+    const AudioCtx=window.AudioContext||window.webkitAudioContext;
+    if(!AudioCtx)return;
+    const ctx=new AudioCtx();
+    const osc=ctx.createOscillator(), gain=ctx.createGain();
+    osc.type='sine';
+    osc.frequency.setValueAtTime(140, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(110, ctx.currentTime+0.25);
+    osc.frequency.linearRampToValueAtTime(160, ctx.currentTime+0.5);
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.6);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(); osc.stop(ctx.currentTime+0.65);
+  }catch{}
+}
 function guestbook(){
   const notes=getGuestbookNotes();
   const presets=[
@@ -602,7 +620,7 @@ function guestbook(){
     '偷偷摸一下屋顶上的猫 🐾'
   ];
   return '<div class="wrap guestbook-room">'
-    + '<header class="room-heading"><span class="eyebrow">GUESTBOOK / 06</span><h1>檐下留言簿</h1><p>青瓦飞檐下挂一串铜风铃，案头留有各色木牌与素笺；留下你的停驻，风吹过时会一起轻响。</p></header>'
+    + '<header class="room-heading"><span class="eyebrow">GUESTBOOK / 06</span><h1>檐下茶摊与心愿牌</h1><p>青瓦飞檐下挂着铜风铃，屋脊上卧着贪睡的橘猫。挑一枚木牌挂上去吹吹风，或是给猫顺顺毛吧~</p></header>'
     + '<div class="eaves-pavilion-structure">'
       + '<div class="eaves-skyline">'
         + '<svg class="eaves-roof-svg" viewBox="0 0 1100 95" preserveAspectRatio="none" aria-hidden="true">'
@@ -615,8 +633,7 @@ function guestbook(){
           + '<rect x="0" y="68" width="1100" height="12" fill="url(#roofWoodBeam)"/>'
           + '<line x1="0" y1="80" x2="1100" y2="80" stroke="#d4b77a" stroke-width="1" stroke-opacity=".3"/>'
         + '</svg>'
-        + '<button type="button" class="roof-cat" id="roof-cat" aria-label="屋檐上的眠猫 · 点击摸一摸" title="屋檐上的眠猫 · 点击摸摸它"><span class="cat-emote" aria-hidden="true">🐱💤</span><span class="cat-popover" id="cat-popover">呼噜噜... 檐下避风，小店长明。</span></button>'
-        + '<button type="button" class="roof-windchime" id="roof-windchime" aria-label="檐下青铜风铃 · 拂动聆听" title="青铜风铃 · 点击拂响"><span class="chime-bell" aria-hidden="true">🎐</span><span class="chime-clapper" aria-hidden="true"></span><span class="chime-ribbon" aria-hidden="true">风吹心安</span></button>'
+        + '<button type="button" class="roof-cat" id="roof-cat" aria-label="屋檐上的眠猫 · 摸摸它" title="屋檐上的眠猫 · 点击顺顺毛"><svg class="roof-cat-svg" viewBox="0 0 72 44" fill="none" aria-hidden="true"><defs><linearGradient id="catFur" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f5a452"/><stop offset="50%" stop-color="#e08236"/><stop offset="100%" stop-color="#ba5d1a"/></linearGradient><linearGradient id="catBelly" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fff8ed"/><stop offset="100%" stop-color="#fae3c6"/></linearGradient></defs><path class="cat-svg-tail" d="M 14 30 C 6 28 4 18 10 14 C 14 11 19 15 17 21 C 16 26 22 28 26 28" stroke="url(#catFur)" stroke-width="4.5" stroke-linecap="round" fill="none"/><ellipse class="cat-svg-body" cx="38" cy="26" rx="20" ry="13" fill="url(#catFur)"/><ellipse cx="36" cy="28" rx="14" ry="8" fill="url(#catBelly)" opacity=".8"/><circle class="cat-svg-head" cx="50" cy="20" r="10.5" fill="url(#catFur)"/><polygon class="cat-svg-ear-l" points="43,14 47,6 51,12" fill="#d97126"/><polygon points="45,13 47,8 49,12" fill="#ffb4a2"/><polygon class="cat-svg-ear-r" points="51,11 56,4 59,13" fill="#d97126"/><polygon points="53,11 56,6 58,12" fill="#ffb4a2"/><path d="M 47 21 Q 49 23 52 21" stroke="#4a2612" stroke-width="1.2" stroke-linecap="round" fill="none"/><path d="M 53 20 Q 55 22 58 20" stroke="#4a2612" stroke-width="1.2" stroke-linecap="round" fill="none"/><path d="M 58 22 L 67 21 M 58 24 L 66 25" stroke="#ffe8cc" stroke-width="0.8" stroke-linecap="round" opacity=".85"/><g class="cat-svg-zzz"><text x="56" y="6" font-size="7" font-weight="bold" fill="#ffd175" opacity=".9">z</text><text x="63" y="1" font-size="9" font-weight="bold" fill="#ffb84d" opacity=".8">Z</text></g></svg><span class="cat-popover" id="cat-popover">呼噜噜... (蹭了蹭你的手)</span></button><button type="button" class="roof-windchime" id="roof-windchime" aria-label="檐下青铜风铃 · 拂动聆听" title="青铜风铃 · 点击拂动清音"><svg class="roof-chime-svg" viewBox="0 0 38 92" fill="none" aria-hidden="true"><defs><linearGradient id="chimeBrass" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#9a7336"/><stop offset="35%" stop-color="#e8c77e"/><stop offset="70%" stop-color="#fff1c2"/><stop offset="100%" stop-color="#8c6428"/></linearGradient><linearGradient id="chimeRibbonGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#b8382c"/><stop offset="100%" stop-color="#7a1f18"/></linearGradient></defs><line x1="19" y1="0" x2="19" y2="16" stroke="#d4b77a" stroke-width="1.2"/><ellipse cx="19" cy="16" rx="3.5" ry="2" fill="#d4b77a"/><path class="chime-svg-bell" d="M 14 18 C 14 26 11 31 8 36 L 30 36 C 27 31 24 26 24 18 Z" fill="url(#chimeBrass)" stroke="#523916" stroke-width="0.8"/><ellipse cx="19" cy="36" rx="11" ry="3.5" fill="#523916"/><ellipse cx="19" cy="36" rx="9.5" ry="2.6" fill="#8c6428"/><line class="chime-svg-clapper-cord" x1="19" y1="36" x2="19" y2="48" stroke="#d4b77a" stroke-width="1"/><circle class="chime-svg-bead" cx="19" cy="48" r="2.8" fill="#4fa58f" stroke="#28594d" stroke-width="0.6"/><g class="chime-svg-ribbon-group"><path d="M 16 51 Q 19 53 22 51 L 22 86 Q 19 88 16 86 Z" fill="url(#chimeRibbonGrad)" stroke="#5a120d" stroke-width="0.5"/><text x="19" y="63" font-size="4.5" fill="#fcecd2" text-anchor="middle" font-family="serif">风</text><text x="19" y="70" font-size="4.5" fill="#fcecd2" text-anchor="middle" font-family="serif">吹</text><text x="19" y="77" font-size="4.5" fill="#fcecd2" text-anchor="middle" font-family="serif">心</text><text x="19" y="84" font-size="4.5" fill="#ffd175" text-anchor="middle" font-family="serif">安</text></g></svg></button>'
       + '</div>'
       + '<div class="eaves-pavilions-caption"><span>屋檐下共悬挂了 <strong id="eaves-total-count">'+notes.length+'</strong> 枚行客木牌 · 风吹过时轻响</span><span class="eaves-hint">点击风铃可拂动清音，摸摸眠猫会打哈欠</span></div>'
     + '</div>'
@@ -669,6 +686,7 @@ function guestbook(){
                 + '<p class="plaque-text">'+esc(note.text)+'</p>'
                 + '<div class="plaque-foot">'
                   + '<span class="plaque-date">'+esc(note.date)+'</span>'
+                  + '<button type="button" class="plaque-cheer-btn" aria-label="添一盏暖灯" title="添一盏暖灯 / 顺顺毛"><span aria-hidden="true">🏮</span><span class="cheer-count">'+(3+(idx*7)%11)+'</span></button>'
                   + '<span class="plaque-num">#'+(idx+1)+'</span>'
                 + '</div>'
               + '</div>'
@@ -696,13 +714,23 @@ function bindGuestbook(){
     chime.addEventListener('click',ringChime);
   }
   if(cat&&catPop){
+    const catQuotes=[
+      '呼噜噜... (翻了个身把肚皮露给你看)',
+      '喵呜~ 给你踩踩奶，今日诸事大吉！🐾',
+      '屋顶瓦片被晒得好暖，你也要歇一歇呀。',
+      '蹭蹭你的掌心，送你一团猫毛护身符。',
+      '檐角风大，不过有小店的灯在，不冷。'
+    ];
+    let catQuoteIdx=0;
     const petCat=()=>{
-      cat.classList.remove('is-purring');void cat.offsetWidth;cat.classList.add('is-purring');
+      cat.classList.remove('is-purring'); void cat.offsetWidth; cat.classList.add('is-purring');
+      catPop.textContent=catQuotes[catQuoteIdx % catQuotes.length];
+      catQuoteIdx++;
       catPop.classList.add('show-pop');
-      playWoodTapSound();
-      setTimeout(()=>catPop.classList.remove('show-pop'),3200);
+      playCatPurrSound();
+      setTimeout(()=>catPop.classList.remove('show-pop'), 3400);
     };
-    cat.addEventListener('click',petCat);
+    cat.addEventListener('click', petCat);
   }
 
   // Quick preset chips
@@ -717,7 +745,29 @@ function bindGuestbook(){
     });
   });
 
-  if(!form||!plaques)return()=>{};
+  
+  // Clicking any plaque makes it sway with soft wooden tap
+  if(plaques){
+    plaques.addEventListener('click', e=>{
+      const cheerBtn=e.target.closest('.plaque-cheer-btn');
+      if(cheerBtn){
+        e.stopPropagation();
+        const countSpan=cheerBtn.querySelector('.cheer-count');
+        const cur=parseInt(countSpan?.textContent||'0', 10);
+        if(countSpan) countSpan.textContent=cur+1;
+        cheerBtn.style.transform='scale(1.2)';
+        setTimeout(()=>cheerBtn.style.transform='', 200);
+        playWoodTapSound();
+        return;
+      }
+      const card=e.target.closest('.eaves-card');
+      if(card){
+        card.classList.remove('is-swinging'); void card.offsetWidth; card.classList.add('is-swinging');
+        playWoodTapSound();
+      }
+    });
+  }
+if(!form||!plaques)return()=>{};
 
   const onSubmit=e=>{
     e.preventDefault();

@@ -1707,3 +1707,370 @@ body[data-room="home"] .river-body-glow {
   color: #fff;
   border-color: #c44436;
 }
+
+
+/* ==========================================================================
+   v1.5 Masterpiece Refinements:
+   1. Fixed Floating Music Dock (Under Header Compass, Never Clipped or Shifting Flow)
+   2. Seamless River Branch Laminar Flow (Eliminate Tributary Hesitation / Stutter)
+   3. Exquisite SVG Roof Cat & Temple Brass Windchime (Alive & Interactive, No Stickers)
+   4. Playful Eaves Teahouse & Wish Plaques (Interactive Wooden Plaque Sway & Warmth)
+   5. Authentic Handmade Xuan Paper Poetry Book (No Dot Grid, Silk Spine & Title Slip)
+   ========================================================================== */
+
+/* 1. Fixed Floating Music Dock (固定浮动声音藏品卡片，居于指南针正下方，绝不遮挡、绝不挤压页面) */
+.dock-panel {
+  position: fixed !important;
+  top: 74px !important;
+  right: max(18px, 4.2%) !important;
+  z-index: 200 !important;
+  width: min(340px, calc(100vw - 32px)) !important;
+  margin: 0 !important;
+  background: linear-gradient(155deg, rgba(23, 59, 50, 0.98), rgba(10, 33, 31, 0.99)) !important;
+  border: 1px solid rgba(216, 191, 132, 0.45) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 25px rgba(212, 183, 122, 0.22) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  animation: dock-panel-pop 0.28s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+}
+.dock-panel[hidden] {
+  display: none !important;
+}
+@keyframes dock-panel-pop {
+  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (max-width: 768px) {
+  .dock-panel {
+    top: 68px !important;
+    left: 16px !important;
+    right: 16px !important;
+    width: auto !important;
+  }
+}
+
+/* 2. Seamless River Branch Laminar Momentum (彻底消除电脑端支流停滞卡顿) */
+/* 强制消除 v10.css 中相互冲突的延迟与隐藏 */
+body[data-room="home"] .roaming-night .branch-bed,
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-bed,
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-photos .branch-bed,
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-poems .branch-bed,
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-traces .branch-bed,
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-lab .branch-bed,
+body[data-room="home"] .external-branches .tributary,
+body[data-room="home"] .roaming-night[data-intro="playing"] .external-branches .tributary {
+  animation: none !important;
+  opacity: 0.92 !important;
+  stroke-dashoffset: 0 !important;
+}
+
+/* 支流蒙版跟随主流波峰抵达时刻自然、连续流淌舒展，绝不悬停 */
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-reveal-photos,
+body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-photos {
+  animation: river-branch-flow-out 1.35s cubic-bezier(0.22, 0.61, 0.36, 1) 0.8s forwards !important;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-reveal-poems,
+body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-poems {
+  animation: river-branch-flow-out 1.4s cubic-bezier(0.22, 0.61, 0.36, 1) 1.55s forwards !important;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-reveal-traces,
+body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-traces {
+  animation: river-branch-flow-out 1.45s cubic-bezier(0.22, 0.61, 0.36, 1) 2.35s forwards !important;
+}
+body[data-room="home"] .roaming-night[data-intro="playing"] .branch-reveal-lab,
+body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-lab {
+  animation: river-branch-flow-out 1.5s cubic-bezier(0.22, 0.61, 0.36, 1) 3.05s forwards !important;
+}
+@keyframes river-branch-flow-out {
+  0% { stroke-dashoffset: 100; opacity: 0; }
+  12% { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+
+/* 3. Authentic Xuan Paper Poetry Book (宣纸罗纹帘纹·彻底根除网格感·朱砂题签与装订真丝) */
+.book-sheet {
+  background-size: auto, auto, auto, auto !important;
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat !important;
+  background-image:
+    /* Delicate Xuan paper ribbed chain lines (宣纸罗纹水纹，极微细，无任何格子感) */
+    repeating-linear-gradient(0deg, transparent, transparent 7px, rgba(186, 160, 124, 0.045) 7.5px, transparent 8px),
+    /* Gold leaf fleck spattering (泥金洒金微粒) */
+    radial-gradient(circle at 76% 22%, rgba(224, 192, 128, 0.14) 0%, transparent 48%),
+    radial-gradient(circle at 24% 78%, rgba(212, 178, 110, 0.12) 0%, transparent 45%),
+    linear-gradient(135deg, #faf4e8 0%, #fffefb 46%, #f7efe2 100%) !important;
+  border-radius: 4px !important;
+}
+.book-sheet:after {
+  /* 古籍内页双边栏细框 */
+  border: 1px solid rgba(186, 156, 114, 0.28) !important;
+  outline: 0.5px solid rgba(186, 156, 114, 0.12) !important;
+}
+/* 左侧目录页古籍朱砂题签 */
+.book-toc-slip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 8px;
+  background: linear-gradient(180deg, #9e2a22 0%, #7e1d16 100%);
+  color: #faebd7;
+  border-radius: 2px;
+  box-shadow: 0 2px 6px rgba(126, 29, 22, 0.35), inset 0 0 0 1px rgba(247, 215, 148, 0.4);
+  margin-bottom: 12px;
+}
+.book-toc-slip .slip-char {
+  font-family: "STKaiti", "KaiTi", serif;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: #fff2db;
+}
+
+/* 顶部诗集卷签：如同线装书顶部的绫绢卷签，服帖雅致 */
+.book-cover-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid rgba(212, 183, 122, 0.25);
+  padding-bottom: 12px;
+}
+.book-cover {
+  appearance: none;
+  background: rgba(22, 45, 40, 0.65) !important;
+  border: 1px solid rgba(212, 183, 122, 0.32) !important;
+  border-radius: 6px 6px 0 0 !important;
+  color: #d6cbaf !important;
+  padding: 10px 18px !important;
+  font-family: var(--serif) !important;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.book-cover:hover {
+  background: rgba(30, 60, 53, 0.85) !important;
+  border-color: #d4b77a !important;
+  color: #f7e8c8 !important;
+  transform: translateY(-2px);
+}
+.book-cover.is-current {
+  background: linear-gradient(180deg, #f7efe2 0%, #eddcc3 100%) !important;
+  border-color: #ba9c72 !important;
+  color: #382414 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  font-weight: 600;
+  transform: translateY(1px);
+}
+.book-cover.is-current .book-cover-seal {
+  background: #a83e31 !important;
+  color: #fff !important;
+}
+
+/* 4. Living Roof Cat & Windchime (灵动生机屋檐：真实插画、呼吸眠猫、风铃拂响) */
+.eaves-skyline {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 96px;
+  margin: 18px 0 6px;
+}
+.roof-cat {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 8;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.roof-cat:hover {
+  transform: translateX(-50%) scale(1.08);
+}
+.roof-cat:active {
+  transform: translateX(-50%) scale(0.96);
+}
+.roof-cat-svg {
+  width: 76px;
+  height: 48px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+}
+.cat-svg-body {
+  transform-origin: 38px 26px;
+  animation: cat-breathe-body 3.6s ease-in-out infinite;
+}
+@keyframes cat-breathe-body {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.03, 1.05); }
+}
+.cat-svg-tail {
+  transform-origin: 22px 28px;
+  animation: cat-tail-slow-wag 4.8s ease-in-out infinite;
+}
+@keyframes cat-tail-slow-wag {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-5deg); }
+}
+.cat-svg-ear-l, .cat-svg-ear-r {
+  transform-origin: center bottom;
+  animation: cat-ear-twitch 6.4s ease-in-out infinite;
+}
+@keyframes cat-ear-twitch {
+  0%, 92%, 100% { transform: rotate(0deg); }
+  94% { transform: rotate(-4deg); }
+  97% { transform: rotate(3deg); }
+}
+.cat-svg-zzz {
+  animation: cat-zzz-float 3.2s ease-in-out infinite;
+}
+@keyframes cat-zzz-float {
+  0% { opacity: 0.2; transform: translateY(2px); }
+  50% { opacity: 0.95; transform: translateY(-3px); }
+  100% { opacity: 0.2; transform: translateY(2px); }
+}
+
+/* 摸猫时弹出的生动互动气泡与肉垫浮现 */
+.cat-popover {
+  position: absolute;
+  bottom: 54px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.85);
+  background: rgba(16, 38, 34, 0.96);
+  border: 1px solid rgba(216, 191, 132, 0.65);
+  border-radius: 12px;
+  padding: 8px 16px;
+  color: #f7e9c8;
+  font-size: 13px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(212, 183, 122, 0.25);
+  z-index: 20;
+}
+.cat-popover:after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(16, 38, 34, 0.96);
+}
+.cat-popover.show-pop {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+/* 铜风铃：悬于屋檐右侧，微风拂动 */
+.roof-windchime {
+  position: absolute;
+  right: 7% !important;
+  bottom: 0px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 8;
+  outline: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-origin: 19px 0px;
+  animation: chime-breeze-sway 5.2s ease-in-out infinite;
+  transition: filter 0.2s ease;
+}
+.roof-windchime:hover {
+  filter: drop-shadow(0 0 10px rgba(228, 199, 126, 0.7));
+}
+.roof-chime-svg {
+  width: 44px;
+  height: 98px;
+}
+.chime-svg-ribbon-group {
+  transform-origin: 19px 51px;
+  animation: chime-ribbon-flutter 3.8s ease-in-out infinite alternate;
+}
+@keyframes chime-breeze-sway {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(3deg); }
+  75% { transform: rotate(-2.5deg); }
+}
+@keyframes chime-ribbon-flutter {
+  0% { transform: rotate(0deg) skewX(0deg); }
+  50% { transform: rotate(4deg) skewX(3deg); }
+  100% { transform: rotate(-3deg) skewX(-2deg); }
+}
+.roof-windchime.is-ringing {
+  animation: chime-ring-shock 0.85s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+@keyframes chime-ring-shock {
+  0% { transform: rotate(0deg); }
+  20% { transform: rotate(9deg); }
+  40% { transform: rotate(-7deg); }
+  60% { transform: rotate(4deg); }
+  80% { transform: rotate(-2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* 5. Playful Eaves Plaques (好玩、生动的行客木牌悬挂与互动) */
+.eaves-card {
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.3s ease;
+  transform-origin: top center;
+}
+.eaves-card:hover {
+  transform: translateY(-4px) rotate(0.8deg);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(212, 183, 122, 0.25) !important;
+}
+.eaves-card.is-swinging {
+  animation: plaque-swing-sound 0.75s ease-in-out both;
+}
+@keyframes plaque-swing-sound {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(3.5deg); }
+  50% { transform: rotate(-2.5deg); }
+  75% { transform: rotate(1.2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* 木牌暖意点赞按钮 */
+.plaque-cheer-btn {
+  appearance: none;
+  background: rgba(212, 183, 122, 0.12);
+  border: 1px solid rgba(212, 183, 122, 0.3);
+  border-radius: 12px;
+  color: #eeddb0;
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+.plaque-cheer-btn:hover {
+  background: rgba(212, 183, 122, 0.28);
+  border-color: #e4c77e;
+  color: #fff;
+  transform: scale(1.05);
+}
+.plaque-cheer-btn:active {
+  transform: scale(0.92);
+}
+.plaque-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(212, 183, 122, 0.2);
+}

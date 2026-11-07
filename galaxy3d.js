@@ -79,27 +79,43 @@ export function mountGalaxy(root,archive){
 
   const disposables=[];
 
-  // 0. 360° Full-Space Deep Starfield & Galactic Halo ("把星星不只局限于那个地方")
+  // 0. 360° Multi-Layered Authentic Starry Sky ("周围真正像浩瀚星空")
   let bgSeed=91023;
   const bgRand=()=>{bgSeed=(1664525*bgSeed+1013904223)>>>0;return bgSeed/4294967296;};
   const bgNormal=()=>bgRand()+bgRand()+bgRand()-1.5;
 
-  const deepCount=3400,deepPos=new Float32Array(deepCount*3),deepCol=new Float32Array(deepCount*3),deepSize=new Float32Array(deepCount);
+  // Layer 0A: 5,200 Crisp Field Stars & Open Star Clusters across the 360° Sky Dome
+  const deepCount=5200,deepPos=new Float32Array(deepCount*3),deepCol=new Float32Array(deepCount*3),deepSize=new Float32Array(deepCount);
   const deepColor=new THREE.Color();
+  const clusterCenters=[
+    [-22,12,-28],[26,15,-25],[-30,-9,-18],[28,-11,-22],[0,21,-32],[-16,18,24]
+  ];
   for(let i=0;i<deepCount;i++){
-    const u=bgRand()*2-1,theta=bgRand()*Math.PI*2,s=Math.sqrt(Math.max(0,1-u*u));
-    const r=20+Math.pow(bgRand(),.65)*72;
-    deepPos[i*3]=r*s*Math.cos(theta);
-    deepPos[i*3+1]=r*u*.82;
-    deepPos[i*3+2]=r*s*Math.sin(theta);
+    let x,y,z;
+    if(i<750){
+      // Open star clusters in the surrounding night sky
+      const c=clusterCenters[i%clusterCenters.length];
+      const spread=2.2+bgRand()*4.5;
+      x=c[0]+bgNormal()*spread;
+      y=c[1]+bgNormal()*spread*.75;
+      z=c[2]+bgNormal()*spread;
+    }else{
+      const u=bgRand()*2-1,theta=bgRand()*Math.PI*2,s=Math.sqrt(Math.max(0,1-u*u));
+      const r=22+Math.pow(bgRand(),.58)*64;
+      x=r*s*Math.cos(theta);
+      y=r*u*.88;
+      z=r*s*Math.sin(theta);
+    }
+    deepPos[i*3]=x;deepPos[i*3+1]=y;deepPos[i*3+2]=z;
     const pick=bgRand();
-    if(pick<.25)deepColor.setHex(0xc8deff);
-    else if(pick<.55)deepColor.setHex(0xf5efe2);
-    else if(pick<.80)deepColor.setHex(0xffe0ac);
-    else deepColor.setHex(0xaed4e6);
-    const b=.24+Math.pow(bgRand(),1.6)*.72;
+    if(pick<.28)deepColor.setHex(0xb8dcff);      // Ice sapphire
+    else if(pick<.56)deepColor.setHex(0xfcf6ea); // Diamond ivory
+    else if(pick<.78)deepColor.setHex(0xffd996); // Warm gold
+    else if(pick<.91)deepColor.setHex(0x9be8df); // Celestial cyan
+    else deepColor.setHex(0xffb8c6);             // Rose giant
+    const b=.58+Math.pow(bgRand(),.85)*.42;
     deepCol[i*3]=deepColor.r*b;deepCol[i*3+1]=deepColor.g*b;deepCol[i*3+2]=deepColor.b*b;
-    deepSize[i]=.6+Math.pow(bgRand(),2.4)*2.4;
+    deepSize[i]=1.1+Math.pow(bgRand(),1.6)*3.6;
   }
   const deepGeo=new THREE.BufferGeometry();
   deepGeo.setAttribute('position',new THREE.BufferAttribute(deepPos,3));
@@ -108,26 +124,82 @@ export function mountGalaxy(root,archive){
   const deepMat=new THREE.ShaderMaterial({
     transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,
     uniforms:{scale:{value:dpr},time:{value:0},visibility:{value:1}},
-    vertexShader:'attribute float aSize;varying vec3 vColor;varying float vTwinkle;uniform float scale;uniform float time;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);vTwinkle=.82+.18*sin(time*1.4+position.x*3.1+position.y*2.7);gl_PointSize=clamp(18.0*aSize*scale/(-p.z),.9,4.2);gl_Position=projectionMatrix*p;}',
-    fragmentShader:'varying vec3 vColor;varying float vTwinkle;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=pow(1.0-d*2.0,2.0)*vTwinkle*visibility;gl_FragColor=vec4(vColor,a);\n#include <colorspace_fragment>\n}'
+    vertexShader:'attribute float aSize;varying vec3 vColor;varying float vTwinkle;uniform float scale;uniform float time;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);vTwinkle=.76+.24*sin(time*1.8+position.x*2.3+position.y*3.1);gl_PointSize=clamp(36.0*aSize*scale/(-p.z),1.5,6.8);gl_Position=projectionMatrix*p;}',
+    fragmentShader:'varying vec3 vColor;varying float vTwinkle;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float core=exp(-d*d*22.0);float halo=pow(max(0.0,1.0-d*2.0),1.8)*.65;float a=(core+halo)*vTwinkle*visibility;gl_FragColor=vec4(vColor*1.25,clamp(a,0.0,1.0));}'
   });
   const deepField=new THREE.Points(deepGeo,deepMat);
   scene.add(deepField);
   disposables.push(deepGeo,deepMat);
 
-  const haloCount=1800,haloPos=new Float32Array(haloCount*3),haloCol=new Float32Array(haloCount*3),haloSize=new Float32Array(haloCount);
+  // Layer 0B: 75 Named/Anchor Bright Stars with Cross-Diffraction Glints + Background Nebula Veils
+  const brightSkyGroup=new THREE.Group();
+  scene.add(brightSkyGroup);
+  const anchorPalette=[0xd4ebff,0xfff6e0,0xffd28a,0xa8e6ff,0xffc2d1];
+  for(let i=0;i<75;i++){
+    const u=bgRand()*2-1,theta=bgRand()*Math.PI*2,s=Math.sqrt(Math.max(0,1-u*u));
+    const r=24+bgRand()*38;
+    const spMat=new THREE.SpriteMaterial({
+      map:i%3===0?spikeTexture:glowTexture,
+      color:anchorPalette[i%anchorPalette.length],
+      transparent:true,
+      opacity:.52+bgRand()*.42,
+      depthWrite:false,
+      blending:THREE.AdditiveBlending
+    });
+    const sp=new THREE.Sprite(spMat);
+    sp.position.set(r*s*Math.cos(theta),r*u*.85,r*s*Math.sin(theta));
+    const sc=(i%3===0?.75:.48)+bgRand()*.65;
+    sp.scale.set(sc,sc,1);
+    brightSkyGroup.add(sp);
+    disposables.push(spMat);
+  }
+  // Ambient deep-space nebula veils in background sky
+  const skyNebColors=[0x163854,0x2a1f4a,0x143d3e,0x3b2638];
+  for(let i=0;i<18;i++){
+    const u=(bgRand()-.5)*1.4,theta=bgRand()*Math.PI*2,r=28+bgRand()*22;
+    const nebMat=new THREE.SpriteMaterial({
+      map:glowTexture,
+      color:skyNebColors[i%skyNebColors.length],
+      transparent:true,
+      opacity:.14+bgRand()*.08,
+      depthWrite:false,
+      blending:THREE.AdditiveBlending
+    });
+    const neb=new THREE.Sprite(nebMat);
+    neb.position.set(Math.cos(theta)*r,u*16,Math.sin(theta)*r);
+    const sc=14+bgRand()*16;
+    neb.scale.set(sc*1.4,sc*.85,1);
+    brightSkyGroup.add(neb);
+    disposables.push(nebMat);
+  }
+
+  // Layer 0C: 3D Spherical & Vertical Galactic Halo Stars + Arching Tidal Streams
+  const haloCount=2400,haloPos=new Float32Array(haloCount*3),haloCol=new Float32Array(haloCount*3),haloSize=new Float32Array(haloCount);
   for(let i=0;i<haloCount;i++){
-    const a=bgRand()*Math.PI*2;
-    const r=2.5+Math.pow(bgRand(),.78)*22.0;
-    const ySpread=(1.2+r*.28)*bgNormal();
-    haloPos[i*3]=Math.cos(a)*r+bgNormal()*1.2;
-    haloPos[i*3+1]=ySpread;
-    haloPos[i*3+2]=Math.sin(a)*r+bgNormal()*1.2;
+    let x,y,z;
+    if(i<600){
+      // 3D Arching Tidal Stream ribbons rising above and below the disk ("打破扁平感的三维星流")
+      const stream=i%2===0?1:-1;
+      const t=(i/600)*Math.PI*1.65;
+      const r=2.8+t*3.8;
+      const angle=t*1.35+(stream>0?0:Math.PI);
+      x=Math.cos(angle)*r+bgNormal()*.55;
+      z=Math.sin(angle)*r+bgNormal()*.55;
+      y=stream*Math.sin(t*1.1)*2.35+bgNormal()*.38;
+    }else{
+      const a=bgRand()*Math.PI*2;
+      const r=1.4+Math.pow(bgRand(),.72)*16.5;
+      const ySpread=(.85+r*.19)*bgNormal();
+      x=Math.cos(a)*r+bgNormal()*.8;
+      y=ySpread;
+      z=Math.sin(a)*r+bgNormal()*.8;
+    }
+    haloPos[i*3]=x;haloPos[i*3+1]=y;haloPos[i*3+2]=z;
     const m=bgRand();
-    deepColor.setHex(m<.35?0xd8e8ff:m<.72?0xf6ead3:0xe5c287);
-    const b=.18+bgRand()*.46;
+    deepColor.setHex(m<.38?0x9ecbff:m<.72?0xfff0d4:0xffbe78);
+    const b=.38+bgRand()*.56;
     haloCol[i*3]=deepColor.r*b;haloCol[i*3+1]=deepColor.g*b;haloCol[i*3+2]=deepColor.b*b;
-    haloSize[i]=.55+Math.pow(bgRand(),2.0)*1.8;
+    haloSize[i]=.85+Math.pow(bgRand(),1.7)*2.4;
   }
   const haloGeo=new THREE.BufferGeometry();
   haloGeo.setAttribute('position',new THREE.BufferAttribute(haloPos,3));
@@ -136,78 +208,194 @@ export function mountGalaxy(root,archive){
   const haloMat=new THREE.ShaderMaterial({
     transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,
     uniforms:{scale:{value:dpr},time:{value:0},visibility:{value:1}},
-    vertexShader:'attribute float aSize;varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(16.0*aSize*scale/(-p.z),.8,4.0);gl_Position=projectionMatrix*p;}',
-    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=pow(1.0-d*2.0,2.1)*visibility*.75;gl_FragColor=vec4(vColor,a);\n#include <colorspace_fragment>\n}'
+    vertexShader:'attribute float aSize;varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(24.0*aSize*scale/(-p.z),1.1,5.2);gl_Position=projectionMatrix*p;}',
+    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=pow(1.0-d*2.0,1.7)*visibility*.88;gl_FragColor=vec4(vColor*1.15,a);}'
   });
   galaxy.add(new THREE.Points(haloGeo,haloMat));
   disposables.push(haloGeo,haloMat);
 
-  // 1. Main Milky Way Galaxy
-  const count=28000;
-  const positions=new Float32Array(count*3),colors=new Float32Array(count*3);
-  const inside=new THREE.Color('#fff2cf'),mid=new THREE.Color('#d8c796'),outside=new THREE.Color('#6f96b8'),dust=new THREE.Color('#476779');
+  // 1. Main 3D Grand-Design Logarithmic Spiral Galaxy (32,000 Stars with 3D Warp & Bulge)
+  const count=32000;
+  const positions=new Float32Array(count*3),colors=new Float32Array(count*3),sizes=new Float32Array(count);
+  const cCore=new THREE.Color('#fff5d6');
+  const cAmber=new THREE.Color('#ffbe6b');
+  const cBlue=new THREE.Color('#7cc2ff');
+  const cCyan=new THREE.Color('#b8f0ff');
+  const cRose=new THREE.Color('#ff85b3');
+  const cViolet=new THREE.Color('#a68cff');
   let seed=42071;
   const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};
   const normal=()=>rand()+rand()+rand()-1.5;
 
   for(let i=0;i<count;i++){
-    const i3=i*3,u=rand(),inCore=u<.23;
-    const radius=inCore?Math.pow(rand(),1.9)*2.2:1.1+Math.pow(rand(),.76)*11.6;
-    const arm=i%4,spin=radius*1.32,branch=(arm/4)*Math.PI*2;
-    const spread=(inCore?.38:.24+radius*.078)*(inCore?1:(.55+rand()*.9));
-    const angle=branch+spin+normal()*spread*.42;
-    const thickness=inCore?(1-radius/3.2)*.58+.12:Math.max(.08,.48-radius*.025);
-    positions[i3]=Math.cos(angle)*radius+normal()*spread;
-    positions[i3+1]=normal()*thickness;
-    positions[i3+2]=Math.sin(angle)*radius+normal()*spread;
+    const i3=i*3,u=rand();
+    let x,y,z,radius,angle,inBulge=false,isSpur=false,isKnot=false;
 
-    const t=Math.min(1,radius/12.2);
-    const c=inside.clone().lerp(mid,Math.min(1,t*1.55)).lerp(outside,Math.max(0,(t-.28)/.72));
-    if(i%6===0)c.lerp(dust,.48);
-    const brightness=inCore?.88+rand()*.42:.42+rand()*.78;
-    colors[i3]=c.r*brightness;colors[i3+1]=c.g*brightness;colors[i3+2]=c.b*brightness;
+    if(u<.22){
+      // 3D Prolate Galactic Bulge & Bar around the Black Hole (立体椭球核球与棒旋核)
+      inBulge=true;
+      const rBulge=.38+Math.pow(rand(),1.45)*2.45;
+      const theta=rand()*Math.PI*2;
+      const phi=Math.acos(2*rand()-1);
+      const barStretch=1.28;
+      x=rBulge*Math.sin(phi)*Math.cos(theta)*barStretch;
+      z=rBulge*Math.sin(phi)*Math.sin(theta)*.84;
+      y=rBulge*Math.cos(phi)*.62;
+      radius=Math.hypot(x,z);
+      angle=Math.atan2(z,x);
+    }else{
+      // 2 Grand Primary Logarithmic Spiral Arms (72%) + 2 Delicate Secondary Arms (28%)
+      isSpur=u>.78;
+      const arm=isSpur?(i%2):((i%2));
+      const armOffset=arm*Math.PI+(isSpur?Math.PI*.52:0);
+      radius=1.15+Math.pow(rand(),.82)*(isSpur?9.8:12.2);
+      // Logarithmic spiral winding: crisp separation between arms!
+      const pitch=isSpur?1.52:1.38;
+      const baseTheta=armOffset+pitch*Math.log(radius/1.12);
+      // Tight arm concentration so dark inter-arm lanes remain dramatic
+      const armWidth=(isSpur?.18:.13)+radius*.016;
+      const angularJitter=normal()*armWidth;
+      const radialJitter=normal()*((isSpur?.16:.11)+radius*.022);
+      angle=baseTheta+angularJitter;
+      const rr=Math.max(.55,radius+radialJitter);
+
+      // Star-forming H-II knots clustered along the spiral arms
+      if(!isSpur&&rand()<.085){
+        isKnot=true;
+      }
+
+      x=Math.cos(angle)*rr;
+      z=Math.sin(angle)*rr;
+
+      // 3D Vertical Thickness + Graceful S-Curve Relativistic Galactic Warp ("立体翘曲星盘")
+      const diskThickness=Math.max(.09,.54*Math.exp(-radius/4.8));
+      const warp=0.42*Math.sin(angle+0.45)*Math.pow(Math.min(1,radius/11.5),1.85)
+                 +0.15*Math.cos(angle*2.0-0.8)*Math.pow(Math.min(1,radius/11.5),1.4);
+      y=normal()*diskThickness+warp;
+    }
+
+    positions[i3]=x;
+    positions[i3+1]=y;
+    positions[i3+2]=z;
+
+    const t=Math.min(1,radius/11.8);
+    let c;
+    if(inBulge){
+      c=cCore.clone().lerp(cAmber,Math.min(1,radius/2.5));
+    }else if(isKnot){
+      c=rand()<.65?cRose.clone():cViolet.clone();
+    }else if(isSpur){
+      c=cAmber.clone().lerp(cBlue,Math.min(1,t*1.2)).lerp(cViolet,Math.max(0,(t-.45)/.55));
+    }else{
+      c=cCore.clone()
+        .lerp(cAmber,Math.min(1,t*2.4))
+        .lerp(cCyan,Math.max(0,Math.min(1,(t-.14)*2.1)))
+        .lerp(cBlue,Math.max(0,(t-.38)/.62));
+      if(rand()<.12)c.lerp(cRose,.55);
+    }
+
+    const brightness=inBulge?(.72+rand()*.45):(isKnot?(1.05+rand()*.45):(.52+Math.pow(rand(),.75)*.78));
+    colors[i3]=c.r*brightness;
+    colors[i3+1]=c.g*brightness;
+    colors[i3+2]=c.b*brightness;
+    sizes[i]=isKnot?(1.8+rand()*1.8):(inBulge?(.9+rand()*1.4):(.75+Math.pow(rand(),1.5)*2.3));
   }
 
   const geometry=new THREE.BufferGeometry();
   geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
   geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
+  geometry.setAttribute('aSize',new THREE.BufferAttribute(sizes,1));
   const starsMaterial=new THREE.ShaderMaterial({
     transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,
     uniforms:{scale:{value:dpr},visibility:{value:1}},
-    vertexShader:'varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(24.0*scale/(-p.z),1.2,5.5);gl_Position=projectionMatrix*p;}',
-    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=(1.0-smoothstep(0.08,0.5,d))*0.92*visibility;gl_FragColor=vec4(vColor,a);\n#include <colorspace_fragment>\n}'
+    vertexShader:'attribute float aSize;varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(22.0*aSize*scale/(-p.z),1.2,6.4);gl_Position=projectionMatrix*p;}',
+    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float core=exp(-d*d*18.0);float halo=pow(max(0.0,1.0-d*2.0),1.6)*.6;float a=(core+halo)*0.88*visibility;gl_FragColor=vec4(vColor*1.18,clamp(a,0.0,1.0));}'
   });
   galaxy.add(new THREE.Points(geometry,starsMaterial));
 
-  const cloudCount=380,cloudPositions=new Float32Array(cloudCount*3),cloudColors=new Float32Array(cloudCount*3);
+  // 1B. 2,200 Volumetric Luminous Nebula Clouds Along the Spiral Arms (绚丽星云气团)
+  const cloudCount=2200,cloudPositions=new Float32Array(cloudCount*3),cloudColors=new Float32Array(cloudCount*3),cloudSizes=new Float32Array(cloudCount);
   for(let i=0;i<cloudCount;i++){
-    const i3=i*3,arm=i%4,radius=1.1+Math.pow(rand(),.82)*9.2,angle=(arm/4)*Math.PI*2+radius*1.28+normal()*.28;
-    cloudPositions[i3]=Math.cos(angle)*radius+normal()*.55;
-    cloudPositions[i3+1]=normal()*.18;
-    cloudPositions[i3+2]=Math.sin(angle)*radius+normal()*.55;
-    const c=inside.clone().lerp(outside,Math.min(1,radius/10));
-    cloudColors[i3]=c.r*.65;cloudColors[i3+1]=c.g*.68;cloudColors[i3+2]=c.b*.78;
+    const i3=i*3;
+    const isCoreCloud=i<320;
+    const arm=i%2;
+    const radius=isCoreCloud?(.45+Math.pow(rand(),1.3)*2.2):(1.2+Math.pow(rand(),.78)*10.6);
+    const baseAngle=arm*Math.PI+1.38*Math.log(Math.max(.4,radius/1.12));
+    const angle=isCoreCloud?(rand()*Math.PI*2):(baseAngle+normal()*(.14+radius*.014));
+    const rr=radius+normal()*(isCoreCloud?.22:.32);
+    const warp=isCoreCloud?0:(0.42*Math.sin(angle+0.45)*Math.pow(Math.min(1,radius/11.5),1.85));
+    cloudPositions[i3]=Math.cos(angle)*rr;
+    cloudPositions[i3+1]=normal()*(isCoreCloud?.38:.22)+warp;
+    cloudPositions[i3+2]=Math.sin(angle)*rr;
+
+    const t=Math.min(1,radius/10.5);
+    let c;
+    if(isCoreCloud){
+      c=new THREE.Color('#ffcf86').lerp(new THREE.Color('#ff9b54'),rand()*.6);
+    }else if(i%7===0){
+      c=new THREE.Color('#e86fa8').lerp(new THREE.Color('#9a78ff'),rand());
+    }else{
+      c=new THREE.Color('#ffe2a8')
+        .lerp(new THREE.Color('#5ea8ff'),Math.min(1,t*1.35))
+        .lerp(new THREE.Color('#3b68c9'),Math.max(0,(t-.45)/.55));
+    }
+    const lum=isCoreCloud?.42:.28+rand()*.24;
+    cloudColors[i3]=c.r*lum;cloudColors[i3+1]=c.g*lum;cloudColors[i3+2]=c.b*lum;
+    cloudSizes[i]=isCoreCloud?(.75+rand()*.65):(.85+rand()*1.35);
   }
   const cloudGeometry=new THREE.BufferGeometry();
   cloudGeometry.setAttribute('position',new THREE.BufferAttribute(cloudPositions,3));
   cloudGeometry.setAttribute('color',new THREE.BufferAttribute(cloudColors,3));
+  cloudGeometry.setAttribute('aSize',new THREE.BufferAttribute(cloudSizes,1));
   const cloudMaterial=new THREE.ShaderMaterial({
     transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,
     uniforms:{scale:{value:dpr},visibility:{value:1}},
-    vertexShader:'varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(160.0*scale/(-p.z),6.0,46.0);gl_Position=projectionMatrix*p;}',
-    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=pow(max(0.0,1.0-d*2.0),2.2)*0.075*visibility;gl_FragColor=vec4(vColor,a);\n#include <colorspace_fragment>\n}'
+    vertexShader:'attribute float aSize;varying vec3 vColor;uniform float scale;void main(){vColor=color;vec4 p=modelViewMatrix*vec4(position,1.0);gl_PointSize=clamp(220.0*aSize*scale/(-p.z),8.0,58.0);gl_Position=projectionMatrix*p;}',
+    fragmentShader:'varying vec3 vColor;uniform float visibility;void main(){float d=length(gl_PointCoord-vec2(.5));if(d>.5)discard;float a=pow(max(0.0,1.0-d*2.0),2.1)*0.14*visibility;gl_FragColor=vec4(vColor,a);}'
   });
   galaxy.add(new THREE.Points(cloudGeometry,cloudMaterial));
 
-    const coreMaterial=new THREE.SpriteMaterial({map:glowTexture,color:0xffdfa4,transparent:true,opacity:.35,depthWrite:false,blending:THREE.AdditiveBlending});
+  // 1C. 3D Gargantua Black Hole Core: Soft Bulge Glow + 3D Relativistic Accretion Disk + Event Horizon
+  const coreMaterial=new THREE.SpriteMaterial({map:glowTexture,color:0xffd896,transparent:true,opacity:.48,depthWrite:false,blending:THREE.AdditiveBlending});
   const core=new THREE.Sprite(coreMaterial);
-  core.scale.set(3.2,3.2,1);
+  core.scale.set(3.8,3.2,1);
   galaxy.add(core);
 
+  // 3D Relativistic Swirling Accretion Disk Mesh (visible at all camera distances!)
+  const accretionGeo=new THREE.PlaneGeometry(3.4,3.4,1,1);
+  const accretionMat=new THREE.ShaderMaterial({
+    transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,
+    uniforms:{time:{value:0},visibility:{value:1}},
+    vertexShader:'varying vec2 vUv;void main(){vUv=uv*2.0-1.0;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+    fragmentShader:`
+      varying vec2 vUv;uniform float time;uniform float visibility;
+      void main(){
+        float r=length(vUv);
+        if(r>1.0||r<0.16)discard;
+        float angle=atan(vUv.y,vUv.x);
+        float spiral=sin(log(r)*14.0-angle*3.0+time*1.6)*.5+.5;
+        float wisps=sin(r*24.0-angle*5.0+time*2.2)*.5+.5;
+        float ring=smoothstep(0.16,0.23,r)*(1.0-smoothstep(0.45,1.0,r));
+        float photon=exp(-pow((r-0.21)/0.028,2.0))*1.6;
+        float doppler=0.68+0.48*cos(angle+0.6);
+        vec3 hot=vec3(1.0,0.95,0.82);
+        vec3 mid=vec3(1.0,0.62,0.22);
+        vec3 outer=vec3(0.82,0.26,0.08);
+        vec3 col=mix(outer,mix(mid,hot,clamp(1.2-r*1.4,0.0,1.0)),clamp(spiral*.65+wisps*.35,0.0,1.0));
+        float alpha=(ring*(0.45+0.55*spiral*wisps)+photon)*doppler*visibility*0.85;
+        gl_FragColor=vec4(col*doppler,clamp(alpha,0.0,1.0));
+      }
+    `
+  });
+  const accretionDisk=new THREE.Mesh(accretionGeo,accretionMat);
+  accretionDisk.rotation.x=-Math.PI*0.42;
+  accretionDisk.rotation.z=0.18;
+  galaxy.add(accretionDisk);
+  disposables.push(accretionGeo,accretionMat);
 
-
-  const holeGeometry=new THREE.SphereGeometry(.56,28,20);
-  const holeMaterial=new THREE.MeshBasicMaterial({color:0x000104});
+  // Compact Event Horizon Singularity (no longer a giant flat black sticker!)
+  const holeGeometry=new THREE.SphereGeometry(.22,28,20);
+  const holeMaterial=new THREE.MeshBasicMaterial({color:0x010206});
   const blackHole=new THREE.Mesh(holeGeometry,holeMaterial);
   galaxy.add(blackHole);
 
@@ -755,6 +943,7 @@ export function mountGalaxy(root,archive){
         effectTime+=dt;
       }
       lensMaterial.uniforms.time.value=effectTime;
+      accretionMat.uniforms.time.value=effectTime;
       haloMat.uniforms.time.value=effectTime;
       deepMat.uniforms.time.value=effectTime;
       waves.forEach(w=>{const phase=(effectTime*.12+w.userData.phase)%1;w.scale.setScalar(.25+phase*3);w.material.opacity=reduced.matches?0:Math.sin(phase*Math.PI)*.12;});
@@ -815,6 +1004,7 @@ export function mountGalaxy(root,archive){
       const visibility=focusIndex>=0?.06:(locked>=0?.52:1);
       starsMaterial.uniforms.visibility.value=THREE.MathUtils.lerp(starsMaterial.uniforms.visibility.value,visibility,1-Math.exp(-4.5*dt));
       cloudMaterial.uniforms.visibility.value=starsMaterial.uniforms.visibility.value;
+      accretionMat.uniforms.visibility.value=starsMaterial.uniforms.visibility.value;
       haloMat.uniforms.visibility.value=THREE.MathUtils.lerp(haloMat.uniforms.visibility.value,focusIndex>=0?.28:1,1-Math.exp(-4.5*dt));
       deepMat.uniforms.visibility.value=THREE.MathUtils.lerp(deepMat.uniforms.visibility.value,focusIndex>=0?.75:1,1-Math.exp(-4.5*dt));
       coreMaterial.opacity=(.35+audioBoost*.12)*starsMaterial.uniforms.visibility.value;
@@ -865,7 +1055,7 @@ export function mountGalaxy(root,archive){
       });
 
       const coreDist=camera.position.length();
-      if(focusIndex>=0||coreDist>=7){
+      if(focusIndex>=0||coreDist>=25){
         renderer.setRenderTarget(null);renderer.render(scene,camera);
       }else{
         renderer.setRenderTarget(target);renderer.render(scene,camera);renderer.setRenderTarget(null);
@@ -874,8 +1064,8 @@ export function mountGalaxy(root,archive){
         lensMaterial.uniforms.eye.value.copy(camera.position).normalize().multiplyScalar(12.25);
         lensMaterial.uniforms.right.value.set(1,0,0).applyQuaternion(camera.quaternion);
         lensMaterial.uniforms.up.value.set(0,1,0).applyQuaternion(camera.quaternion);
-        lensMaterial.uniforms.radius.value=THREE.MathUtils.clamp(.09*4.0/coreDist,.01,.16);
-        lensMaterial.uniforms.strength.value=THREE.MathUtils.clamp((7-coreDist)/2.5,0,1);
+        lensMaterial.uniforms.radius.value=THREE.MathUtils.clamp(.068*16.0/coreDist,.032,.16);
+        lensMaterial.uniforms.strength.value=THREE.MathUtils.clamp((25-coreDist)/9.0,.42,1.0);
         renderer.render(lensScene,lensCamera);
       }
     }
