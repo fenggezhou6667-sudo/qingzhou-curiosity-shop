@@ -96,7 +96,7 @@ body[data-room=home] .mobile-scene-art .river-body{filter:none}
 body[data-room=home] .branch-water-surface{opacity:.92}
 body[data-room=home] .river-distributary{pointer-events:none}
 body[data-room=home] .river-distributary .branch-haze{stroke:#e4d19a;stroke-width:24;opacity:.06;filter:blur(8px)}
-body[data-room=home] .river-distributary .tributary{display:none !important;opacity:0 !important}
+body[data-room=home] .river-distributary .tributary{stroke:#e4d19a;stroke-width:1.1;opacity:0}
 body[data-room=home] .river-distributary .branch-waterline{stroke:#f0dda5;stroke-width:1.1;opacity:.07}
 body[data-room=home] .river-distributary .branch-ripples path{fill:none;stroke:#f0dca6;stroke-width:1;opacity:.1}
 body[data-room=home] .river-distributary .branch-current{stroke:#fff0bf;stroke-width:1.4;stroke-dasharray:30 180;opacity:.32;filter:blur(2px)}
@@ -2515,33 +2515,4 @@ body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-lab {
 @keyframes topdown-spark-dance {
   0% { transform-origin: 30px 13px; transform: scale(0.9); }
   100% { transform-origin: 30px 13px; transform: scale(1.2); }
-}
-
-
-/* ========================================================
-   v1.4 见星之夜 · 江南水乡八角莲花微光水灯样式
-   ======================================================== */
-.lotus-lantern-wrap {
-  display: inline-block;
-  line-height: 1;
-  filter: drop-shadow(0 0 10px rgba(243, 215, 148, 0.7));
-  transition: transform 0.25s ease, filter 0.25s ease;
-}
-.river-lantern:hover .lotus-lantern-wrap {
-  transform: scale(1.22);
-  filter: drop-shadow(0 0 18px rgba(255, 230, 160, 0.95));
-}
-.lotus-glow-pulse {
-  animation: lotus-flicker 2.4s ease-in-out infinite alternate;
-}
-@keyframes lotus-flicker {
-  0% { transform-origin: 26px 26px; transform: scale(0.88); opacity: 0.78; }
-  100% { transform-origin: 26px 26px; transform: scale(1.18); opacity: 1; }
-}
-.lotus-ripple {
-  animation: lotus-ripple-spread 3s ease-out infinite;
-}
-@keyframes lotus-ripple-spread {
-  0% { transform-origin: 26px 26px; transform: scale(0.85); opacity: 0.6; }
-  100% { transform-origin: 26px 26px; transform: scale(1.25); opacity: 0; }
 }

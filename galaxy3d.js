@@ -214,146 +214,95 @@ export function mountGalaxy(root,archive){
   galaxy.add(new THREE.Points(haloGeo,haloMat));
   disposables.push(haloGeo,haloMat);
 
-  // 1. NASA Spitzer Accurate Barred Spiral Galaxy (36,000 Stars: Central Bar + 2 Major Arms + Spurs + H-II Knots)
-  const count = 38000;
-  const positions = new Float32Array(count * 3);
-  const colors = new Float32Array(count * 3);
-  const sizes = new Float32Array(count);
+  // 1. Main 3D Grand-Design Logarithmic Spiral Galaxy (32,000 Stars with 3D Warp & Bulge)
+  const count=32000;
+  const positions=new Float32Array(count*3),colors=new Float32Array(count*3),sizes=new Float32Array(count);
+  const cCore=new THREE.Color('#fff5d6');
+  const cAmber=new THREE.Color('#ffbe6b');
+  const cBlue=new THREE.Color('#7cc2ff');
+  const cCyan=new THREE.Color('#b8f0ff');
+  const cRose=new THREE.Color('#ff85b3');
+  const cViolet=new THREE.Color('#a68cff');
+  let seed=42071;
+  const rand=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};
+  const normal=()=>rand()+rand()+rand()-1.5;
 
-  const cCore = new THREE.Color('#fffcf2'); // Brilliant warm nuclear core
-  const cBar = new THREE.Color('#ffd888');  // Warm golden-amber stellar bar
-  const cArmCyan = new THREE.Color('#7de8ff'); // Radiant OB young stars
-  const cArmBlue = new THREE.Color('#a8d4ff'); // Soft blue-white galactic disk
-  const cKnotRose = new THREE.Color('#ff7ba9'); // H-II emission nebula (starbirth)
-  const cKnotViolet = new THREE.Color('#be8aff');
-  const cDust = new THREE.Color('#16121a'); // Obscuring interstellar dust
+  for(let i=0;i<count;i++){
+    const i3=i*3,u=rand();
+    let x,y,z,radius,angle,inBulge=false,isSpur=false,isKnot=false;
 
-  let seed = 42071;
-  const rand = () => { seed = (1664525 * seed + 1013904223) >>> 0; return seed / 4294967296; };
-  const normal = () => rand() + rand() + rand() - 1.5;
+    if(u<.22){
+      // 3D Prolate Galactic Bulge & Bar around the Black Hole (立体椭球核球与棒旋核)
+      inBulge=true;
+      const rBulge=.32+Math.pow(rand(),1.85)*2.2;
+      const theta=rand()*Math.PI*2;
+      const phi=Math.acos(2*rand()-1);
+      const barStretch=1.28;
+      x=rBulge*Math.sin(phi)*Math.cos(theta)*barStretch;
+      z=rBulge*Math.sin(phi)*Math.sin(theta)*.84;
+      y=rBulge*Math.cos(phi)*.16;
+      radius=Math.hypot(x,z);
+      angle=Math.atan2(z,x);
+    }else{
+      // 2 Grand Primary Logarithmic Spiral Arms (72%) + 2 Delicate Secondary Arms (28%)
+      isSpur=u>.78;
+      const arm=isSpur?(i%2):((i%2));
+      const armOffset=arm*Math.PI+(isSpur?Math.PI*.52:0);
+      radius=1.15+Math.pow(rand(),.82)*(isSpur?9.8:12.2);
+      // Logarithmic spiral winding: crisp separation between arms!
+      const pitch=isSpur?1.52:1.38;
+      const baseTheta=armOffset+pitch*Math.log(radius/1.12);
+      // Tight arm concentration so dark inter-arm lanes remain dramatic
+      const armWidth=(isSpur?.18:.13)+radius*.016;
+      const angularJitter=normal()*armWidth;
+      const radialJitter=normal()*((isSpur?.16:.11)+radius*.022);
+      angle=baseTheta+angularJitter;
+      const rr=Math.max(.55,radius+radialJitter);
 
-  for (let i = 0; i < count; i++) {
-    const i3 = i * 3;
-    const u = rand();
-    let x, y, z, radius, angle;
-    let starColor = cCore.clone();
-    let brightness = 1.0;
-    let starSize = 1.0;
-
-    if (u < 0.20) {
-      // Structure 1: Dense Galactic Bulge & Nuclear Star Cluster (中央高密度核球星团)
-      radius = Math.pow(rand(), 1.8) * 1.8;
-      angle = rand() * Math.PI * 2.0;
-      x = Math.cos(angle) * radius;
-      z = Math.sin(angle) * radius;
-      y = normal() * 0.16 * Math.exp(-radius * 0.85);
-
-      starColor = cCore.clone().lerp(cBar, Math.min(1.0, radius / 1.6));
-      brightness = 1.25 + rand() * 0.65;
-      starSize = 1.1 + rand() * 1.8;
-
-    } else if (u < 0.38) {
-      // Structure 2: NASA Spitzer 27,000-ly Elongated Central Stellar Bar (棒旋星系中央发光恒星棒)
-      const barLength = 2.45;
-      const barHalfWidth = 0.72;
-      const tBar = (rand() - 0.5) * 2.0;
-      const bx = tBar * barLength;
-      const bz = normal() * barHalfWidth * Math.sqrt(Math.max(0.01, 1.0 - tBar * tBar * 0.75));
-      const barAngle = 0.65;
-      x = bx * Math.cos(barAngle) - bz * Math.sin(barAngle);
-      z = bx * Math.sin(barAngle) + bz * Math.cos(barAngle);
-      y = normal() * 0.14 * Math.exp(-Math.abs(tBar) * 0.8);
-      radius = Math.hypot(x, z);
-      angle = Math.atan2(z, x);
-
-      starColor = cCore.clone().lerp(cBar, Math.min(1.0, radius / 2.2));
-      brightness = 0.95 + rand() * 0.45;
-      starSize = 0.95 + rand() * 1.3;
-
-    } else if (u < 0.78) {
-      // Structure 3: 2 Grand Major Arms (Perseus & Scutum-Centaurus) hooked directly to Bar ends
-      const armIdx = i % 2;
-      const startAngle = 0.65 + (armIdx === 0 ? 0.0 : Math.PI);
-      const minR = 2.1;
-      const maxR = 12.8;
-      radius = minR + Math.pow(rand(), 0.82) * (maxR - minR);
-      
-      const windingPitch = 1.34;
-      const spiralTheta = startAngle + windingPitch * Math.log(radius / minR);
-      const armWidth = 0.14 + radius * 0.018;
-      angle = spiralTheta + normal() * armWidth;
-      const rr = Math.max(0.6, radius + normal() * (0.10 + radius * 0.014));
-      x = Math.cos(angle) * rr;
-      z = Math.sin(angle) * rr;
-
-      const diskScaleHeight = 0.15 + 0.10 * Math.exp(-Math.pow(radius / 4.0, 2.0));
-      const warp = 0.38 * Math.sin(angle + 0.42) * Math.pow(Math.min(1.0, radius / 11.5), 1.85);
-      y = normal() * diskScaleHeight + warp;
-
-      const tRadius = Math.min(1.0, (radius - minR) / 9.5);
-      if (rand() < 0.09) {
-        starColor = rand() < 0.65 ? cKnotRose.clone() : cKnotViolet.clone();
-        brightness = 1.35 + rand() * 0.65;
-        starSize = 2.2 + rand() * 2.2;
-      } else {
-        starColor = cCore.clone()
-          .lerp(cBar, Math.min(1.0, (1.0 - tRadius) * 0.8))
-          .lerp(cArmCyan, Math.min(1.0, tRadius * 1.8))
-          .lerp(cArmBlue, Math.max(0.0, (tRadius - 0.25) / 0.75));
-        brightness = 0.75 + Math.pow(rand(), 0.7) * 0.75;
-        starSize = 0.85 + Math.pow(rand(), 1.5) * 2.0;
+      // Star-forming H-II knots clustered along the spiral arms
+      if(!isSpur&&rand()<.085){
+        isKnot=true;
       }
 
-    } else if (u < 0.94) {
-      // Structure 4: Secondary Arms + Inter-arm Feathery Spurs
-      const spurIdx = (i % 3);
-      const spurOffset = (spurIdx * Math.PI * 0.66) + 0.35;
-      radius = 1.6 + Math.pow(rand(), 0.75) * 10.5;
-      const windingPitch = 1.48;
-      const baseTheta = spurOffset + windingPitch * Math.log(radius / 1.5);
-      const spread = 0.22 + radius * 0.024;
-      angle = baseTheta + normal() * spread;
-      const rr = Math.max(0.5, radius + normal() * 0.20);
-      x = Math.cos(angle) * rr;
-      z = Math.sin(angle) * rr;
+      x=Math.cos(angle)*rr;
+      z=Math.sin(angle)*rr;
 
-      const diskScaleHeight = 0.16 + 0.08 * (radius / 10.0);
-      const warp = 0.36 * Math.sin(angle + 0.42) * Math.pow(Math.min(1.0, radius / 11.5), 1.85);
-      y = normal() * diskScaleHeight + warp;
-
-      const tR = Math.min(1.0, (radius - 1.6) / 8.5);
-      starColor = cBar.clone().lerp(cArmBlue, tR);
-      brightness = 0.60 + rand() * 0.45;
-      starSize = 0.75 + rand() * 1.2;
-
-    } else {
-      // Structure 5: Interstellar Dust Lanes
-      const armIdx = i % 2;
-      const startAngle = 0.65 + (armIdx === 0 ? 0.0 : Math.PI);
-      radius = 2.2 + Math.pow(rand(), 0.78) * 8.8;
-      const windingPitch = 1.34;
-      const spiralTheta = startAngle + windingPitch * Math.log(radius / 2.1) - 0.08;
-      angle = spiralTheta + normal() * 0.06;
-      x = Math.cos(angle) * radius;
-      z = Math.sin(angle) * radius;
-      const warp = 0.38 * Math.sin(angle + 0.42) * Math.pow(Math.min(1.0, radius / 11.5), 1.85);
-      y = normal() * 0.05 + warp;
-
-      starColor = cDust.clone();
-      brightness = 0.10;
-      starSize = 1.6 + rand() * 1.8;
+      // 3D Vertical Thickness + Graceful S-Curve Relativistic Galactic Warp ("立体翘曲星盘")
+      const diskThickness=0.18 + 0.32 * Math.exp(-Math.pow(radius / 3.4, 2.0));
+      const warp=0.42*Math.sin(angle+0.45)*Math.pow(Math.min(1,radius/11.5),1.85)
+                 +0.15*Math.cos(angle*2.0-0.8)*Math.pow(Math.min(1,radius/11.5),1.4);
+      // Natural volumetric scale height with midplane concentration and subtle interstellar dust lane
+      const isDustLane = Math.abs(normal()) < 0.25 && radius > 1.8 && radius < 8.5;
+      y = normal() * diskThickness * (isDustLane ? 0.35 : 1.0) + warp;
     }
 
-    positions[i3] = x;
-    positions[i3 + 1] = y;
-    positions[i3 + 2] = z;
+    positions[i3]=x;
+    positions[i3+1]=y;
+    positions[i3+2]=z;
 
-    colors[i3] = starColor.r * brightness;
-    colors[i3 + 1] = starColor.g * brightness;
-    colors[i3 + 2] = starColor.b * brightness;
-    sizes[i] = starSize;
+    const t=Math.min(1,radius/11.8);
+    let c;
+    if(inBulge){
+      c=cCore.clone().lerp(cAmber,Math.min(1,radius/2.5));
+    }else if(isKnot){
+      c=rand()<.65?cRose.clone():cViolet.clone();
+    }else if(isSpur){
+      c=cAmber.clone().lerp(cBlue,Math.min(1,t*1.2)).lerp(cViolet,Math.max(0,(t-.45)/.55));
+    }else{
+      c=cCore.clone()
+        .lerp(cAmber,Math.min(1,t*2.4))
+        .lerp(cCyan,Math.max(0,Math.min(1,(t-.14)*2.1)))
+        .lerp(cBlue,Math.max(0,(t-.38)/.62));
+      if(rand()<.12)c.lerp(cRose,.55);
+    }
+
+    const brightness=inBulge?(.72+rand()*.45):(isKnot?(1.05+rand()*.45):(.52+Math.pow(rand(),.75)*.78));
+    colors[i3]=c.r*brightness;
+    colors[i3+1]=c.g*brightness;
+    colors[i3+2]=c.b*brightness;
+    sizes[i]=isKnot?(1.8+rand()*1.8):(inBulge?(.9+rand()*1.4):(.75+Math.pow(rand(),1.5)*2.3));
   }
-  
+
   const geometry=new THREE.BufferGeometry();
   geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
   geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));
@@ -409,19 +358,13 @@ export function mountGalaxy(root,archive){
   galaxy.add(new THREE.Points(cloudGeometry,cloudMaterial));
 
   // 1C. 3D Gargantua Black Hole Core: Soft Bulge Glow + 3D Relativistic Accretion Disk + Event Horizon
-  const coreMaterial=new THREE.SpriteMaterial({map:glowTexture,color:0xfff2d4,transparent:true,opacity:.58,depthWrite:false,blending:THREE.AdditiveBlending});
+  const coreMaterial=new THREE.SpriteMaterial({map:glowTexture,color:0xffd896,transparent:true,opacity:.48,depthWrite:false,blending:THREE.AdditiveBlending});
   const core=new THREE.Sprite(coreMaterial);
-  core.scale.set(3.2,2.8,1);
+  core.scale.set(3.8,3.2,1);
   galaxy.add(core);
 
-  // Additional soft amber nuclear glow
-  const innerCoreMat=new THREE.SpriteMaterial({map:glowTexture,color:0xffd68a,transparent:true,opacity:.42,depthWrite:false,blending:THREE.AdditiveBlending});
-  const innerCore=new THREE.Sprite(innerCoreMat);
-  innerCore.scale.set(1.8,1.6,1);
-  galaxy.add(innerCore);
-
   // 3D Relativistic Swirling Accretion Disk Mesh (visible at all camera distances!)
-  const accretionGeo=new THREE.PlaneGeometry(1.4,1.4,1,1);
+  const accretionGeo=new THREE.PlaneGeometry(3.4,3.4,1,1);
   const accretionMat=new THREE.ShaderMaterial({
     transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,
     uniforms:{time:{value:0},visibility:{value:1}},
@@ -453,10 +396,9 @@ export function mountGalaxy(root,archive){
   disposables.push(accretionGeo,accretionMat);
 
   // Compact Event Horizon Singularity (no longer a giant flat black sticker!)
-  const holeGeometry=new THREE.SphereGeometry(0.08,24,16);
+  const holeGeometry=new THREE.SphereGeometry(.22,28,20);
   const holeMaterial=new THREE.MeshBasicMaterial({color:0x000000});
   const blackHole=new THREE.Mesh(holeGeometry,holeMaterial);
-  blackHole.visible = false;
   galaxy.add(blackHole);
 
   const waveGeometry=new THREE.RingGeometry(.16,.172,72);
@@ -938,32 +880,42 @@ export function mountGalaxy(root,archive){
 
   // Screen-space gravitational lens for the central black hole
   const target=new THREE.WebGLRenderTarget(1,1),lensScene=new THREE.Scene(),lensCamera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
-  const lensMaterial=new THREE.ShaderMaterial({transparent:true,uniforms:{image:{value:target.texture},center:{value:new THREE.Vector2(.5,.5)},aspect:{value:1},time:{value:0},radius:{value:.14},strength:{value:0},eye:{value:new THREE.Vector3(0,4.2,11.5)},right:{value:new THREE.Vector3(1,0,0)},up:{value:new THREE.Vector3(0,1,0)}},vertexShader:'varying vec2 uv0;void main(){uv0=uv;gl_Position=vec4(position,1.0);}',fragmentShader:`uniform sampler2D image;uniform vec2 center;uniform float aspect;uniform float time;uniform float radius;uniform float strength;uniform vec3 eye;uniform vec3 right;uniform vec3 up;varying vec2 uv0;
+  const lensMaterial=new THREE.ShaderMaterial({transparent:true,uniforms:{image:{value:target.texture},center:{value:new THREE.Vector2(.5,.5)},aspect:{value:1},time:{value:0},radius:{value:.14},strength:{value:0},eye:{value:new THREE.Vector3(0,4.2,11.5)},right:{value:new THREE.Vector3(1,0,0)},up:{value:new THREE.Vector3(0,1,0)}},vertexShader:'varying vec2 uv0;void main(){uv0=uv;gl_Position=vec4(position,1.0);}',fragmentShader:`
+  uniform sampler2D image;uniform vec2 center;uniform float aspect;uniform float time;uniform float radius;uniform float strength;uniform vec3 eye;uniform vec3 right;uniform vec3 up;varying vec2 uv0;
+  float hash21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+  float noise2(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);float a=hash21(i),b=hash21(i+vec2(1.,0.)),c=hash21(i+vec2(0.,1.)),d=hash21(i+vec2(1.,1.));return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}
+  float fbm(vec2 p){float v=0.0,amp=.5;for(int k=0;k<4;k++){v+=amp*noise2(p);p=p*2.03+vec2(1.7,9.2);amp*=.5;}return v;}
   void main(){
-    vec2 d = uv0 - center;
-    d.x *= aspect;
-    float screenR = length(d);
-    vec4 base = texture2D(image, uv0);
-    if(strength < 0.001 || screenR > radius * 3.4){
-      gl_FragColor = base;
-      return;
+    vec2 d=uv0-center;d.x*=aspect;float screenR=length(d);vec4 base=texture2D(image,uv0);
+    if(screenR>radius||strength<.001){gl_FragColor=base;return;}
+    vec2 q=d/radius;vec3 pos=eye,forward=normalize(-pos);
+    vec3 dir=normalize(forward+right*q.x*.40+up*q.y*.40);vec3 light=vec3(0.);float captured=0.;float previousY=pos.y;float minR=99.0;
+    for(int i=0;i<128;i++){
+      float r=length(pos);minR=min(minR,r);float stepSize=clamp(r*.045,.042,.34);vec3 acceleration=-pos/(r*r*r+.165)*.88;
+      dir=normalize(dir+acceleration*stepSize);pos+=dir*stepSize;float nr=length(pos);minR=min(minR,nr);
+      if(previousY*pos.y<0.&&captured<.5){float radial=length(pos.xz);if(radial>1.02&&radial<5.2){
+          float angle=atan(pos.z,pos.x);float shear=log(max(radial,.1))*6.8-angle*2.0+time*.28;
+          float turb=fbm(vec2(radial*2.6+sin(angle*2.0)*.35,shear*.65));
+          float wisps=smoothstep(.22,.82,turb)*(.62+.38*sin(shear*1.7+turb*4.2));
+          float edge=smoothstep(1.02,1.42,radial)*(1.-smoothstep(3.4,5.1,radial));
+          float doppler=pow(clamp(.78+.58*cos(angle+.52),.18,1.55),1.45);
+          float heat=pow(clamp(1.-(radial-1.02)/3.8,0.,1.),1.3);
+          vec3 col=mix(vec3(.88,.24,.04),mix(vec3(1.,.64,.18),vec3(1.,.96,.82),heat),clamp(heat*doppler*.85,0.,1.));
+          light+=col*wisps*edge*doppler*1.18;}}
+      previousY=pos.y;if(nr<.22){captured=1.;break;}if(pos.z < -10.)break;
     }
-    // Pure Einstein deflection: optical starlight curvature without 2D black cutoffs
-    float falloff = 1.0 - smoothstep(radius * 0.15, radius * 3.2, screenR);
-    float deflect = strength * falloff * (0.0135 / (screenR + 0.032));
-    vec2 nDir = normalize(d);
-    vec2 shift = vec2(nDir.x / aspect, nDir.y) * deflect;
-    vec2 tang = vec2(-nDir.y / aspect, nDir.x) * (deflect * 0.28);
-    vec2 shiftedUV = uv0 - shift + tang;
-    vec4 bent = texture2D(image, shiftedUV);
-
-    // Subtle Einstein photon ring glow around the photon sphere
-    float ringDist = abs(screenR - radius * 0.76);
-    float photonRing = exp(-pow(ringDist / (radius * 0.18 + 0.003), 2.0)) * strength;
-    vec3 photonGlow = vec3(1.0, 0.90, 0.72) * (photonRing * 0.82);
-
-    vec3 blended = mix(base.rgb, bent.rgb + photonGlow, falloff);
-    gl_FragColor = vec4(blended, max(base.a, bent.a));
+    float photonRing=exp(-pow((minR-.635)/.034,2.0))*(1.0-captured*.92);
+    float asym=.75+.45*normalize(q+vec2(.001)).x;
+    light=light*(1.0-captured*.88)+vec3(1.0,.91,.70)*photonRing*asym*.98;
+    float einstein=exp(-pow((minR-.72)/.14,2.0))*(1.0-captured);
+    vec2 tang=vec2(-q.y,q.x)/(length(q)+.04);
+    vec2 shifted=uv0+vec2((dir.x-q.x*.32)/aspect,dir.y-q.y*.32)*(.034+einstein*.022)+vec2(tang.x/aspect,tang.y)*einstein*.008;
+    vec4 bent=texture2D(image,shifted)*(1.0-captured);float rim=1.-smoothstep(radius*.72,radius,screenR);
+    vec3 voidColor=vec3(.003,.006,.014);
+    vec3 bgResult=mix(base.rgb,mix(voidColor,bent.rgb*(1.0+einstein*.28),1.0-captured),rim);
+    vec3 result=bgResult+light*rim;
+    float alpha=max(base.a,max(bent.a*rim,clamp((captured*.98+length(light)*.88)*rim,0.,1.)));
+    gl_FragColor=mix(base,vec4(result,clamp(alpha,0.,1.)),strength);
   }`});
   lensScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),lensMaterial));
 
@@ -1104,25 +1056,19 @@ export function mountGalaxy(root,archive){
         });
       });
 
-      const coreDist = camera.position.length();
-      blackHole.visible = (coreDist < 5.5);
-      if (focusIndex >= 0 || coreDist >= 5.5) {
-        // Pure unwarped galactic beauty at normal/wide distances
-        renderer.setRenderTarget(null);
-        renderer.render(scene, camera);
-      } else {
-        // Relativistic starlight lensing only when diving deep into Sagittarius A* core
-        renderer.setRenderTarget(target);
-        renderer.render(scene, camera);
-        renderer.setRenderTarget(null);
-        const projected = new THREE.Vector3(0,0,0).project(camera);
-        lensMaterial.uniforms.center.value.set(projected.x * 0.5 + 0.5, projected.y * 0.5 + 0.5);
+      const coreDist=camera.position.length();
+      if(focusIndex>=0||coreDist>=25){
+        renderer.setRenderTarget(null);renderer.render(scene,camera);
+      }else{
+        renderer.setRenderTarget(target);renderer.render(scene,camera);renderer.setRenderTarget(null);
+        const projected=new THREE.Vector3(0,0,0).project(camera);
+        lensMaterial.uniforms.center.value.set(projected.x*.5+.5,projected.y*.5+.5);
         lensMaterial.uniforms.eye.value.copy(camera.position).normalize().multiplyScalar(12.25);
-        lensMaterial.uniforms.right.value.set(1, 0, 0).applyQuaternion(camera.quaternion);
-        lensMaterial.uniforms.up.value.set(0, 1, 0).applyQuaternion(camera.quaternion);
-        lensMaterial.uniforms.radius.value = THREE.MathUtils.clamp(0.14 * 4.0 / Math.max(0.5, coreDist), 0.02, 0.32);
-        lensMaterial.uniforms.strength.value = THREE.MathUtils.clamp((5.5 - coreDist) / 3.0, 0.0, 1.0);
-        renderer.render(lensScene, lensCamera);
+        lensMaterial.uniforms.right.value.set(1,0,0).applyQuaternion(camera.quaternion);
+        lensMaterial.uniforms.up.value.set(0,1,0).applyQuaternion(camera.quaternion);
+        lensMaterial.uniforms.radius.value = THREE.MathUtils.clamp(0.22 * 14.0 / coreDist, 0.02, 0.38);
+        lensMaterial.uniforms.strength.value=THREE.MathUtils.clamp((25-coreDist)/9.0,.42,1.0);
+        renderer.render(lensScene,lensCamera);
       }
     }
   };
