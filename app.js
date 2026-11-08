@@ -264,14 +264,7 @@ function home(){
               <p>投一枚铜钱，放一叶心愿水灯。随水流漂向远方。</p>
             </div>
           </div>
-          <div class="wish-stamp-picker" role="radiogroup" aria-label="选择一枚心境印记">
-            <label class="stamp-opt"><input type="radio" name="wishStamp" value="✨" checked><span>✨ 许愿</span></label>
-            <label class="stamp-opt"><input type="radio" name="wishStamp" value="🐟"><span>🐟 摸鱼</span></label>
-            <label class="stamp-opt"><input type="radio" name="wishStamp" value="🍵"><span>🍵 敬茶</span></label>
-            <label class="stamp-opt"><input type="radio" name="wishStamp" value="🐾"><span>🐾 顺毛</span></label>
-            <label class="stamp-opt"><input type="radio" name="wishStamp" value="🌙"><span>🌙 熬夜</span></label>
-            <label class="stamp-opt"><input type="radio" name="wishStamp" value="⛵"><span>⛵ 顺流</span></label>
-          </div>
+          
           <div class="wish-input-wrap">
             <textarea id="wish-text" maxlength="60" placeholder="写下一两句心愿、秘密或碎碎念...（匿名，不留名）" rows="3"></textarea>
             <div class="wish-char-count"><span id="wish-chars">0</span>/60</div>
@@ -289,7 +282,7 @@ function home(){
       <dialog class="lantern-viewer-dialog" id="lantern-viewer" aria-labelledby="lantern-viewer-text">
         <div class="lantern-viewer-inner">
           <button type="button" class="wish-dialog-close" id="lantern-viewer-close" aria-label="放回河中">×</button>
-          <div class="lantern-boat-icon" aria-hidden="true">⛵</div>
+          <div class="lantern-boat-icon" aria-hidden="true"><span class="topdown-boat-wrap"><svg class="topdown-boat-svg" viewBox="0 0 60 26" width="46" height="20" aria-hidden="true"><defs><radialGradient id="topdownGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff8e7" stop-opacity="1"/><stop offset="35%" stop-color="#ffd580" stop-opacity="0.85"/><stop offset="70%" stop-color="#f59e0b" stop-opacity="0.3"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/></radialGradient><linearGradient id="boatWoodGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#142c26"/><stop offset="25%" stop-color="#2d554a"/><stop offset="50%" stop-color="#3c6b5e"/><stop offset="75%" stop-color="#2d554a"/><stop offset="100%" stop-color="#142c26"/></linearGradient></defs><ellipse cx="30" cy="13" rx="26" ry="9" fill="#081e1a" opacity="0.6"/><path d="M 4 13 Q 30 4 56 13 Q 30 22 4 13 Z" fill="url(#boatWoodGrad)" stroke="#cbb082" stroke-width="0.9" stroke-linejoin="round"/><path d="M 12 13 Q 30 7 48 13 Q 30 19 12 13 Z" fill="#1b3a33" stroke="#8fa89b" stroke-width="0.5" opacity="0.85"/><circle cx="30" cy="13" r="10" fill="url(#topdownGlow)" class="boat-candle-halo"/><circle cx="30" cy="13" r="2.2" fill="#ffffff" class="boat-candle-spark"/></svg></span></div>
           <span class="lantern-stamp-badge" id="lantern-viewer-stamp">✨</span>
           <p class="lantern-viewer-text" id="lantern-viewer-text"></p>
           <div class="lantern-viewer-foot">
@@ -553,7 +546,7 @@ function bindLabDesk(){
   return()=>{desk.removeEventListener('pointermove',move);desk.removeEventListener('click',click);};
 }
 
-function about(){return `<div class="wrap">${title('05','ABOUT','关于这间小店','世界的边缘，往往藏在日常的细节里。')}<div class="about-layout"><div>${eyebrow('A PERSONAL MANIFESTO','小店的自述')}<h2>我想保留的，<br>是看向世界的方式。</h2><p>这里是一个安放注意力的小地方。用诗歌留下没说完的话，用摄影留下光，再把实验和日常的碎片，慢慢收进来。</p><p>在这里，事物可以不被立即归类。一个下午的光，可以成为一组照片；一个无法回答的问题，可以长成一篇手记；一次偶然的尝试，也可以留下自己的位置。</p><p>希望每次回到这里，都能发现：世界依然辽阔，而观察尚未结束。</p><div class="demo-note">以上为网站概念文案。所有者的真实姓名、个人简介与经历尚待填写。</div></div><aside class="about-sidebar">${eyebrow('OPEN ENDED','保持开放')}<dl><dt>关注的方向 / INTERESTS</dt><dd>诗歌与日常观察<br>影像与叙事<br>AI、交互与生活碎片</dd><dt>关于作者 / THE PERSON</dt><dd>个人介绍，待续。</dd><dt>联系 / CONTACT</dt><dd>联系方式与社交账号<br>将在所有者提供后加入。</dd><dt>当前版本 / EDITION</dt><dd>Vol. 001 / v1.1.1 · 本地预览<br>诗歌来自所有者稿件，影像与足迹等待真实内容</dd></dl></aside></div></div>`}
+function about(){return `<div class="wrap">${title('05','ABOUT','关于这间小店','世界的边缘，往往藏在日常的细节里。')}<div class="about-layout"><div>${eyebrow('A PERSONAL MANIFESTO','小店的自述')}<h2>我想保留的，<br>是看向世界的方式。</h2><p>这里是一个安放注意力的小地方。用诗歌留下没说完的话，用摄影留下光，再把实验和日常的碎片，慢慢收进来。</p><p>在这里，事物可以不被立即归类。一个下午的光，可以成为一组照片；一个无法回答的问题，可以长成一篇手记；一次偶然的尝试，也可以留下自己的位置。</p><p>希望每次回到这里，都能发现：世界依然辽阔，而观察尚未结束。</p><div class="demo-note">以上为网站概念文案。所有者的真实姓名、个人简介与经历尚待填写。</div></div><aside class="about-sidebar">${eyebrow('OPEN ENDED','保持开放')}<dl><dt>关注的方向 / INTERESTS</dt><dd>诗歌与日常观察<br>影像与叙事<br>AI、交互与生活碎片</dd><dt>关于作者 / THE PERSON</dt><dd>个人介绍，待续。</dd><dt>联系 / CONTACT</dt><dd>联系方式与社交账号<br>将在所有者提供后加入。</dd><dt>当前版本 / EDITION</dt><dd>Vol. 001 / v1.4 · 公开预览<br>诗歌来自所有者稿件，影像与足迹等待真实内容</dd></dl></aside></div></div>`}
 
 function credits(){
   const demos=A.works.filter(w=>w.demo!==false).length;
@@ -990,11 +983,17 @@ function bindRoaming(){
       { left: '78%', top: '28%', anim: 'float-drift-1', delay: '-7.1s' }
     ];
     lanternsLayer.innerHTML = wishes.slice(0, 5).map((w, i) => {
+      // Natural tangential angles matching the river's curving bezier slopes
+      const positions = [
+        { left: '28%', top: '22%', rot: '-18deg', anim: 'float-drift-1', delay: '0s' },
+        { left: '52%', top: '38%', rot: '26deg',  anim: 'float-drift-2', delay: '-3.5s' },
+        { left: '68%', top: '56%', rot: '-12deg', anim: 'float-drift-3', delay: '-1.8s' },
+        { left: '36%', top: '72%', rot: '34deg',  anim: 'float-drift-4', delay: '-5.2s' },
+        { left: '78%', top: '28%', rot: '-8deg',  anim: 'float-drift-1', delay: '-7.1s' }
+      ];
       const pos = positions[i % positions.length];
-      return '<button type="button" class="river-lantern ' + pos.anim + '" style="left:' + pos.left + ';top:' + pos.top + ';animation-delay:' + pos.delay + ';" data-wish-id="' + esc(w.id) + '" title="捞起这叶水灯看一看">'
-        + '<span class="lantern-flame"></span>'
-        + '<span class="lantern-boat">⛵</span>'
-        + '<span class="lantern-stamp">' + esc(w.stamp) + '</span>'
+      return '<button type="button" class="river-lantern ' + pos.anim + '" style="left:' + pos.left + ';top:' + pos.top + ';--tangent-rot:' + pos.rot + ';animation-delay:' + pos.delay + ';" data-wish-id="' + esc(w.id) + '" title="捞起这叶水灯看一看">'
+        + '<span class="topdown-boat-wrap"><svg class="topdown-boat-svg" viewBox="0 0 60 26" width="46" height="20" aria-hidden="true"><defs><radialGradient id="topdownGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff8e7" stop-opacity="1"/><stop offset="35%" stop-color="#ffd580" stop-opacity="0.85"/><stop offset="70%" stop-color="#f59e0b" stop-opacity="0.3"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/></radialGradient><linearGradient id="boatWoodGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#142c26"/><stop offset="25%" stop-color="#2d554a"/><stop offset="50%" stop-color="#3c6b5e"/><stop offset="75%" stop-color="#2d554a"/><stop offset="100%" stop-color="#142c26"/></linearGradient></defs><ellipse cx="30" cy="13" rx="26" ry="9" fill="#081e1a" opacity="0.6"/><path d="M 4 13 Q 30 4 56 13 Q 30 22 4 13 Z" fill="url(#boatWoodGrad)" stroke="#cbb082" stroke-width="0.9" stroke-linejoin="round"/><path d="M 12 13 Q 30 7 48 13 Q 30 19 12 13 Z" fill="#1b3a33" stroke="#8fa89b" stroke-width="0.5" opacity="0.85"/><circle cx="30" cy="13" r="10" fill="url(#topdownGlow)" class="boat-candle-halo"/><circle cx="30" cy="13" r="2.2" fill="#ffffff" class="boat-candle-spark"/></svg></span>'
       + '</button>';
     }).join('');
   };
@@ -1021,8 +1020,7 @@ function bindRoaming(){
   if (wishTossBtn && wishDialog) {
     wishTossBtn.addEventListener('click', () => {
       const text = wishTextArea.value.trim() || '随手掷了一枚铜钱，愿平安喜乐 ✨';
-      const stampEl = wishDialog.querySelector('input[name="wishStamp"]:checked');
-      const stamp = stampEl ? stampEl.value : '✨';
+      const stamp = '✨';
 
       // 1. Play crystal-clear water splash sound!
       playWaterSplashSound();

@@ -234,13 +234,13 @@ export function mountGalaxy(root,archive){
     if(u<.22){
       // 3D Prolate Galactic Bulge & Bar around the Black Hole (立体椭球核球与棒旋核)
       inBulge=true;
-      const rBulge=.38+Math.pow(rand(),1.45)*2.45;
+      const rBulge=.32+Math.pow(rand(),1.85)*2.2;
       const theta=rand()*Math.PI*2;
       const phi=Math.acos(2*rand()-1);
       const barStretch=1.28;
       x=rBulge*Math.sin(phi)*Math.cos(theta)*barStretch;
       z=rBulge*Math.sin(phi)*Math.sin(theta)*.84;
-      y=rBulge*Math.cos(phi)*.62;
+      y=rBulge*Math.cos(phi)*.16;
       radius=Math.hypot(x,z);
       angle=Math.atan2(z,x);
     }else{
@@ -268,7 +268,7 @@ export function mountGalaxy(root,archive){
       z=Math.sin(angle)*rr;
 
       // 3D Vertical Thickness + Graceful S-Curve Relativistic Galactic Warp ("立体翘曲星盘")
-      const diskThickness=Math.max(0.32, 0.85*Math.exp(-radius/5.2) + 0.12*(radius/10.0));
+      const diskThickness=0.18 + 0.32 * Math.exp(-Math.pow(radius / 3.4, 2.0));
       const warp=0.42*Math.sin(angle+0.45)*Math.pow(Math.min(1,radius/11.5),1.85)
                  +0.15*Math.cos(angle*2.0-0.8)*Math.pow(Math.min(1,radius/11.5),1.4);
       // Natural volumetric scale height with midplane concentration and subtle interstellar dust lane
@@ -397,7 +397,7 @@ export function mountGalaxy(root,archive){
 
   // Compact Event Horizon Singularity (no longer a giant flat black sticker!)
   const holeGeometry=new THREE.SphereGeometry(.22,28,20);
-  const holeMaterial=new THREE.MeshBasicMaterial({color:0x010206});
+  const holeMaterial=new THREE.MeshBasicMaterial({color:0x000000});
   const blackHole=new THREE.Mesh(holeGeometry,holeMaterial);
   galaxy.add(blackHole);
 
@@ -1066,7 +1066,7 @@ export function mountGalaxy(root,archive){
         lensMaterial.uniforms.eye.value.copy(camera.position).normalize().multiplyScalar(12.25);
         lensMaterial.uniforms.right.value.set(1,0,0).applyQuaternion(camera.quaternion);
         lensMaterial.uniforms.up.value.set(0,1,0).applyQuaternion(camera.quaternion);
-        lensMaterial.uniforms.radius.value=THREE.MathUtils.clamp(.038*14.0/coreDist,.020,.095);
+        lensMaterial.uniforms.radius.value = THREE.MathUtils.clamp(0.22 * 14.0 / coreDist, 0.02, 0.38);
         lensMaterial.uniforms.strength.value=THREE.MathUtils.clamp((25-coreDist)/9.0,.42,1.0);
         renderer.render(lensScene,lensCamera);
       }
