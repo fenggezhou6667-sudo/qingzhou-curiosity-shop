@@ -1,2 +1,3 @@
 [build]
-  publish = "dist"
+  # Exit with code 0 to ignore and cancel Netlify build, saving all build minutes
+  ignore = "exit 0"
