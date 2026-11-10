@@ -1,0 +1,188 @@
+/* ========================================================
+   UNIFIED EXPLORATION (独立探索版 · 水乡小楼的一夜)
+   ======================================================== */
+
+/* 1. Native View Transitions API Easing */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.62s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-old(root) {
+  opacity: 1;
+}
+::view-transition-new(root) {
+  opacity: 0;
+  mix-blend-mode: normal;
+}
+
+/* 2. Global Atmosphere State Machine (800ms 平滑光学混色) */
+body {
+  transition: background-color 0.8s cubic-bezier(0.22, 1, 0.36, 1), color 0.5s ease;
+}
+body[data-room="home"] {
+  background-color: #071917 !important;
+}
+body[data-room="poems"] {
+  background-color: #101918 !important;
+}
+body[data-room="photography"] {
+  background-color: #03070e !important;
+}
+body[data-room="traces"] {
+  background-color: #071515 !important;
+}
+body[data-room="lab"] {
+  background-color: #0c1714 !important;
+}
+
+/* 3. Solar Term Badge & Version Switcher in HUD Header */
+.solar-term-hud {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(10, 24, 26, 0.45);
+  border: 1px solid rgba(212, 183, 122, 0.22);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-size: 11px;
+  color: #eeddb0;
+  letter-spacing: 0.06em;
+  pointer-events: auto;
+  transition: border-color 0.25s, transform 0.25s;
+}
+.solar-term-hud:hover {
+  border-color: rgba(224, 198, 136, 0.45);
+  background: rgba(14, 32, 36, 0.6);
+}
+.solar-term-stamp {
+  color: #df9e72;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+.solar-term-note {
+  color: #a7bcb2;
+  font-family: var(--serif);
+}
+
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(212, 183, 122, 0.12);
+  border: 1px solid rgba(224, 198, 136, 0.32);
+  color: #f7e6c0;
+  text-decoration: none;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  pointer-events: auto;
+  transition: background 0.2s, border-color 0.2s;
+}
+.version-badge:hover {
+  background: rgba(212, 183, 122, 0.22);
+  border-color: #f5dc9c;
+}
+.version-badge small {
+  color: #9eb5a8;
+  font-size: 10px;
+}
+
+.nav-subtext {
+  display: block;
+  font-size: 8.5px;
+  letter-spacing: 0.1em;
+  color: #8fa59b;
+  text-align: center;
+  margin-top: -2px;
+  opacity: 0.75;
+}
+
+/* 4. Intertextual Cards & Links (诗·影·地 时空互文卡片) */
+.intertext-block {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: rgba(9, 26, 28, 0.65);
+  border: 1px solid rgba(212, 183, 122, 0.28);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+.intertext-kicker {
+  display: block;
+  font: 11px/1.3 var(--sans);
+  letter-spacing: 0.1em;
+  color: #dfc280;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.intertext-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.intertext-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(18, 42, 44, 0.75);
+  border: 1px solid rgba(182, 202, 190, 0.25);
+  color: #f3ecd8;
+  font: 12px/1.3 var(--serif);
+  text-decoration: none;
+  transition: all 0.22s ease;
+}
+.intertext-link:hover {
+  background: rgba(212, 183, 122, 0.22);
+  border-color: #e0c688;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.poetry-intertext-seal {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(182, 202, 190, 0.22);
+}
+.geo-seal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(14, 33, 34, 0.65);
+  border: 1px solid rgba(212, 183, 122, 0.32);
+  color: #eeddb0;
+  font: 12.5px/1.4 var(--serif);
+  text-decoration: none;
+  transition: all 0.22s ease;
+}
+.geo-seal-link:hover {
+  background: rgba(212, 183, 122, 0.2);
+  border-color: #f5dc9c;
+  color: #fff;
+  transform: translateY(-1px);
+}
+.geo-seal-link .seal-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  background: #a94438;
+  color: #fff;
+  font-size: 10px;
+  font-family: var(--serif);
+  line-height: 1;
+}
+
+@media(max-width: 850px){
+  .solar-term-hud .solar-term-note {
+    display: none;
+  }
+}

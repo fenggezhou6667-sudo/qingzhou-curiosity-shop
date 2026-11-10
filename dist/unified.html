@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b211f">
+  <meta name="description" content="清舟的杂货铺（独立探索版 · 水乡小楼的一夜），统摄人间水脉、宣纸墨卷、星空暗房与山河经纬的立体心智空间。">
+  <title>清舟的杂货铺 · 独立探索版 / Qingzhou's Curiosity Shop</title>
+  <link rel="icon" type="image/svg+xml" href="assets/sleeping-cat.svg">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="world.css">
+  <link rel="stylesheet" href="shop.css">
+  <link rel="stylesheet" href="places.css">
+  <link rel="stylesheet" href="roaming-v07.css">
+  <link rel="stylesheet" href="v08.css">
+  <link rel="stylesheet" href="v09.css">
+  <link rel="stylesheet" href="v10.css">
+  <link rel="stylesheet" href="v11.css">
+  <link rel="stylesheet" href="v12.css">
+  <link rel="stylesheet" href="galaxies.css">
+  <link rel="stylesheet" href="unified.css">
+  <script src="content.js" defer></script>
+  <script src="china-map.js" defer></script>
+  <script src="unified.js" defer></script>
+</head>
+<body>
+  <div class="page-atmosphere" id="page-atmosphere" aria-hidden="true"></div>
+  <a class="skip" href="#main">跳至正文</a>
+  <header class="site-header">
+    <div style="display:inline-flex;align-items:center;gap:10px;">
+      <a class="brand" href="#/" aria-label="清舟的杂货铺 首页">
+        <img class="cat-mark" src="assets/sleeping-cat.svg" width="88" height="64" alt="">
+        <span>清舟的杂货铺<small>QINGZHOU’S CURIOSITY SHOP</small></span>
+      </a>
+      <div class="solar-term-hud" id="solar-term-hud" aria-live="polite">
+        <!-- populated dynamically -->
+      </div>
+    </div>
+    <div class="header-compass">
+      <nav aria-label="主导航">
+        <a href="#/" data-nav="index"><span>水面</span><small class="nav-subtext">入口</small></a>
+        <a href="#/notes" data-nav="notes"><span>诗卷</span><small class="nav-subtext">诗集</small></a>
+        <a href="#/works" data-nav="works"><span>暗房</span><small class="nav-subtext">摄影</small></a>
+        <a href="#/lab" data-nav="lab"><span>造物</span><small class="nav-subtext">实验</small></a>
+        <a href="#/traces" data-nav="traces"><span>山河</span><small class="nav-subtext">足迹</small></a>
+      </nav>
+      <a class="version-badge" href="index.html" title="点击返回原版里程碑版本 (v1.4)"><span>✦ 探索版</span><small>返回原版 ↗</small></a>
+      <aside class="music-dock" id="music-dock" aria-label="声音藏品">
+        <button id="dock-toggle" class="dock-toggle" type="button" aria-expanded="false" aria-controls="dock-panel" aria-label="展开音乐播放器">
+          <span aria-hidden="true">♫</span><span class="dock-title">有光的地方</span><span class="dock-pulse" aria-hidden="true"></span>
+        </button>
+        <audio id="dock-audio" src="assets/where-the-light-settles.mp3" preload="metadata"></audio>
+      </aside>
+    </div>
+    <span class="edition">VOL. 002 / <span>水乡小楼的一夜</span></span>
+  </header>
+  <section class="dock-panel" id="dock-panel" hidden aria-label="有光的地方播放器">
+    <button type="button" class="dock-close" id="dock-close" aria-label="收起音乐播放器">收起</button>
+    <span class="dock-eyebrow">一件声音作品</span>
+    <h2>有光的地方</h2>
+    <p>与 AI 共同编曲，并通过 MIDI 演奏</p>
+    <div class="dock-controls">
+      <button type="button" id="dock-play" aria-label="播放《有光的地方》">▶</button>
+      <div class="dock-timeline">
+        <label for="dock-progress" class="sr-only">播放进度</label>
+        <input id="dock-progress" type="range" min="0" max="1000" value="0" step="1">
+        <div class="dock-times">
+          <output id="dock-elapsed">0:00</output><span id="dock-duration">3:19</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <main id="main" tabindex="-1"></main>
+  <footer>
+    <a href="#/" class="footer-title">倚山水暖风走过，傍夕阳皓月而行</a>
+    <div>
+      <span>QINGZHOU’S CURIOSITY SHOP · 独立探索版</span>
+      <span>水乡小楼 · 诗·影·地时空互文</span>
+      <a href="#/" id="footer-wish-link">光河许愿池</a>
+      <a href="index.html">返回原版里程碑 ↗</a>
+      <a href="#/about">关于这间小店</a>
+      <a href="#/credits">演示内容与影像来源 ↗</a>
+      <a href="#main">回到页首 ↑</a>
+    </div>
+  </footer>
+  <dialog id="lightbox" aria-labelledby="viewer-title">
+    <div class="viewer-bar"><span id="viewer-title"></span><button id="close-viewer" aria-label="关闭放大浏览">关闭 ESC ×</button></div>
+    <img id="viewer-image" alt="">
+    <div class="viewer-bottom">
+      <button id="previous-image" aria-label="上一张照片">← 上一张</button>
+      <span id="viewer-count" aria-live="polite"></span>
+      <button id="next-image" aria-label="下一张照片">下一张 →</button>
+    </div>
+  </dialog>
+</body>
+</html>
