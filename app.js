@@ -328,38 +328,73 @@ function starfieldMarkup(kind='collection',count=190){
 }
 function works(){
   const first=A.works[0];
-  const themes=A.works.map((w,i)=>'<button type="button" class="cosmos-theme'+(i===0?' is-active':'')+'" data-theme="'+i+'" aria-pressed="'+(i===0)+'">'+esc(w.title)+'</button>').join('');
-  return '<div class="cosmos-room"><div class="cosmos-heading wrap"><div><p>一片银河，几段记忆</p><h1>星空暗房</h1><span>每一座恒星系，都安放着一组可以靠近的影像。</span></div><small>3D 琉璃星盘与银河 · 悬浮探看 · 点击深入</small></div><section class="cosmos" aria-label="摄影星系"><div class="cosmos-themes" aria-label="选择相册星团">'+themes+'<button type="button" class="cosmos-theme cosmos-reset-btn" data-zoom="reset">↺ 银河全景</button></div><div class="cosmos-layout"><div class="cosmos-scene"><canvas class="cosmos-canvas" tabindex="0" aria-label="三维星系，拖动旋转；滚轮缩放；悬停查看恒星系，点击进入完整相册"></canvas><p class="cosmos-instructions"><span class="cosmos-hint-desktop">拖拽旋转星河 · 悬浮探看恒星系 · 点击星系展开影像 · ↺ 重置全景</span><span class="cosmos-hint-touch">单指旋转 · 双指缩放 · 轻触恒星系探看 · ↺ 返回全景</span></p><div class="cosmos-zoom"><button type="button" data-zoom="in" aria-label="放大星系">＋</button><button type="button" data-zoom="out" aria-label="缩小星系">−</button><button type="button" data-zoom="reset" aria-label="重置视角">↺</button></div><div id="cosmos-hover-card" class="cosmos-hover-card" aria-live="polite"><a class="cosmos-hover-link" href="#/works/'+esc(first.slug)+'"><div class="cosmos-hover-top"><div class="cosmos-hover-thumb"><img src="'+esc(A.images[first.photos[0]].variants[1].path)+'" alt=""></div><div class="cosmos-hover-meta"><span class="cosmos-hover-kicker">STELLAR SYSTEM 01</span><h2>'+esc(first.title)+'</h2></div></div><p class="cosmos-hover-desc">'+esc(first.intro)+'</p><div class="cosmos-hover-foot"><span>点击进入这组影像 ↗</span><small>'+first.photos.length+' 幅摄影</small></div></a></div><p class="cosmos-fallback" hidden>当前设备无法显示三维星系，可以使用上方按钮浏览影像。</p></div></div></section><p class="cosmos-end wrap">光会留下它经过的地方。</p></div>';
+  const themes=A.works.map((w,i)=>'<button type="button" class="cosmos-theme" data-theme="'+i+'" aria-pressed="false">'+esc(w.title)+'</button>').join('');
+  return '<div class="cosmos-room"><div class="cosmos-heading wrap"><div><p>一片银河，几段记忆</p><h1>星空暗房</h1><span>每一座恒星系，都安放着一组可以靠近的影像。</span></div><small>3D 琉璃星盘与银河 · 悬浮探看 · 点击深入</small></div><section class="cosmos" aria-label="摄影星系"><div class="cosmos-themes" aria-label="选择相册星团">'+themes+'<button type="button" class="cosmos-theme cosmos-reset-btn" data-zoom="reset">↺ 银河全景</button></div><div class="cosmos-layout"><div class="cosmos-scene"><canvas class="cosmos-canvas" tabindex="0" aria-label="三维星系，拖动旋转；滚轮缩放；悬停查看恒星系，点击进入完整相册"></canvas><p class="cosmos-instructions"><span class="cosmos-hint-desktop">拖拽旋转星河 · 悬浮探看恒星系 · 点击星系展开影像 · ↺ 重置全景</span><span class="cosmos-hint-touch">单指旋转 · 双指缩放 · 轻触恒星系探看 · ↺ 返回全景</span></p><div class="cosmos-zoom"><button type="button" data-zoom="in" aria-label="放大星系">＋</button><button type="button" data-zoom="out" aria-label="缩小星系">−</button><button type="button" data-zoom="reset" aria-label="重置视角">↺</button></div><div id="cosmos-hover-card" class="cosmos-hover-card" aria-live="polite"><div class="cosmos-card-head"><div><span class="cosmos-card-kicker">STELLAR SYSTEM 01 · 摄影暗房归藏</span><h2 class="cosmos-card-title">'+esc(first.title)+'</h2></div><button type="button" class="cosmos-card-close" id="cosmos-card-close" aria-label="关闭看片台，返回银河全景">×</button></div><a class="cosmos-card-cover-wrap" href="#/works/'+esc(first.slug)+'"><img class="cosmos-card-thumb" src="'+esc(A.images[first.photos[0]].variants[1].path)+'" alt=""><span class="cosmos-card-badge">展开完整展厅 ↗</span></a><p class="cosmos-card-desc">'+esc(first.intro)+'</p><div class="cosmos-card-film-strip" aria-label="该星系底片缩略"></div><a class="cosmos-card-cta" href="#/works/'+esc(first.slug)+'">展开暗房看片台 · 阅览影像 ↗</a></div><p class="cosmos-fallback" hidden>当前设备无法显示三维星系，可以使用上方按钮浏览影像。</p></div></div></section><p class="cosmos-end wrap">光会留下它经过的地方。</p></div>';
 }
 function bindCosmos(){
   const root=document.querySelector('.cosmos');
   const card=root.querySelector('#cosmos-hover-card');
-  let currentTheme=0,disposed=false,stop=()=>{};
+  let currentTheme=-1,disposed=false,stop=()=>{};
   const updateCard=idx=>{
     if(idx<0||idx>=A.works.length){
+      currentTheme=-1;
       card?.classList.remove('is-visible');
+      root.querySelectorAll('[data-theme]').forEach(el=>{
+        el.classList.remove('is-active');
+        el.setAttribute('aria-pressed','false');
+      });
       return;
     }
     currentTheme=idx;
     const w=A.works[idx],im=A.images[w.photos[0]];
     if(card){
-      card.querySelector('.cosmos-hover-link').href='#/works/'+w.slug;
-      const img=card.querySelector('.cosmos-hover-thumb img');
+      const kicker=card.querySelector('.cosmos-card-kicker');
+      if(kicker) kicker.textContent='STELLAR SYSTEM 0'+(idx+1)+' · 摄影暗房归藏';
+      const title=card.querySelector('.cosmos-card-title');
+      if(title) title.textContent=w.title;
+      const desc=card.querySelector('.cosmos-card-desc');
+      if(desc) desc.textContent=w.intro;
+      const coverWrap=card.querySelector('.cosmos-card-cover-wrap');
+      if(coverWrap) coverWrap.href='#/works/'+w.slug;
+      const cta=card.querySelector('.cosmos-card-cta');
+      if(cta) cta.href='#/works/'+w.slug;
+      const img=card.querySelector('.cosmos-card-thumb');
       if(img){img.src=im.variants[1].path;img.alt=esc(im.alt);}
-      card.querySelector('.cosmos-hover-kicker').textContent='STELLAR SYSTEM 0'+(idx+1);
-      card.querySelector('.cosmos-hover-meta h2').textContent=w.title;
-      card.querySelector('.cosmos-hover-desc').textContent=w.intro;
-      card.querySelector('.cosmos-hover-foot small').textContent=w.photos.length+' 幅摄影';
+      const strip=card.querySelector('.cosmos-card-film-strip');
+      if(strip){
+        strip.innerHTML=w.photos.map((p,pi)=>{
+          const pim=A.images[p];
+          const src=pim.variants[0]?.path||pim.variants[1].path;
+          return '<a class="cosmos-film-thumb" href="#/works/'+w.slug+'" title="第 '+(pi+1)+' 帧：'+esc(pim.alt)+'"><img src="'+esc(src)+'" alt="'+esc(pim.alt)+'"></a>';
+        }).join('');
+      }
       card.classList.add('is-visible');
     }
-    root.querySelectorAll('[data-theme]').forEach((el,i)=>el.classList.toggle('is-active',i===idx));
+    root.querySelectorAll('[data-theme]').forEach((el,i)=>{
+      const active=i===idx;
+      el.classList.toggle('is-active',active);
+      el.setAttribute('aria-pressed',active?'true':'false');
+    });
   };
   root.addEventListener('cosmos-hover',e=>updateCard(e.detail.index));
+  root.addEventListener('cosmos-pick',e=>updateCard(e.detail.index));
   root.addEventListener('click',e=>{
     const tab=e.target.closest('[data-theme]');
     if(tab){
       const idx=Number(tab.dataset.theme);
+      updateCard(idx);
       root.dispatchEvent(new CustomEvent('cosmos-focus',{detail:{index:idx,openGallery:false}}));
+    }
+    const reset=e.target.closest('[data-zoom="reset"]');
+    if(reset){
+      updateCard(-1);
+    }
+    const closeBtn=e.target.closest('#cosmos-card-close');
+    if(closeBtn){
+      e.preventDefault();
+      e.stopPropagation();
+      updateCard(-1);
+      root.querySelector('[data-zoom="reset"]')?.click();
     }
   });
   import('./galaxy3d.js').then(m=>{if(!disposed)stop=m.mountGalaxy(root,A);}).catch(error=>{console.error('星系加载失败',error);root.querySelector('.cosmos-fallback').hidden=false;});

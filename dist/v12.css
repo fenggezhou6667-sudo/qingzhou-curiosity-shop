@@ -1,3 +1,29 @@
+/* Viewport anti-shift & ethereal ambient scrollbars */
+html{
+  scrollbar-gutter:stable;
+}
+::-webkit-scrollbar{
+  width:7px;
+  height:7px;
+}
+::-webkit-scrollbar-track{
+  background:transparent;
+}
+::-webkit-scrollbar-thumb{
+  background:rgba(182,202,190,.22);
+  border-radius:999px;
+  border:2px solid transparent;
+  background-clip:padding-box;
+}
+::-webkit-scrollbar-thumb:hover{
+  background:rgba(212,183,122,.45);
+  border:2px solid transparent;
+  background-clip:padding-box;
+}
+*{
+  scrollbar-width:thin;
+  scrollbar-color:rgba(182,202,190,.22) transparent;
+}
 
 /* v1.2 — one continuous night palette, unified river branches, and the China footprint map. */
 :root{--ink:#e7e6d9;--muted:#aab8af;--line:#304a43;--red:#d4b77a;--paper:#0b211f}
@@ -108,7 +134,8 @@ body[data-room=home] .river-distributary:focus-within .branch-haze,body[data-roo
 
 body[data-text-scheme=dark]{background:#0b211f!important;color:#e7e6d9;--ink:#e7e6d9;--muted:#aab8af;--line:#304a43;--red:#d4b77a;--paper:#0b211f}
 body[data-room=home]:before{opacity:.055!important}
-.dock-toggle{background:#12342fe8!important;border-color:#d8c99a87!important;color:#f1dfb3!important}
+.dock-toggle{background:rgba(20,44,48,.65)!important;border:1px solid rgba(224,198,136,.32)!important;color:#f1dfb3!important;backdrop-filter:blur(8px);}
+.dock-toggle:hover{background:rgba(28,62,68,.85)!important;border-color:rgba(224,198,136,.65)!important;}
 .dock-toggle:hover{background:#1d4a3e!important;border-color:#f0d597!important}
 .dock-panel{background:linear-gradient(155deg,#173b32fa,#0a211ffc)!important;border-color:#d8bf8455!important;color:#eae6d9}
 
@@ -279,20 +306,21 @@ body[data-room=home]:before{opacity:.055!important}
   display:inline-flex;
   align-items:center;
   gap:10px;
-  background:rgba(9,26,25,.68);
-  border:1px solid rgba(212,183,122,.28);
+  background:rgba(8,18,22,.48)!important;
+  border:1px solid rgba(224,198,136,.18)!important;
   border-radius:999px;
   padding:5px 16px 5px 12px;
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-  box-shadow:0 6px 20px rgba(0,0,0,.42);
+  backdrop-filter:blur(18px) saturate(150%)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(150%)!important;
+  box-shadow:0 4px 20px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.05)!important;
   text-decoration:none;
   transition:background .25s,border-color .25s,transform .25s;
 }
 .site-header .brand:hover{
-  background:rgba(16,42,40,.82);
-  border-color:#dfc282;
+  background:rgba(12,28,34,.65)!important;
+  border-color:rgba(224,198,136,.36)!important;
   transform:translateY(-1px);
+  box-shadow:0 6px 24px rgba(0,0,0,.45),0 0 16px rgba(212,183,122,.12)!important;
 }
 .site-header .brand .cat-mark{
   width:42px;
@@ -315,13 +343,14 @@ body[data-room=home]:before{opacity:.055!important}
   display:inline-flex;
   align-items:center;
   gap:12px;
-  background:rgba(9,26,25,.75);
-  border:1px solid rgba(212,183,122,.32);
+  background:rgba(8,18,22,.48)!important;
+  border:1px solid rgba(224,198,136,.18)!important;
   border-radius:999px;
   padding:4px 8px 4px 18px;
-  backdrop-filter:blur(14px);
-  -webkit-backdrop-filter:blur(14px);
-  box-shadow:0 8px 24px rgba(2,10,9,.5);
+  backdrop-filter:blur(18px) saturate(150%)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(150%)!important;
+  box-shadow:0 4px 20px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.05)!important;
+  transition:background .25s,border-color .25s,box-shadow .25s;
 }
 .header-compass nav{
   display:flex;
