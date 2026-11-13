@@ -491,7 +491,7 @@ function bookPage(n){
   const paragraphs=n.body.map(p=>'<p>'+esc(p)+'</p>').join('');
   const sealed=getSealState(n.slug);
   const placeTag=n.place?' · 写于'+esc(n.place):'';
-  const geoSeal=n.place?'<div class="poetry-intertext-seal"><a href="#/traces" class="geo-seal-link" data-city="'+esc(n.place)+'"><span class="seal-icon">印</span><span>写于 '+esc(n.place)+' · 在山河经纬中寻访坐标 ↗</span></a></div>':'';
+  const geoSeal=n.place?'<div class="poetry-intertext-seal"><a href="#realm-traces" class="geo-seal-link" data-city-jump="'+esc(n.place)+'"><span class="seal-icon">印</span><span>写于 '+esc(n.place)+' · 在下方山河舆图中定位 ↓</span></a><a href="#/notes/'+esc(n.slug)+'" class="geo-seal-link"><span class="seal-icon">笺</span><span>古笺竖排与旅人批注 ↗</span></a></div>':'';
   return '<div class="book-poem-wrap"><div class="book-poem-header"><span class="book-leaf-meta">'+esc(n.category)+' / '+esc(n.genre)+placeTag+'</span><h2>'+esc(n.title)+'</h2><span class="book-date">'+esc(n.date||'')+'</span></div><div class="book-poem-body">'+paragraphs+'</div>'+poemVignette(n)+geoSeal+'<div class="book-poem-actions"><a class="book-permalink" href="#/notes/'+esc(n.slug)+'">单独打开这首诗 ↗</a><button type="button" class="poem-seal-btn '+(sealed?'is-sealed':'')+'" data-seal-slug="'+esc(n.slug)+'" aria-pressed="'+sealed+'"><span class="seal-mark" aria-hidden="true">清舟</span><span class="seal-text">'+(sealed?'已落朱砂印 · 留存共鸣':'落一枚朱砂 · 记下停驻')+'</span></button></div></div>';
 }
 function renderBook(){
@@ -618,13 +618,13 @@ const HERBARIUM_SAMPLES=[
 function projectDetail(l){
   const stages=l.stages||[{label:'当前状态',text:l.status},{label:'记录',text:l.record}];
   const interactive=l.slug==='machine-herbarium'?
-    '<section class="lab-interactive-box" aria-label="机器植物志·概念标本台"><div class="eyebrow"><span class="red">INTERACTIVE PROTOTYPE</span> &nbsp; / &nbsp; 机器命名 vs 人的记忆</div><h2>采集一枚概念标本</h2><p class="lab-proto-desc">选择一处日常观察片段，看看「算法特征提取」与「人的诗意命名」在同一张标本卡上的对照：</p><div class="herb-pills" role="group" aria-label="选择观察样本">'+HERBARIUM_SAMPLES.map((s,i)=>'<button type="button" class="herb-pill" data-herb="'+i+'" aria-pressed="'+(i===0)+'">'+esc(s.tag)+'</button>').join('')+'</div><div class="herb-card" id="herb-card"><div class="herb-card-head"><span id="herb-latin">'+esc(HERBARIUM_SAMPLES[0].latin)+'</span><small id="herb-place">'+esc(HERBARIUM_SAMPLES[0].place)+'</small></div><p id="herb-note">'+esc(HERBARIUM_SAMPLES[0].note)+'</p><blockquote id="herb-verse">'+esc(HERBARIUM_SAMPLES[0].verse)+'</blockquote></div></section>':'';
-  return '<div class="wrap project-reading" id="lab-desk"><div class="lab-lamp-glow" aria-hidden="true"></div><a class="quiet-link" href="#/lab">← 回到实验桌</a><header class="room-heading">'+eyebrow(l.id,'PROJECT DOSSIER')+'<h1>'+esc(l.title)+'</h1><p>'+esc(l.en)+'</p><span class="project-status">○ '+esc(l.status)+'</span></header><div class="project-reading-grid"><section><h2>一开始的念头</h2><p>'+esc(l.inspiration||l.intro)+'</p><h2>还想继续问的</h2><ul>'+(l.questions||['这个想法想留下什么？','下一次尝试，需要怎样的观察？']).map(q=>'<li>'+esc(q)+'</li>').join('')+'</ul></section><section><h2>留在桌上的记录</h2><ol class="project-stages">'+stages.map(s=>'<li><span>'+esc(s.label)+'</span><p>'+esc(s.text)+'</p></li>').join('')+'</ol><p class="project-boundary">这里呈现档案与演示状态，不构成已发布产品或已完成科研成果的声明。</p></section></div>'+interactive+'</div>';
+    '<section class="lab-interactive-box" aria-label="机器植物志·概念标本台"><div class="eyebrow"><span class="red">INTERACTIVE PROTOTYPE</span> &nbsp; / &nbsp; 机器命名 vs 人的记忆</div><h2>采集一枚概念标本</h2><p class="lab-proto-desc">选择一处日常观察片段，看看「算法特征提取」与「人的诗意命名」在同一张标本卡上的对照：</p><div class="herb-pills" role="group" aria-label="选择观察样本">'+HERBARIUM_SAMPLES.map((s,i)=>'<button type="button" class="herb-pill" data-herb="'+i+'" aria-pressed="'+(i===0)+'">'+esc(s.tag)+'</button>').join('')+'</div><div class="herb-card"><div class="herb-card-head"><span class="herb-latin">'+esc(HERBARIUM_SAMPLES[0].latin)+'</span><small class="herb-place">'+esc(HERBARIUM_SAMPLES[0].place)+'</small></div><p class="herb-note">'+esc(HERBARIUM_SAMPLES[0].note)+'</p><blockquote class="herb-verse">'+esc(HERBARIUM_SAMPLES[0].verse)+'</blockquote></div></section>':'';
+  return '<div class="wrap project-reading" id="lab-dossier-desk"><div class="lab-lamp-glow" aria-hidden="true"></div><a class="quiet-link" href="#/lab">← 回到实验桌</a><header class="room-heading">'+eyebrow(l.id,'PROJECT DOSSIER')+'<h1>'+esc(l.title)+'</h1><p>'+esc(l.en)+'</p><span class="project-status">○ '+esc(l.status)+'</span></header><div class="project-reading-grid"><section><h2>一开始的念头</h2><p>'+esc(l.inspiration||l.intro)+'</p><h2>还想继续问的</h2><ul>'+(l.questions||['这个想法想留下什么？','下一次尝试，需要怎样的观察？']).map(q=>'<li>'+esc(q)+'</li>').join('')+'</ul></section><section><h2>留在桌上的记录</h2><ol class="project-stages">'+stages.map(s=>'<li><span>'+esc(s.label)+'</span><p>'+esc(s.text)+'</p></li>').join('')+'</ol><p class="project-boundary">这里呈现档案与演示状态，不构成已发布产品或已完成科研成果的声明。</p></section></div>'+interactive+'</div>';
 }
-function bindLabDesk(){
-  const desk=document.querySelector('#lab-desk');if(!desk)return()=>{};
+function bindLabDesk(scopeEl){
+  const desk=scopeEl||document.querySelector('#lab-desk');if(!desk)return()=>{};
   const move=e=>{const r=desk.getBoundingClientRect();desk.style.setProperty('--lamp-x',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');desk.style.setProperty('--lamp-y',((e.clientY-r.top)/r.height*100).toFixed(1)+'%');};
-  const click=e=>{const b=e.target.closest('[data-herb]');if(!b)return;const idx=Number(b.dataset.herb),sample=HERBARIUM_SAMPLES[idx];if(!sample)return;desk.querySelectorAll('[data-herb]').forEach((el,i)=>el.setAttribute('aria-pressed',String(i===idx)));document.querySelector('#herb-latin').textContent=sample.latin;document.querySelector('#herb-place').textContent=sample.place;document.querySelector('#herb-note').textContent=sample.note;document.querySelector('#herb-verse').textContent=sample.verse;};
+  const click=e=>{const b=e.target.closest('[data-herb]');if(!b)return;const idx=Number(b.dataset.herb),sample=HERBARIUM_SAMPLES[idx];if(!sample)return;desk.querySelectorAll('[data-herb]').forEach((el,i)=>el.setAttribute('aria-pressed',String(i===idx)));desk.querySelector('.herb-latin').textContent=sample.latin;desk.querySelector('.herb-place').textContent=sample.place;desk.querySelector('.herb-note').textContent=sample.note;desk.querySelector('.herb-verse').textContent=sample.verse;};
   desk.addEventListener('pointermove',move);desk.addEventListener('click',click);
   return()=>{desk.removeEventListener('pointermove',move);desk.removeEventListener('click',click);};
 }
@@ -981,14 +981,21 @@ if(!form||!plaques)return()=>{};
   return ()=>{form.removeEventListener('submit',onSubmit);};
 }
 
+
+
+
+
+
+
 let roamingPaused=false;
 let roamingIntroComplete=false;
 function bindRoaming(){
   const area=document.querySelector('#rooms'),button=document.querySelector('#toggle-roaming');
+  if(!area||!button)return()=>{};
 
-  // Keep the portrait illustration's proportions while giving tablets wider banks.
   const portraitScene=area.querySelector('.mobile-scene-art');
   const sizePortrait=()=>{
+    if(!portraitScene)return;
     const width=area.clientWidth;
     const portrait=matchMedia('(orientation: portrait)').matches;
     const frame=portrait&&width<=900 ? Math.max(390,width) : 390;
@@ -1005,7 +1012,7 @@ function bindRoaming(){
     const paused=roamingPaused||preference.matches;
     area.dataset.paused=String(paused);
     area.dataset.running=String(visible&&!document.hidden&&!paused);
-    const label=preference.matches?'已按照系统设置减少动画':roamingPaused?'继续首页动画':'暂停首页动画';
+    const label=preference.matches?'已按照系统设置减少动画':roamingPaused?'继续河灯动画':'暂停河灯动画';
     button.setAttribute('aria-pressed',String(paused));button.disabled=preference.matches;
     button.textContent=paused?'▷':'Ⅱ';button.setAttribute('aria-label',label);button.title=label;
     if(paused&&!introDone){roamingIntroComplete=true;introDone=true;area.dataset.intro='complete';}
@@ -1030,216 +1037,497 @@ function bindRoaming(){
     rip.addEventListener('animationend',()=>rip.remove());
   };
   area.addEventListener('pointermove',onPointerRipple,{passive:true});
-  const observer=new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;sync();},{threshold:.05});
+  const observer=new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;sync();},{rootMargin:'260px 0px',threshold:.04});
   observer.observe(area);
   const onToggle=()=>{roamingPaused=!roamingPaused;sync();};
   button.addEventListener('click',onToggle);area.addEventListener('animationend',onComplete);
   preference.addEventListener('change',sync);document.addEventListener('visibilitychange',sync);sync();
-  
-  // --- 光河许愿池与漂流水灯交互逻辑 ---
-  const wishTrigger = document.querySelector('#dock-wish-trigger');
-  const wishDialog = document.querySelector('#wish-dialog');
-  const wishClose = document.querySelector('#wish-dialog-close');
-  const wishTossBtn = document.querySelector('#wish-toss-btn');
-  const wishTextArea = document.querySelector('#wish-text');
-  const wishCharCount = document.querySelector('#wish-chars');
-  const lanternsLayer = document.querySelector('#river-lanterns-layer');
-  const lanternViewer = document.querySelector('#lantern-viewer');
-  const lanternViewerClose = document.querySelector('#lantern-viewer-close');
-  const lanternViewerText = document.querySelector('#lantern-viewer-text');
-  const lanternViewerStamp = document.querySelector('#lantern-viewer-stamp');
-  const lanternViewerDate = document.querySelector('#lantern-viewer-date');
-  const lanternViewerCheers = document.querySelector('#lantern-viewer-cheers');
-  const lanternCheerBtn = document.querySelector('#lantern-cheer-btn');
 
-  let activeLanternData = null;
+  const wishTrigger=document.querySelector('#dock-wish-trigger');
+  const wishDialog=document.querySelector('#wish-dialog');
+  const wishClose=document.querySelector('#wish-dialog-close');
+  const wishTossBtn=document.querySelector('#wish-toss-btn');
+  const wishTextArea=document.querySelector('#wish-text');
+  const wishCharCount=document.querySelector('#wish-chars');
+  const lanternsLayer=document.querySelector('#river-lanterns-layer');
+  const lanternViewer=document.querySelector('#lantern-viewer');
+  const lanternViewerClose=document.querySelector('#lantern-viewer-close');
+  const lanternViewerText=document.querySelector('#lantern-viewer-text');
+  const lanternViewerStamp=document.querySelector('#lantern-viewer-stamp');
+  const lanternViewerDate=document.querySelector('#lantern-viewer-date');
+  const lanternViewerCheers=document.querySelector('#lantern-viewer-cheers');
+  const lanternCheerBtn=document.querySelector('#lantern-cheer-btn');
+  let activeLanternData=null;
 
-  // Render floating river lanterns along the river curves
-  const renderRiverLanterns = () => {
-    if (!lanternsLayer) return;
-    const wishes = getRiverWishes();
-    const positions = [
-      { left: '28%', top: '22%', anim: 'float-drift-1', delay: '0s' },
-      { left: '52%', top: '38%', anim: 'float-drift-2', delay: '-3.5s' },
-      { left: '68%', top: '56%', anim: 'float-drift-3', delay: '-1.8s' },
-      { left: '36%', top: '72%', anim: 'float-drift-4', delay: '-5.2s' },
-      { left: '78%', top: '28%', anim: 'float-drift-1', delay: '-7.1s' }
+  const renderRiverLanterns=()=>{
+    if(!lanternsLayer)return;
+    const wishes=getRiverWishes();
+    const positions=[
+      {left:'28%',top:'22%',rot:'-18deg',anim:'float-drift-1',delay:'0s'},
+      {left:'52%',top:'38%',rot:'26deg',anim:'float-drift-2',delay:'-3.5s'},
+      {left:'68%',top:'56%',rot:'-12deg',anim:'float-drift-3',delay:'-1.8s'},
+      {left:'36%',top:'72%',rot:'34deg',anim:'float-drift-4',delay:'-5.2s'},
+      {left:'78%',top:'28%',rot:'-8deg',anim:'float-drift-1',delay:'-7.1s'}
     ];
-    lanternsLayer.innerHTML = wishes.slice(0, 5).map((w, i) => {
-      // Natural tangential angles matching the river's curving bezier slopes
-      const positions = [
-        { left: '28%', top: '22%', rot: '-18deg', anim: 'float-drift-1', delay: '0s' },
-        { left: '52%', top: '38%', rot: '26deg',  anim: 'float-drift-2', delay: '-3.5s' },
-        { left: '68%', top: '56%', rot: '-12deg', anim: 'float-drift-3', delay: '-1.8s' },
-        { left: '36%', top: '72%', rot: '34deg',  anim: 'float-drift-4', delay: '-5.2s' },
-        { left: '78%', top: '28%', rot: '-8deg',  anim: 'float-drift-1', delay: '-7.1s' }
-      ];
-      const pos = positions[i % positions.length];
-      return '<button type="button" class="river-lantern ' + pos.anim + '" style="left:' + pos.left + ';top:' + pos.top + ';--tangent-rot:' + pos.rot + ';animation-delay:' + pos.delay + ';" data-wish-id="' + esc(w.id) + '" title="捞起这叶水灯看一看">'
-        + '<span class="topdown-boat-wrap"><svg class="topdown-boat-svg" viewBox="0 0 60 26" width="46" height="20" aria-hidden="true"><defs><radialGradient id="topdownGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff8e7" stop-opacity="1"/><stop offset="35%" stop-color="#ffd580" stop-opacity="0.85"/><stop offset="70%" stop-color="#f59e0b" stop-opacity="0.3"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/></radialGradient><linearGradient id="boatWoodGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#142c26"/><stop offset="25%" stop-color="#2d554a"/><stop offset="50%" stop-color="#3c6b5e"/><stop offset="75%" stop-color="#2d554a"/><stop offset="100%" stop-color="#142c26"/></linearGradient></defs><ellipse cx="30" cy="13" rx="26" ry="9" fill="#081e1a" opacity="0.6"/><path d="M 4 13 Q 30 4 56 13 Q 30 22 4 13 Z" fill="url(#boatWoodGrad)" stroke="#cbb082" stroke-width="0.9" stroke-linejoin="round"/><path d="M 12 13 Q 30 7 48 13 Q 30 19 12 13 Z" fill="#1b3a33" stroke="#8fa89b" stroke-width="0.5" opacity="0.85"/><circle cx="30" cy="13" r="10" fill="url(#topdownGlow)" class="boat-candle-halo"/><circle cx="30" cy="13" r="2.2" fill="#ffffff" class="boat-candle-spark"/></svg></span>'
-      + '</button>';
+    lanternsLayer.innerHTML=wishes.slice(0,5).map((w,i)=>{
+      const pos=positions[i%positions.length];
+      return '<button type="button" class="river-lantern '+pos.anim+'" style="left:'+pos.left+';top:'+pos.top+';--tangent-rot:'+pos.rot+';animation-delay:'+pos.delay+';" data-wish-id="'+esc(w.id)+'" title="捞起这叶水灯看一看">'
+        +'<span class="topdown-boat-wrap"><svg class="topdown-boat-svg" viewBox="0 0 60 26" width="46" height="20" aria-hidden="true"><defs><radialGradient id="topdownGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff8e7" stop-opacity="1"/><stop offset="35%" stop-color="#ffd580" stop-opacity="0.85"/><stop offset="70%" stop-color="#f59e0b" stop-opacity="0.3"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/></radialGradient><linearGradient id="boatWoodGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#142c26"/><stop offset="25%" stop-color="#2d554a"/><stop offset="50%" stop-color="#3c6b5e"/><stop offset="75%" stop-color="#2d554a"/><stop offset="100%" stop-color="#142c26"/></linearGradient></defs><ellipse cx="30" cy="13" rx="26" ry="9" fill="#081e1a" opacity="0.6"/><path d="M 4 13 Q 30 4 56 13 Q 30 22 4 13 Z" fill="url(#boatWoodGrad)" stroke="#cbb082" stroke-width="0.9" stroke-linejoin="round"/><path d="M 12 13 Q 30 7 48 13 Q 30 19 12 13 Z" fill="#1b3a33" stroke="#8fa89b" stroke-width="0.5" opacity="0.85"/><circle cx="30" cy="13" r="10" fill="url(#topdownGlow)" class="boat-candle-halo"/><circle cx="30" cy="13" r="2.2" fill="#ffffff" class="boat-candle-spark"/></svg></span>'
+        +'</button>';
     }).join('');
   };
   renderRiverLanterns();
 
-  if (wishTrigger && wishDialog) {
-    wishTrigger.addEventListener('click', () => {
-      wishDialog.showModal();
-      wishTextArea?.focus();
-    });
+  if(wishTrigger&&wishDialog){
+    wishTrigger.addEventListener('click',()=>{wishDialog.showModal();wishTextArea?.focus();});
   }
-  if (wishClose && wishDialog) {
-    wishClose.addEventListener('click', () => wishDialog.close());
-    wishDialog.addEventListener('click', e => { if (e.target === wishDialog) wishDialog.close(); });
+  if(wishClose&&wishDialog){
+    wishClose.addEventListener('click',()=>wishDialog.close());
+    wishDialog.addEventListener('click',e=>{if(e.target===wishDialog)wishDialog.close();});
   }
-
-  if (wishTextArea && wishCharCount) {
-    wishTextArea.addEventListener('input', () => {
-      wishCharCount.textContent = wishTextArea.value.length;
-    });
+  if(wishTextArea&&wishCharCount){
+    wishTextArea.addEventListener('input',()=>{wishCharCount.textContent=wishTextArea.value.length;});
   }
-
-  // Throw coin & launch river lantern!
-  if (wishTossBtn && wishDialog) {
-    wishTossBtn.addEventListener('click', () => {
-      const text = wishTextArea.value.trim() || '随手掷了一枚铜钱，愿平安喜乐 ✨';
-      const stamp = '✨';
-
-      // 1. Play crystal-clear water splash sound!
+  if(wishTossBtn&&wishDialog){
+    wishTossBtn.addEventListener('click',()=>{
+      const text=wishTextArea.value.trim()||'随手掷了一枚铜钱，愿平安喜乐 ✨';
       playWaterSplashSound();
-
-      // 2. Spawn a coin throw arc & splash animation in the river
-      const splash = document.createElement('div');
-      splash.className = 'river-coin-splash';
-      splash.style.left = '42%';
-      splash.style.top = '65%';
-      splash.innerHTML = '<span class="coin-flying">🪙</span><span class="water-ripple r1"></span><span class="water-ripple r2"></span>';
+      const splash=document.createElement('div');
+      splash.className='river-coin-splash';
+      splash.style.left='42%';splash.style.top='65%';
+      splash.innerHTML='<span class="coin-flying">🪙</span><span class="water-ripple r1"></span><span class="water-ripple r2"></span>';
       area.appendChild(splash);
-      setTimeout(() => splash.remove(), 1600);
-
-      // 3. Save new wish
-      addRiverWish(text, stamp);
-
-      // 4. Reset & close dialog
-      wishTextArea.value = '';
-      if (wishCharCount) wishCharCount.textContent = '0';
+      setTimeout(()=>splash.remove(),1600);
+      addRiverWish(text,'✨');
+      wishTextArea.value='';
+      if(wishCharCount)wishCharCount.textContent='0';
       wishDialog.close();
-
-      // 5. Re-render river lanterns with the newly released lantern!
-      setTimeout(renderRiverLanterns, 600);
+      setTimeout(renderRiverLanterns,600);
     });
   }
-
-  // Lantern viewer inspection
-  if (lanternsLayer && lanternViewer) {
-    lanternsLayer.addEventListener('click', e => {
-      const btn = e.target.closest('.river-lantern');
-      if (!btn) return;
-      const id = btn.dataset.wishId;
-      const wishes = getRiverWishes();
-      const w = wishes.find(item => item.id === id);
-      if (!w) return;
-      activeLanternData = w;
-      if (lanternViewerText) lanternViewerText.textContent = w.text;
-      if (lanternViewerStamp) lanternViewerStamp.textContent = w.stamp;
-      if (lanternViewerDate) lanternViewerDate.textContent = w.date || '漂流中';
-      if (lanternViewerCheers) lanternViewerCheers.textContent = w.cheers || 1;
+  if(lanternsLayer&&lanternViewer){
+    lanternsLayer.addEventListener('click',e=>{
+      const btn=e.target.closest('.river-lantern');if(!btn)return;
+      const w=getRiverWishes().find(item=>item.id===btn.dataset.wishId);if(!w)return;
+      activeLanternData=w;
+      if(lanternViewerText)lanternViewerText.textContent=w.text;
+      if(lanternViewerStamp)lanternViewerStamp.textContent=w.stamp;
+      if(lanternViewerDate)lanternViewerDate.textContent=w.date||'漂流中';
+      if(lanternViewerCheers)lanternViewerCheers.textContent=w.cheers||1;
       playWoodTapSound();
       lanternViewer.showModal();
     });
   }
-  if (lanternViewerClose && lanternViewer) {
-    lanternViewerClose.addEventListener('click', () => lanternViewer.close());
-    lanternViewer.addEventListener('click', e => { if (e.target === lanternViewer) lanternViewer.close(); });
+  if(lanternViewerClose&&lanternViewer){
+    lanternViewerClose.addEventListener('click',()=>lanternViewer.close());
+    lanternViewer.addEventListener('click',e=>{if(e.target===lanternViewer)lanternViewer.close();});
   }
-  if (lanternCheerBtn) {
-    lanternCheerBtn.addEventListener('click', () => {
-      if (!activeLanternData) return;
-      activeLanternData.cheers = (activeLanternData.cheers || 1) + 1;
-      if (lanternViewerCheers) lanternViewerCheers.textContent = activeLanternData.cheers;
-      lanternCheerBtn.style.transform = 'scale(1.25)';
-      setTimeout(() => lanternCheerBtn.style.transform = '', 200);
+  if(lanternCheerBtn){
+    lanternCheerBtn.addEventListener('click',()=>{
+      if(!activeLanternData)return;
+      activeLanternData.cheers=(activeLanternData.cheers||1)+1;
+      if(lanternViewerCheers)lanternViewerCheers.textContent=activeLanternData.cheers;
+      lanternCheerBtn.style.transform='scale(1.25)';
+      setTimeout(()=>lanternCheerBtn.style.transform='',200);
       playChimeSound();
     });
   }
 
+  // Upstream gliders: clicking river branch nodes glides smoothly up to the corresponding realm
+  const glideMap={photos:'realm-cosmos',poems:'realm-poetry',traces:'realm-traces',lab:'realm-lab'};
+  area.querySelectorAll('.wander-node').forEach(node=>{
+    node.addEventListener('click',e=>{
+      const targetId=glideMap[node.dataset.branch];
+      if(targetId){
+        e.preventDefault();
+        glideToRealm(targetId);
+      }
+    });
+  });
+
   return ()=>{disposed=true;area.removeEventListener('pointermove',onPointerRipple);observer.disconnect();window.removeEventListener('resize',sizePortrait);button.removeEventListener('click',onToggle);area.removeEventListener('animationend',onComplete);preference.removeEventListener('change',sync);document.removeEventListener('visibilitychange',sync);};
 }
 
-function render(){
-  const hash=location.hash;
-  const fromRoom=document.body.dataset.room||'home';
-  const fromHome=fromRoom==='home';
-  if(hash&&!hash.startsWith('#/')&&main.children.length)return;
-  disposePage();disposePage=()=>{};if(box.open)box.close();currentWork=null;
-  const [page,slug]=((hash.startsWith('#/')?hash.slice(2):'')||'').split('/');
-  let html,label='私人世界',room='home';
-  if(!page)html=home();
-  else if(page==='works'){
-    room='photography';label='我的摄影集';
-    if(slug){const w=A.works.find(x=>x.slug===slug);if(w){html=workPage(w);label=w.title;}}
-    else html=works();
-  }else if(page==='notes'){
-    room='poems';label='我的诗集';
-    if(slug){const n=A.notes.find(x=>x.slug===slug)||(A.legacyNotes||[]).find(x=>x.slug===slug);if(n){html=article(n);label=n.title;}}
-    else html=notes();
-  }else if(page==='lab'){
-    room='lab';label='我的 AI 实验室';
-    if(slug){const l=A.labs.find(x=>x.slug===slug);if(l){html=projectDetail(l);label=l.title;}}
-    else html=lab();
-  }else if(page==='traces'){
-    room='traces';label='走过的地方';html=traces();
-  }else if(page==='guestbook'){
-    location.replace('#/');
-    return;
-  }else if(page==='about'){room='about';html=about();label='关于';}
-  else if(page==='credits'){room='about';html=credits();label='版本与来源';}
-  if(!html){room='about';html='<div class="wrap">'+title('404','NOT FOUND','这条路，尚未写下。','可以回到入口，重新选一个方向。')+'<a class="quiet-link" href="#/">回到入口 →</a></div>';label='未找到档案';}
-  document.body.dataset.room=room;
+// =========================================================================
+// CONTINUOUS HANDSCROLL COMPOSER & CROSS-REALM INTERTEXTUALITY ENGINE
+// =========================================================================
+
+const REALM_CONFIG=[
+  {id:'realm-cosmos',room:'photography',nav:'cosmos',stop:'cosmos',readout:'穹顶 · 星空暗房'},
+  {id:'realm-poetry',room:'poems',nav:'poetry',stop:'poetry',readout:'二层 · 宣纸诗卷'},
+  {id:'realm-lab',room:'lab',nav:'lab',stop:'lab',readout:'案头 · 暖灯造物'},
+  {id:'realm-traces',room:'traces',nav:'traces',stop:'traces',readout:'远眺 · 华夏山河'},
+  {id:'realm-river',room:'home',nav:'river',stop:'river',readout:'水面 · 归舟水灯'}
+];
+
+function glideToRealm(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function workIndexForCity(cityName, regionName){
+  if(/上海|苏州|杭州|南京|无锡|嘉兴|常州|扬州|连云港|武汉|长沙|华东|华中/.test(cityName+regionName)) return 2;
+  if(/玉林|南宁|北海|桂林|华南/.test(cityName+regionName)) return 1;
+  return 0;
+}
+
+function openPoemInBook(slug){
+  const poem=A.notes.find(n=>n.slug===slug);
+  if(!poem)return false;
+  bookState.mode='series';
+  bookState.group=POETRY_GROUPS.series.includes(poem.category)?poem.category:'其他作品';
+  const list=bookEntries();
+  const idx=list.findIndex(n=>n.slug===slug);
+  bookState.index=Math.max(0,idx);
+  bookState.view='poem';
+  document.querySelectorAll('[data-poetry-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.poetryMode==='series')));
+  renderBook();
+  glideToRealm('realm-poetry');
+  const book=document.querySelector('#reading-book');
+  if(book){
+    book.classList.remove('intertext-pulse');
+    void book.offsetWidth;
+    book.classList.add('intertext-pulse');
+  }
+  return true;
+}
+
+function selectCityOnMap(cityName){
+  glideToRealm('realm-traces');
+  setTimeout(()=>{
+    const pill=document.querySelector('#china-city-list button[data-city="'+cityName+'"]');
+    if(pill){pill.click();return;}
+    const node=document.querySelector('#china-city-points .china-city[aria-label*="'+cityName+'"]');
+    node?.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+  },360);
+}
+
+function focusCosmosSystem(workIdx){
+  glideToRealm('realm-cosmos');
+  const root=document.querySelector('.cosmos');
+  if(!root)return;
+  const tab=root.querySelector('[data-theme="'+workIdx+'"]');
+  if(tab)tab.click();
+  else root.dispatchEvent(new CustomEvent('cosmos-focus',{detail:{index:workIdx,openGallery:false}}));
+}
+
+// Inline Darkroom Filmstrip Ribbon inside #realm-cosmos
+function cosmosFilmstripMarkup(){
+  const regionTags=['川西雪线 · 陕甘山岳','岭南沙丘 · 晚照','江南晨昏 · 林间微雾'];
+  return '<section class="cosmos-filmstrip-ribbon" aria-label="摄影暗房三卷速览">'
+    +'<div class="filmstrip-head"><span>DARKROOM ARCHIVE / 三座浑天仪卷宗</span><small>点击星体或下方卷宗卡片，直接在看片台展开影像 ↗</small></div>'
+    +'<div class="filmstrip-grid">'+A.works.map((w,idx)=>{
+      const coverKey=w.cover||w.photos[0];
+      const im=A.images[coverKey];
+      return '<article class="filmstrip-card">'
+        +'<div class="filmstrip-thumb" data-open-work="'+esc(w.slug)+'" role="button" tabindex="0" aria-label="展开摄影集：'+esc(w.title)+'">'
+        +'<img src="'+esc(im.variants[0]?.path||im.variants[1].path)+'" alt="'+esc(im.alt)+'" loading="lazy">'
+        +'</div>'
+        +'<div class="filmstrip-meta">'
+        +'<span class="filmstrip-kicker">'+esc(w.id)+' · '+(regionTags[idx]||'光影档案')+'</span>'
+        +'<h3>'+esc(w.title)+'</h3>'
+        +'<p>'+esc(w.photos.length)+' 帧底片 · '+esc(w.medium)+'</p>'
+        +'<div class="filmstrip-actions">'
+        +'<button type="button" class="filmstrip-btn" data-focus-galaxy="'+idx+'">星图聚焦 ◎</button>'
+        +'<a class="filmstrip-btn is-primary" href="#/works/'+esc(w.slug)+'">暗房看片台 ↗</a>'
+        +'</div>'
+        +'</div>'
+        +'</article>';
+    }).join('')+'</div></section>';
+}
+
+// Inline Machine Herbarium Live Bench below Lab Blueprints
+function inlineHerbariumMarkup(){
+  return '<section class="inline-herbarium-tray" id="inline-herb-bench" aria-label="机器植物志·实时样本采集台">'
+    +'<div class="eyebrow"><span class="red">LIVE SPECIMEN TRAY</span> &nbsp; / &nbsp; 机器命名与诗意记忆对照</div>'
+    +'<p class="lab-proto-desc">不用离开天地手卷，直接在案头比对算法的冷峻特征提取与人眼的诗意感知：</p>'
+    +'<div class="herb-pills" role="group" aria-label="切换观察样本">'+HERBARIUM_SAMPLES.map((s,i)=>'<button type="button" class="herb-pill" data-herb="'+i+'" aria-pressed="'+(i===0)+'">'+esc(s.tag)+'</button>').join('')+'</div>'
+    +'<div class="herb-card"><div class="herb-card-head"><span class="herb-latin">'+esc(HERBARIUM_SAMPLES[0].latin)+'</span><small class="herb-place">'+esc(HERBARIUM_SAMPLES[0].place)+'</small></div><p class="herb-note">'+esc(HERBARIUM_SAMPLES[0].note)+'</p><blockquote class="herb-verse">'+esc(HERBARIUM_SAMPLES[0].verse)+'</blockquote></div>'
+    +'</section>';
+}
+
+// Dossier Modal Engine (opens Works exhibition, Poem article/annotations, Lab project detail, About, Credits)
+const dossierModal=document.querySelector('#dossier-modal');
+const dossierBody=document.querySelector('#dossier-body');
+const dossierBadge=document.querySelector('#dossier-badge');
+let dossierCleanup=()=>{};
+
+function closeDossier(){
+  if(dossierModal?.open)dossierModal.close();
+}
+
+function openDossier(routePath, startPhotoIndex=0){
+  if(!dossierModal||!dossierBody)return;
+  dossierCleanup();dossierCleanup=()=>{};
+  currentWork=null;
+  const clean=routePath.replace(/^#?\/?/,'');
+  const [section,slug]=clean.split('/');
+  let html='',badgeText='DOSSIER / 细读档案';
+
+  if(section==='works'&&slug){
+    const w=A.works.find(x=>x.slug===slug);
+    if(w){
+      badgeText=w.id+' · DARKROOM LIGHTBOX / '+w.title;
+      html=workPage(w);
+    }
+  }else if(section==='notes'&&slug){
+    const n=A.notes.find(x=>x.slug===slug)||(A.legacyNotes||[]).find(x=>x.slug===slug);
+    if(n){
+      badgeText='POETRY FOLIO / '+n.title;
+      html=article(n);
+    }
+  }else if(section==='lab'&&slug){
+    const l=A.labs.find(x=>x.slug===slug);
+    if(l){
+      badgeText=l.id+' · PROJECT DOSSIER / '+l.title;
+      html=projectDetail(l);
+    }
+  }else if(section==='about'){
+    badgeText='05 · ABOUT / 关于这间小店';
+    html=about();
+  }else if(section==='credits'){
+    badgeText='COLOPHON · CREDITS / 版本与影像来源';
+    html=credits();
+  }
+  if(!html)return;
+  if(dossierBadge)dossierBadge.textContent=badgeText;
+  dossierBody.innerHTML=html;
+
+  // Bind modal internal interactive elements
+  if(currentWork){
+    setPhoto(Math.max(0,Math.min(startPhotoIndex,currentWork.photos.length-1)));
+    dossierBody.querySelector('#prev')?.addEventListener('click',()=>setPhoto(photoIndex-1));
+    dossierBody.querySelector('#next')?.addEventListener('click',()=>setPhoto(photoIndex+1));
+    dossierBody.querySelector('#open-viewer')?.addEventListener('click',openViewer);
+    dossierBody.querySelectorAll('[data-photo]').forEach(b=>b.addEventListener('click',()=>setPhoto(Number(b.dataset.photo))));
+  }
+  const artEl=dossierBody.querySelector('.article.poetry-reading');
+  if(artEl?.dataset.poemSlug){
+    dossierCleanup=bindArticle(artEl.dataset.poemSlug);
+  }
+  const modalLab=dossierBody.querySelector('#lab-dossier-desk');
+  if(modalLab){
+    dossierCleanup=bindLabDesk(modalLab);
+  }
+
+  // Remap modal back links ("← 摄影集 / ← 回到诗集 / ← 回到实验桌") to close modal gently
+  dossierBody.querySelectorAll('.back-link, .quiet-link').forEach(a=>{
+    a.addEventListener('click',e=>{
+      const href=a.getAttribute('href')||'';
+      if(href==='#/works'||href==='#/notes'||href==='#/lab'){
+        e.preventDefault();
+        closeDossier();
+      }
+    });
+  });
+
+  if(!dossierModal.open)dossierModal.showModal();
+  dossierBody.scrollTop=0;
+}
+
+if(dossierModal){
+  document.querySelector('#dossier-close')?.addEventListener('click',closeDossier);
+  dossierModal.addEventListener('click',e=>{if(e.target===dossierModal)closeDossier();});
+  dossierModal.addEventListener('close',()=>{
+    dossierCleanup();dossierCleanup=()=>{};
+    currentWork=null;
+  });
+}
+
+function attachTracesIntertextObserver(){
+  const slot=document.querySelector('#china-poem-slot');
+  const titleEl=document.querySelector('#china-selected-title');
+  if(!slot||!titleEl)return()=>{};
+
+  let lastKey='';
+  const inject=()=>{
+    const titleTxt=(titleEl.textContent||'').trim();
+    if(!titleTxt||titleTxt==='去过的地方')return;
+    const cityName=titleTxt.split('·')[0].trim();
+    if(!cityName)return;
+    const card=slot.querySelector('.china-poem-card');
+    if(!card||card.classList.contains('is-hint'))return;
+    // Detect current poem slug from china-map output link
+    const poemLink=card.querySelector('a[href^="#/notes/"]');
+    const slug=poemLink?poemLink.getAttribute('href').replace('#/notes/',''):'';
+    const key=cityName+'|'+slug;
+    const existing=card.querySelector('.intertext-block');
+    if(existing&&existing.dataset.key===key)return;
+    existing?.remove();
+
+    const wIdx=workIndexForCity(cityName, card.textContent||'');
+    const work=A.works[wIdx]||A.works[0];
+    const block=document.createElement('div');
+    block.className='intertext-block';
+    block.dataset.key=key;
+    block.innerHTML='<span class="intertext-kicker">✦ 诗 · 影 · 地 · 时空互文共振</span><div class="intertext-links">'
+      +(slug?'<button type="button" class="intertext-link" data-intertext-book="'+esc(slug)+'">在上方书阁翻阅此诗 ↑</button>':'')
+      +(slug?'<button type="button" class="intertext-link" data-intertext-dossier="#/notes/'+esc(slug)+'">古笺细读与批注 ↗</button>':'')
+      +'<button type="button" class="intertext-link" data-intertext-galaxy="'+wIdx+'">仰望共鸣星系：《'+esc(work.title)+'》 ↑</button>'
+      +'</div>';
+    const quote=card.querySelector('blockquote');
+    if(quote)quote.after(block);
+    else card.appendChild(block);
+  };
+
+  const obs=new MutationObserver(inject);
+  obs.observe(slot,{childList:true,subtree:true});
+
+  const onClick=e=>{
+    const bookBtn=e.target.closest('[data-intertext-book]');
+    if(bookBtn){e.preventDefault();openPoemInBook(bookBtn.dataset.intertextBook);return;}
+    const dosBtn=e.target.closest('[data-intertext-dossier]');
+    if(dosBtn){e.preventDefault();openDossier(dosBtn.dataset.intertextDossier);return;}
+    const galBtn=e.target.closest('[data-intertext-galaxy]');
+    if(galBtn){e.preventDefault();focusCosmosSystem(Number(galBtn.dataset.intertextGalaxy));}
+  };
+  slot.addEventListener('click',onClick);
+  return ()=>{obs.disconnect();slot.removeEventListener('click',onClick);};
+}
+
+function attachScrollTelemetry(){
+  const els=REALM_CONFIG.map(r=>({cfg:r,el:document.getElementById(r.id)})).filter(x=>x.el);
+  const readout=document.querySelector('#elevation-readout');
+  const fill=document.querySelector('#elevation-fill');
+  const setActive=cfg=>{
+    if(document.body.dataset.room!==cfg.room)document.body.dataset.room=cfg.room;
+    document.querySelectorAll('.header-compass [data-nav]').forEach(a=>{
+      if(a.dataset.nav===cfg.nav)a.setAttribute('aria-current','page');
+      else a.removeAttribute('aria-current');
+    });
+    document.querySelectorAll('.elevation-stop').forEach(btn=>{
+      btn.classList.toggle('is-active',btn.dataset.stop===cfg.stop);
+    });
+    if(readout)readout.textContent=cfg.readout;
+  };
+
+  const ratios=new Map(els.map(x=>[x.cfg.id,0]));
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(e=>ratios.set(e.target.id,e.intersectionRatio));
+    let best=els[0].cfg,bestScore=-1;
+    for(const item of els){
+      const r=item.el.getBoundingClientRect();
+      // Prefer realm crossing the upper-middle reading focus line (35% viewport height)
+      const focusY=window.innerHeight*0.35;
+      const inBand=r.top<=focusY&&r.bottom>=focusY ? 10 : 0;
+      const score=inBand + (ratios.get(item.cfg.id)||0);
+      if(score>bestScore){bestScore=score;best=item.cfg;}
+    }
+    setActive(best);
+  },{threshold:[0,0.05,0.15,0.35,0.6,0.85]});
+  els.forEach(x=>io.observe(x.el));
+
+  const onScroll=()=>{
+    const doc=document.documentElement;
+    const max=Math.max(1,doc.scrollHeight-window.innerHeight);
+    const pct=Math.max(0,Math.min(100,(window.scrollY/max)*100));
+    if(fill)fill.style.height=pct.toFixed(1)+'%';
+  };
+  window.addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+  setActive(REALM_CONFIG[0]);
+
+  return ()=>{io.disconnect();window.removeEventListener('scroll',onScroll);};
+}
+
+function renderHandscroll(){
+  disposePage();disposePage=()=>{};
+  if(box.open)box.close();
+  closeDossier();
   updateSolarTermHUD();
-  document.body.classList.toggle('in-darkroom',room==='photography');
-  document.body.classList.toggle('in-geography',room==='traces');
-  document.querySelector('meta[name=theme-color]').content='#0b211f';
-  main.innerHTML=html;setAtmosphere(room);
-  if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
-    main.animate([{opacity:.82},{opacity:1}],{duration:180,easing:'ease-out'});
+
+  const prologue=`<header class="handscroll-prologue">
+    <div class="prologue-title-row">
+      <div class="prologue-kicker"><span class="prologue-dot"></span><span>QINGZHOU CURATORIAL HANDSCROLL · 从深空直落人间</span></div>
+      <h1>无界天地手卷</h1>
+      <p>自穹顶深空启卷：三座浑天仪悬垂光影，下行入宣纸书阁读三十首诗稿，灯火实验桌旁辨草木微知，推窗见二十二城山河经纬，最终汇入夜泊小院的一河水灯。</p>
+    </div>
+    <div class="prologue-altitude-chips" aria-label="快捷海拔跃迁">
+      <button type="button" class="altitude-chip" data-glide="realm-poetry">↓ 诗卷 · 墨檐 30 篇</button>
+      <button type="button" class="altitude-chip" data-glide="realm-lab">↓ 造物 · 暖灯实验桌</button>
+      <button type="button" class="altitude-chip" data-glide="realm-traces">↓ 山河 · 22 城足迹</button>
+      <button type="button" class="altitude-chip" data-glide="realm-river">↓ 水面 · 光河许愿灯</button>
+    </div>
+  </header>`;
+
+  const html=`<div class="handscroll-world">
+    <section id="realm-cosmos" class="handscroll-realm realm-cosmos" data-realm="photography">
+      ${prologue}
+      ${works()}
+      ${cosmosFilmstripMarkup()}
+    </section>
+
+    <div class="corridor corridor-sky-to-study" aria-hidden="true">
+      <div class="corridor-line"></div>
+      <p class="corridor-verse">星芒褪入窗棂，案头尚留一盏长明灯<small>COSMOS TO STUDY · 光影落笔</small></p>
+    </div>
+
+    <section id="realm-poetry" class="handscroll-realm realm-poetry" data-realm="poems">
+      ${notes()}
+    </section>
+
+    <section id="realm-lab" class="handscroll-realm realm-lab" data-realm="lab">
+      ${lab().replace('</div></div>', inlineHerbariumMarkup()+'</div></div>')}
+    </section>
+
+    <div class="corridor corridor-study-to-earth" aria-hidden="true">
+      <div class="corridor-line"></div>
+      <p class="corridor-verse">推开木窗，万里山河与水脉在墨色里铺开<small>DESK TO TOPOGRAPHY · 山川经纬</small></p>
+    </div>
+
+    <section id="realm-traces" class="handscroll-realm realm-traces" data-realm="traces">
+      ${traces()}
+    </section>
+
+    <div class="corridor corridor-earth-to-water" aria-hidden="true">
+      <svg class="watershed-svg" viewBox="0 0 1440 76" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="watershedFlow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#8cbdb2" stop-opacity="0.15"/>
+            <stop offset="55%" stop-color="#d8c07b" stop-opacity="0.65"/>
+            <stop offset="100%" stop-color="#f2dc9c" stop-opacity="0.92"/>
+          </linearGradient>
+        </defs>
+        <path class="watershed-glow" d="M 480 0 C 560 40, 880 35, 961 76"/>
+        <path class="watershed-path" d="M 480 0 C 560 40, 880 35, 961 76"/>
+        <path class="watershed-path" d="M 1080 0 C 1030 35, 995 52, 961 76" style="opacity:0.42"/>
+      </svg>
+    </div>
+
+    <section id="realm-river" class="handscroll-realm realm-river" data-realm="home">
+      <div class="river-banner-badge">
+        <span>V · HUMAN COURTYARD</span>
+        <strong>人间光河与归舟</strong>
+        <small>山海来水汇入檐前 · 投枚铜钱放一盏灯</small>
+      </div>
+      ${home()}
+    </section>
+  </div>`;
+
+  main.innerHTML=html;
+  document.title='无界天地手卷 · 清舟的杂货铺 / Qingzhou’s Curiosity Shop';
+
+  const cleanups=[];
+  cleanups.push(bindCosmos());
+  cleanups.push(bindBook());
+  cleanups.push(bindLabDesk(document.querySelector('#lab-desk')));
+  if(window.initChinaFootprints){
+    cleanups.push(window.initChinaFootprints()||(()=>{}));
   }
-  document.title=label+' · 清舟的杂货铺 / Qingzhou’s Curiosity Shop';
-  document.querySelectorAll('[data-nav]').forEach(a=>{if(a.dataset.nav===(page||'index'))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
-  window.scrollTo({top:0,left:0,behavior:'instant'});if(currentWork)setPhoto(0);bind();revealImages();
+  cleanups.push(attachTracesIntertextObserver());
+  cleanups.push(bindRoaming());
+  cleanups.push(attachScrollTelemetry());
+
+  disposePage=()=>{
+    while(cleanups.length){
+      try{cleanups.pop()();}catch{}
+    }
+  };
+  revealImages();
 }
-function bindConstellation(){
-  const stage=document.querySelector('.stellar-stage'),svg=stage.querySelector('.stellar-threads');
-  const update=()=>{const bounds=stage.getBoundingClientRect();const points=[...stage.querySelectorAll('.stellar-star')].map(s=>{const r=s.getBoundingClientRect();return {x:r.left+r.width/2-bounds.left,y:r.top+r.height/2-bounds.top};});svg.setAttribute('viewBox','0 0 '+bounds.width+' '+bounds.height);svg.innerHTML=points.slice(1).map((p,i)=>{const a=points[i],midX=(a.x+p.x)/2,midY=(a.y+p.y)/2-30;return '<path d="M'+a.x+' '+a.y+' Q'+midX+' '+midY+' '+p.x+' '+p.y+'"/>';}).join('');};
-  const observer=new ResizeObserver(update);observer.observe(stage);update();return ()=>observer.disconnect();
-}
-function bind(){
-  document.querySelector('#prev')?.addEventListener('click',()=>setPhoto(photoIndex-1));
-  document.querySelector('#next')?.addEventListener('click',()=>setPhoto(photoIndex+1));
-  document.querySelector('#open-viewer')?.addEventListener('click',openViewer);
-  document.querySelectorAll('[data-photo]').forEach(b=>b.addEventListener('click',()=>setPhoto(Number(b.dataset.photo))));
-  document.querySelectorAll('[data-poetry-mode]').forEach(button=>button.addEventListener('click',()=>{
-    const mode=button.dataset.poetryMode;
-    document.querySelectorAll('[data-poetry-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));
-    const volumes=document.querySelector('#poetry-volumes');if(volumes)volumes.innerHTML=poemVolumes(mode);
-  }));
-  if(document.querySelector('.book-library')){const previousDispose=disposePage,stop=bindBook();disposePage=()=>{previousDispose();stop();};}
-  if(document.querySelector('.article.poetry-reading')){
-    const art=document.querySelector('.article.poetry-reading');
-    const slug=art.dataset.poemSlug;
-    if(slug){const previousDispose=disposePage,stop=bindArticle(slug);disposePage=()=>{previousDispose();stop();};}
-  }
-  if(document.querySelector('.guestbook-room')){
-    const previousDispose=disposePage,stop=bindGuestbook();disposePage=()=>{previousDispose();stop();};
-  }
-  if(document.querySelector('.roaming-night'))disposePage=bindRoaming();
-  if(document.querySelector('.cosmos'))disposePage=bindCosmos();
-  if(document.querySelector('#lab-desk')){const previousDispose=disposePage,stop=bindLabDesk();disposePage=()=>{previousDispose();stop();};}
-  if(document.querySelector('.idea-tree')){const previousDispose=disposePage,tree=document.querySelector('.idea-tree');const obs=new IntersectionObserver(entries=>{if(entries[0].isIntersecting){tree.classList.add('tree-in-view');obs.disconnect();}},{threshold:.15});const revealOnFocus=()=>{tree.classList.remove('tree-in-view');obs.disconnect();};tree.addEventListener('focusin',revealOnFocus);obs.observe(tree);disposePage=()=>{previousDispose();obs.disconnect();tree.removeEventListener('focusin',revealOnFocus);};}
-  if(document.querySelector('#china-footprint-map')&&window.initChinaFootprints){const previousDispose=disposePage;const stop=window.initChinaFootprints();disposePage=()=>{previousDispose();stop?.();};}
-  if(document.querySelector('.stellar-stage')){const previousDispose=disposePage,disposeConstellation=bindConstellation();disposePage=()=>{previousDispose();disposeConstellation();};}
-}
-// One persistent audio element lives outside the route-swapped <main>.
+
+// Persistent Sound Dock with Multi-Realm Energy Support
 function initSoundDock(){
   const dock=document.querySelector('#music-dock'),audio=document.querySelector('#dock-audio'),toggle=document.querySelector('#dock-toggle'),panel=document.querySelector('#dock-panel'),play=document.querySelector('#dock-play'),progress=document.querySelector('#dock-progress'),elapsed=document.querySelector('#dock-elapsed'),duration=document.querySelector('#dock-duration');
   if(!dock||!audio)return;
@@ -1258,23 +1546,9 @@ function initSoundDock(){
   const open=v=>{panel.hidden=!v;if(v)update();toggle.setAttribute('aria-expanded',String(v));toggle.setAttribute('aria-label',v?'收起音乐播放器':'展开音乐播放器');if(v)play.focus();else toggle.focus();};
   toggle.addEventListener('click',()=>open(panel.hidden));
   document.querySelector('#dock-close').addEventListener('click',()=>open(false));
-  play.addEventListener('click',async()=>{if(audio.paused){try{await audio.play();}catch(err){play.setAttribute('aria-label','播放未成功，请检查浏览器音频设置');}}else audio.pause();update();});
+  play.addEventListener('click',async()=>{if(audio.paused){try{await audio.play();}catch{play.setAttribute('aria-label','播放未成功，请检查浏览器音频设置');}}else audio.pause();update();});
   progress.addEventListener('input',()=>{if(audio.duration>0&&Number.isFinite(audio.duration))audio.currentTime=audio.duration*Number(progress.value)/1000;update();});
   let audioCtx=null,analyser=null,dataArray=null,rafId=0;
-  const pumpAudioEnergy=()=>{
-    if(audio.paused||document.body.dataset.room!=='photography'){
-      window.__qzAudioEnergy=0;
-      rafId=0;
-      return;
-    }
-    if(!analyser)ensureAudioAnalyser();
-    if(analyser){
-      analyser.getByteFrequencyData(dataArray);
-      let sum=0;for(let i=0;i<24;i++)sum+=dataArray[i];
-      window.__qzAudioEnergy=Math.min(1,Math.max(0,(sum/(24*255)-.08)*1.85));
-    }
-    rafId=requestAnimationFrame(pumpAudioEnergy);
-  };
   const ensureAudioAnalyser=()=>{
     if(audioCtx||matchMedia('(prefers-reduced-motion: reduce)').matches||matchMedia('(max-width: 900px)').matches)return;
     try{
@@ -1283,10 +1557,20 @@ function initSoundDock(){
       analyser=audioCtx.createAnalyser();analyser.fftSize=128;analyser.smoothingTimeConstant=.82;
       src.connect(analyser);analyser.connect(audioCtx.destination);
       dataArray=new Uint8Array(analyser.frequencyBinCount);
-    }catch(e){}
+    }catch{}
+  };
+  const pumpAudioEnergy=()=>{
+    if(audio.paused){window.__qzAudioEnergy=0;rafId=0;return;}
+    if(!analyser)ensureAudioAnalyser();
+    if(analyser){
+      analyser.getByteFrequencyData(dataArray);
+      let sum=0;for(let i=0;i<24;i++)sum+=dataArray[i];
+      window.__qzAudioEnergy=Math.min(1,Math.max(0,(sum/(24*255)-.08)*1.85));
+    }
+    rafId=requestAnimationFrame(pumpAudioEnergy);
   };
   audio.addEventListener('timeupdate',update);audio.addEventListener('loadedmetadata',update);
-  audio.addEventListener('play',()=>{update();if(document.body.dataset.room==='photography'){ensureAudioAnalyser();if(audioCtx?.state==='suspended')audioCtx.resume();cancelAnimationFrame(rafId);pumpAudioEnergy();}});
+  audio.addEventListener('play',()=>{update();ensureAudioAnalyser();if(audioCtx?.state==='suspended')audioCtx.resume();cancelAnimationFrame(rafId);pumpAudioEnergy();});
   audio.addEventListener('pause',()=>{update();cancelAnimationFrame(rafId);rafId=0;window.__qzAudioEnergy=0;});
   audio.addEventListener('ended',()=>{update();cancelAnimationFrame(rafId);rafId=0;window.__qzAudioEnergy=0;});
   audio.addEventListener('error',()=>{play.disabled=true;play.textContent='!';});
@@ -1294,24 +1578,85 @@ function initSoundDock(){
   update();
 }
 initSoundDock();
-document.querySelector('#close-viewer').addEventListener('click',()=>box.close());box.addEventListener('close',()=>returnFocus?.focus());document.querySelector('#previous-image').addEventListener('click',()=>setPhoto(photoIndex-1));document.querySelector('#next-image').addEventListener('click',()=>setPhoto(photoIndex+1));document.addEventListener('keydown',e=>{if(!currentWork||e.altKey||e.ctrlKey||e.metaKey||/INPUT|TEXTAREA/.test(e.target.tagName))return;if(e.key==='ArrowRight'){e.preventDefault();setPhoto(photoIndex+1);}if(e.key==='ArrowLeft'){e.preventDefault();setPhoto(photoIndex-1);}});
-// 页内翻阅不写入页面路由，避免后退时留下其他页面的正文。
-document.addEventListener('click',e=>{const a=e.target.closest('a');if(!a||!a.getAttribute('href')?.startsWith('#')||a.getAttribute('href').startsWith('#/'))return;const target=document.querySelector(a.getAttribute('href'));if(target){e.preventDefault();target.scrollIntoView();if(target.id==='main')target.focus({preventScroll:true});}});
 
-function renderWithTransition(){
-  updateSolarTermHUD();
-  if(document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches){
-    document.startViewTransition(()=>{ render(); });
-  } else {
-    render();
-  }
-}
-window.addEventListener('hashchange',()=>{
-  renderWithTransition();
-  if(location.hash.startsWith('#/'))main.focus({preventScroll:true});
+// Lightbox Wiring (layers cleanly over dossierModal when opened inside a dossier)
+document.querySelector('#close-viewer').addEventListener('click',()=>box.close());
+box.addEventListener('close',()=>returnFocus?.focus());
+document.querySelector('#previous-image').addEventListener('click',()=>setPhoto(photoIndex-1));
+document.querySelector('#next-image').addEventListener('click',()=>setPhoto(photoIndex+1));
+document.addEventListener('keydown',e=>{
+  if(!currentWork||e.altKey||e.ctrlKey||e.metaKey||/INPUT|TEXTAREA/.test(e.target.tagName))return;
+  if(e.key==='ArrowRight'){e.preventDefault();setPhoto(photoIndex+1);}
+  if(e.key==='ArrowLeft'){e.preventDefault();setPhoto(photoIndex-1);}
 });
-renderWithTransition();
 
+// Global Click Dispatcher for Gliders, Intertext Seals, Filmstrip & Dossier Routes
+document.addEventListener('click',e=>{
+  const glideBtn=e.target.closest('[data-glide]');
+  if(glideBtn){
+    e.preventDefault();
+    glideToRealm(glideBtn.dataset.glide);
+    return;
+  }
+  const focusBtn=e.target.closest('[data-focus-galaxy]');
+  if(focusBtn){
+    e.preventDefault();
+    focusCosmosSystem(Number(focusBtn.dataset.focusGalaxy));
+    return;
+  }
+  const workThumb=e.target.closest('[data-open-work]');
+  if(workThumb){
+    e.preventDefault();
+    openDossier('#/works/'+workThumb.dataset.openWork,0);
+    return;
+  }
+  const cityJump=e.target.closest('[data-city-jump]');
+  if(cityJump){
+    e.preventDefault();
+    closeDossier();
+    selectCityOnMap(cityJump.dataset.cityJump);
+    return;
+  }
+  const dosRoute=e.target.closest('[data-dossier-route]');
+  if(dosRoute){
+    e.preventDefault();
+    openDossier(dosRoute.dataset.dossierRoute);
+    return;
+  }
+  const a=e.target.closest('a[href]');
+  if(!a)return;
+  const href=a.getAttribute('href')||'';
+  if(href.startsWith('#/')){
+    e.preventDefault();
+    const clean=href.slice(2);
+    const [sec,slug]=clean.split('/');
+    if(!sec)glideToRealm('realm-cosmos');
+    else if(sec==='works'&&!slug)glideToRealm('realm-cosmos');
+    else if(sec==='notes'&&!slug)glideToRealm('realm-poetry');
+    else if(sec==='lab'&&!slug)glideToRealm('realm-lab');
+    else if(sec==='traces')glideToRealm('realm-traces');
+    else{
+      // Check photo start index if clicked from film thumb
+      let pIdx=0;
+      const strip=a.closest('.cosmos-card-film-strip');
+      if(strip){pIdx=[...strip.children].indexOf(a);}
+      openDossier(href,Math.max(0,pIdx));
+    }
+    return;
+  }
+  if(href.startsWith('#')&&href.length>1){
+    const target=document.querySelector(href);
+    if(target){e.preventDefault();target.scrollIntoView({behavior:'smooth',block:'start'});}
+  }
+});
+
+// Keyboard accessibility for filmstrip thumb divs
+document.addEventListener('keydown',e=>{
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-open-work]')){
+    e.preventDefault();
+    openDossier('#/works/'+e.target.dataset.openWork,0);
+  }
+});
 
 function revealImages(){
   imageObserver?.disconnect();
@@ -1319,10 +1664,15 @@ function revealImages(){
     imageObserver=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in-view');imageObserver.unobserve(e.target);}}),{threshold:.08});
     document.querySelectorAll('.work-image').forEach(img=>{img.classList.add('scroll-image');imageObserver.observe(img);});
   }
-  const stage=document.querySelector('#open-viewer');
-  if(stage){let start,verticalStart,swiped=false;stage.addEventListener('click',e=>{if(swiped){e.preventDefault();e.stopImmediatePropagation();swiped=false;}},true);stage.addEventListener('touchstart',e=>{swiped=false;start=e.touches[0].clientX;verticalStart=e.touches[0].clientY;},{passive:true});stage.addEventListener('touchend',e=>{const d=e.changedTouches[0].clientX-start;if(Math.abs(d)>60&&Math.abs(d)>Math.abs(e.changedTouches[0].clientY-verticalStart)*1.5){swiped=true;setPhoto(photoIndex+(d<0?1:-1));}},{passive:true});}
 }
 
-
-
-
+// Initial mount
+renderHandscroll();
+if(location.hash.startsWith('#/')){
+  const clean=location.hash.slice(2);
+  const [sec,slug]=clean.split('/');
+  if(slug||sec==='about'||sec==='credits')openDossier(location.hash);
+  else if(sec==='notes')glideToRealm('realm-poetry');
+  else if(sec==='lab')glideToRealm('realm-lab');
+  else if(sec==='traces')glideToRealm('realm-traces');
+}

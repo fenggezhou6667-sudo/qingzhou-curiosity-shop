@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b211f">
-  <meta name="description" content="清舟的杂货铺（独立探索版 · 水乡小楼的一夜），统摄人间水脉、宣纸墨卷、星空暗房与山河经纬的立体心智空间。">
-  <title>清舟的杂货铺 · 独立探索版 / Qingzhou's Curiosity Shop</title>
+  <meta name="theme-color" content="#03070e">
+  <meta name="description" content="清舟的杂货铺（无界天地手卷版），从星空暗房垂直落笔至案头诗卷、暖灯实验桌、华夏山河足迹与人间光河水灯。">
+  <title>无界天地手卷 · 清舟的杂货铺 / Qingzhou's Curiosity Shop</title>
   <link rel="icon" type="image/svg+xml" href="assets/sleeping-cat.svg">
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="world.css">
@@ -23,28 +23,28 @@
   <script src="china-map.js" defer></script>
   <script src="unified.js" defer></script>
 </head>
-<body>
+<body data-handscroll="true" data-room="photography" data-text-scheme="dark">
   <div class="page-atmosphere" id="page-atmosphere" aria-hidden="true"></div>
   <a class="skip" href="#main">跳至正文</a>
-  <header class="site-header">
-    <div style="display:inline-flex;align-items:center;gap:10px;">
-      <a class="brand" href="#/" aria-label="清舟的杂货铺 首页">
+
+  <header class="site-header handscroll-hud">
+    <div class="hud-left-cluster">
+      <a class="brand" href="#realm-cosmos" data-glide="realm-cosmos" aria-label="清舟的杂货铺 回到天象穹顶">
         <img class="cat-mark" src="assets/sleeping-cat.svg" width="88" height="64" alt="">
-        <span>清舟的杂货铺<small>QINGZHOU’S CURIOSITY SHOP</small></span>
+        <span>清舟的杂货铺<small>QINGZHOU’S HANDSCROLL</small></span>
       </a>
-      <div class="solar-term-hud" id="solar-term-hud" aria-live="polite">
-        <!-- populated dynamically -->
-      </div>
+      <div class="solar-term-hud" id="solar-term-hud" aria-live="polite"></div>
     </div>
+
     <div class="header-compass">
-      <nav aria-label="主导航">
-        <a href="#/" data-nav="index"><span>水面</span><small class="nav-subtext">入口</small></a>
-        <a href="#/notes" data-nav="notes"><span>诗卷</span><small class="nav-subtext">诗集</small></a>
-        <a href="#/works" data-nav="works"><span>暗房</span><small class="nav-subtext">摄影</small></a>
-        <a href="#/lab" data-nav="lab"><span>造物</span><small class="nav-subtext">实验</small></a>
-        <a href="#/traces" data-nav="traces"><span>山河</span><small class="nav-subtext">足迹</small></a>
+      <nav aria-label="手卷空间导航">
+        <a href="#realm-cosmos" data-nav="cosmos" data-glide="realm-cosmos" aria-current="page"><span>天象</span><small class="nav-subtext">暗房</small></a>
+        <a href="#realm-poetry" data-nav="poetry" data-glide="realm-poetry"><span>诗卷</span><small class="nav-subtext">墨檐</small></a>
+        <a href="#realm-lab" data-nav="lab" data-glide="realm-lab"><span>造物</span><small class="nav-subtext">实验</small></a>
+        <a href="#realm-traces" data-nav="traces" data-glide="realm-traces"><span>山河</span><small class="nav-subtext">足迹</small></a>
+        <a href="#realm-river" data-nav="river" data-glide="realm-river"><span>水灯</span><small class="nav-subtext">光河</small></a>
       </nav>
-      <a class="version-badge" href="index.html" title="点击返回原版里程碑版本 (v1.4)"><span>✦ 探索版</span><small>返回原版 ↗</small></a>
+      <a class="version-badge" href="index.html" title="切换回分室原版里程碑 (v1.4)"><span>✦ 手卷版</span><small>原版 ↗</small></a>
       <aside class="music-dock" id="music-dock" aria-label="声音藏品">
         <button id="dock-toggle" class="dock-toggle" type="button" aria-expanded="false" aria-controls="dock-panel" aria-label="展开音乐播放器">
           <span aria-hidden="true">♫</span><span class="dock-title">有光的地方</span><span class="dock-pulse" aria-hidden="true"></span>
@@ -52,8 +52,9 @@
         <audio id="dock-audio" src="assets/where-the-light-settles.mp3" preload="metadata"></audio>
       </aside>
     </div>
-    <span class="edition">VOL. 002 / <span>水乡小楼的一夜</span></span>
+    <span class="edition">VOL. 002 / <span>无界天地手卷</span></span>
   </header>
+
   <section class="dock-panel" id="dock-panel" hidden aria-label="有光的地方播放器">
     <button type="button" class="dock-close" id="dock-close" aria-label="收起音乐播放器">收起</button>
     <span class="dock-eyebrow">一件声音作品</span>
@@ -70,19 +71,60 @@
       </div>
     </div>
   </section>
+
+  <!-- Floating Vertical Elevation Rail (天涯尺 · 海拔纵览刻度) -->
+  <aside class="elevation-rail" id="elevation-rail" aria-label="天地手卷纵览刻度尺">
+    <div class="elevation-track" aria-hidden="true">
+      <div class="elevation-fill" id="elevation-fill"></div>
+    </div>
+    <div class="elevation-stops">
+      <button type="button" class="elevation-stop is-active" data-glide="realm-cosmos" data-stop="cosmos">
+        <span class="stop-dot"></span><span class="stop-label"><em>I</em> 天象 · 深空</span>
+      </button>
+      <button type="button" class="elevation-stop" data-glide="realm-poetry" data-stop="poetry">
+        <span class="stop-dot"></span><span class="stop-label"><em>II</em> 诗卷 · 案头</span>
+      </button>
+      <button type="button" class="elevation-stop" data-glide="realm-lab" data-stop="lab">
+        <span class="stop-dot"></span><span class="stop-label"><em>III</em> 造物 · 暖灯</span>
+      </button>
+      <button type="button" class="elevation-stop" data-glide="realm-traces" data-stop="traces">
+        <span class="stop-dot"></span><span class="stop-label"><em>IV</em> 山河 · 经纬</span>
+      </button>
+      <button type="button" class="elevation-stop" data-glide="realm-river" data-stop="river">
+        <span class="stop-dot"></span><span class="stop-label"><em>V</em> 水灯 · 人间</span>
+      </button>
+    </div>
+    <div class="elevation-readout" id="elevation-readout" aria-live="polite">天穹 · 仰望星海</div>
+  </aside>
+
   <main id="main" tabindex="-1"></main>
-  <footer>
-    <a href="#/" class="footer-title">倚山水暖风走过，傍夕阳皓月而行</a>
+
+  <footer class="handscroll-footer">
+    <a href="#realm-cosmos" data-glide="realm-cosmos" class="footer-title">倚山水暖风走过，傍夕阳皓月而行</a>
     <div>
-      <span>QINGZHOU’S CURIOSITY SHOP · 独立探索版</span>
-      <span>水乡小楼 · 诗·影·地时空互文</span>
-      <a href="#/" id="footer-wish-link">光河许愿池</a>
-      <a href="index.html">返回原版里程碑 ↗</a>
-      <a href="#/about">关于这间小店</a>
-      <a href="#/credits">演示内容与影像来源 ↗</a>
-      <a href="#main">回到页首 ↑</a>
+      <span>QINGZHOU’S CURIOSITY SHOP · 无界天地手卷版</span>
+      <span>从深空直落人间 · 诗 · 影 · 地时空互文</span>
+      <a href="#realm-river" data-glide="realm-river" id="footer-wish-link">光河许愿池</a>
+      <a href="index.html">切换分室原版 ↗</a>
+      <a href="#/about" data-dossier-route="about">关于这间小店</a>
+      <a href="#/credits" data-dossier-route="credits">演示内容与影像来源 ↗</a>
+      <a href="#realm-cosmos" data-glide="realm-cosmos">重返穹顶 ↑</a>
     </div>
   </footer>
+
+  <!-- Non-destructive Frosted Glass Dossier Modal (保持手卷滚动与 WebGL 上下文不断线) -->
+  <dialog id="dossier-modal" class="dossier-modal" aria-label="手卷细读笺盒">
+    <div class="dossier-shell">
+      <header class="dossier-bar">
+        <span class="dossier-badge" id="dossier-badge">DOSSIER / 细读档案</span>
+        <button type="button" class="dossier-close" id="dossier-close" aria-label="收起细读笺盒，回到天地手卷">
+          <span>收起 · 回到天地手卷</span><span aria-hidden="true">×</span>
+        </button>
+      </header>
+      <div class="dossier-body" id="dossier-body"></div>
+    </div>
+  </dialog>
+
   <dialog id="lightbox" aria-labelledby="viewer-title">
     <div class="viewer-bar"><span id="viewer-title"></span><button id="close-viewer" aria-label="关闭放大浏览">关闭 ESC ×</button></div>
     <img id="viewer-image" alt="">
