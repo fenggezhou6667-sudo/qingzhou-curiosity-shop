@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#050a14" />
-  <title>清舟的杂货铺 · 一镜到底空间剧场 (Blender 3D)</title>
-  <meta name="description" content="清舟的杂货铺立体宇宙版本：穿过星海与天窗，走过《墨盐》长案与实验标本桌，推开木窗俯瞰九州山河舆图，最终顺水停泊在屋檐与归舟之间。" />
+  <title>清舟的杂货铺 · 一镜到底空间剧场 (B-612 × Blender 3D)</title>
+  <meta name="description" content="清舟的杂货铺立体宇宙版本：降落暖金 B-612 清舟星与三枚摄影卫星，穿过屋顶落入《墨盐》阁楼长案与实验暗室，推窗俯瞰华夏山河舆图，顺水停泊在屋檐与乌篷归舟之间。" />
   <link rel="stylesheet" href="./unified.css" />
 </head>
 <body class="onetake-cinema" data-zone="works" data-portal="none">
@@ -16,18 +16,18 @@
   <!-- Top Optical Viewfinder Header -->
   <header id="hud-topbar" aria-label="空间航线导航">
     <div class="hud-brand">
-      <button type="button" class="brand-seal" id="btn-home-reset" title="返回穹顶星海起点 (t=0.00)">
+      <button type="button" class="brand-seal" id="btn-home-reset" title="返回 B-612 清舟星起点 (t=0.00)">
         <span class="seal-mark">舟</span>
       </button>
       <div class="brand-titles">
-        <div class="brand-name">清舟的杂货铺 <span class="brand-badge">ONE-TAKE 3D</span></div>
+        <div class="brand-name">清舟的杂货铺 <span class="brand-badge">B-612 · ONE-TAKE</span></div>
         <div class="brand-solar" id="hud-solar-term">节气读取中…</div>
       </div>
     </div>
 
     <nav class="hud-stations" aria-label="五境空间锚点">
       <button type="button" class="station-pill is-active" data-station="works" data-t="0.00">
-        <span class="st-idx">01</span><span class="st-name">星海</span>
+        <span class="st-idx">01</span><span class="st-name">清舟星</span>
       </button>
       <button type="button" class="station-pill" data-station="notes" data-t="0.32">
         <span class="st-idx">02</span><span class="st-name">墨盐</span>
@@ -44,7 +44,7 @@
     </nav>
 
     <div class="hud-actions">
-      <span class="portal-pill" id="hud-portal-pill" hidden>穿过天窗</span>
+      <span class="portal-pill" id="hud-portal-pill" hidden>降落星屋</span>
       <button type="button" class="hud-btn hud-btn-primary" id="btn-autoplay" aria-pressed="false" title="空格键启停自动长镜头">
         <span id="autoplay-icon">▶</span> <span id="autoplay-label">一镜巡游</span>
       </button>
@@ -76,8 +76,8 @@
   <aside id="station-deck" aria-label="当前空间展签">
     <div class="station-deck-head">
       <div>
-        <div class="deck-eyebrow" id="deck-eyebrow">ZONE 01 · COSMOS DARKROOM</div>
-        <h2 class="deck-title" id="deck-title">穹顶星海 · 摄影与星轨</h2>
+        <div class="deck-eyebrow" id="deck-eyebrow">ZONE 01 · PLANET B-612</div>
+        <h2 class="deck-title" id="deck-title">B-612 清舟星 · 星屋与摄影卫星</h2>
       </div>
       <div class="deck-head-btns">
         <button type="button" class="icon-btn" id="btn-deck-about" title="杂货铺扉页与鸣谢">店志</button>
@@ -94,8 +94,8 @@
       <div class="rail-track-bg"></div>
       <div class="rail-track-fill" id="rail-track-fill"></div>
       <div class="rail-thumb" id="rail-thumb"></div>
-      <button type="button" class="rail-tick is-station" style="left:0%" data-t="0.00" title="01 穹顶星海">星</button>
-      <button type="button" class="rail-tick is-portal" style="left:20%" data-t="0.20" title="穿过天窗"></button>
+      <button type="button" class="rail-tick is-station" style="left:0%" data-t="0.00" title="01 B-612 清舟星">星</button>
+      <button type="button" class="rail-tick is-portal" style="left:20%" data-t="0.20" title="降落星屋入阁楼"></button>
       <button type="button" class="rail-tick is-station" style="left:32%" data-t="0.32" title="02 墨盐书房">书</button>
       <button type="button" class="rail-tick is-station" style="left:50%" data-t="0.50" title="03 实验暗室">研</button>
       <button type="button" class="rail-tick is-portal" style="left:61%" data-t="0.61" title="推开木窗"></button>
@@ -124,22 +124,47 @@
     </article>
   </div>
 
-  <!-- High-Res Photo Lightbox -->
-  <div id="lightbox" class="lightbox" hidden aria-hidden="true" role="dialog" aria-modal="true">
-    <button type="button" class="lb-close" id="lb-close" aria-label="关闭大图">✕</button>
-    <button type="button" class="lb-nav lb-prev" id="lb-prev" aria-label="上一张">‹</button>
-    <figure class="lb-figure">
-      <img id="lb-img" src="" alt="" />
-      <figcaption id="lb-cap"></figcaption>
-    </figure>
-    <button type="button" class="lb-nav lb-next" id="lb-next" aria-label="下一张">›</button>
+  <!-- Fullscreen Darkroom Contact-Sheet Photography Viewer -->
+  <div id="darkroom-modal" class="darkroom-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="星空暗房摄影观片台">
+    <header class="dr-topbar">
+      <div class="dr-tabs" id="dr-tabs" role="tablist" aria-label="摄影系列切换"></div>
+      <div class="dr-controls">
+        <span class="dr-counter" id="dr-counter">01 / 02</span>
+        <button type="button" class="hud-btn" id="dr-intro-toggle" aria-expanded="false">展签导言</button>
+        <button type="button" class="hud-btn" id="dr-zoom-btn" aria-pressed="false">1.8× 细节</button>
+        <button type="button" class="hud-btn hud-btn-primary" id="dr-fly-study-btn">↓ 降落书房</button>
+        <button type="button" class="icon-btn" id="dr-close" aria-label="关闭摄影看图器">✕</button>
+      </div>
+    </header>
+
+    <div class="dr-stage" id="dr-stage">
+      <button type="button" class="dr-nav dr-prev" id="dr-prev" aria-label="上一幅">‹</button>
+      <div class="dr-img-wrap" id="dr-img-wrap">
+        <img id="dr-main-img" src="" alt="" />
+      </div>
+      <button type="button" class="dr-nav dr-next" id="dr-next" aria-label="下一幅">›</button>
+
+      <aside class="dr-intro-drawer" id="dr-intro-drawer" hidden>
+        <div class="dr-intro-meta" id="dr-intro-meta"></div>
+        <h3 class="dr-intro-title" id="dr-intro-title"></h3>
+        <p class="dr-intro-text" id="dr-intro-text"></p>
+      </aside>
+    </div>
+
+    <footer class="dr-bottom">
+      <div class="dr-caption-bar">
+        <span class="dr-caption-main" id="dr-caption-main"></span>
+        <span class="dr-caption-credit" id="dr-caption-credit"></span>
+      </div>
+      <div class="dr-filmstrip" id="dr-filmstrip" aria-label="摄影底片联系表"></div>
+    </footer>
   </div>
 
   <!-- Cinema Loading Curtain -->
   <div id="cinema-loader" class="cinema-loader" aria-live="polite">
     <div class="loader-ring"></div>
-    <div class="loader-title">清舟的杂货铺 · 一镜到底空间正在显影</div>
-    <div class="loader-sub" id="loader-status">正在载入 Blender 空间架构与星海粒子…</div>
+    <div class="loader-title">清舟的杂货铺 · B-612 一镜到底空间正在显影</div>
+    <div class="loader-sub" id="loader-status">正在载入 Blender 空间架构与星海着色器…</div>
   </div>
 
   <!-- Floating Status Toast -->
