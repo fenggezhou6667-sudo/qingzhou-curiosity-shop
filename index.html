@@ -1,2 +1,177 @@
-<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0b211f"><meta name="description" content="清舟的杂货铺，一个收藏诗歌、摄影、AI 实验与生活足迹的私人数字空间。当前为公开预览版，部分栏目仍在整理。"><meta name="robots" content="noindex,nofollow"><title>清舟的杂货铺 / Qingzhou's Curiosity Shop</title><link rel="icon" type="image/svg+xml" href="assets/sleeping-cat.svg"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="world.css"><link rel="stylesheet" href="shop.css"><link rel="stylesheet" href="places.css"><link rel="stylesheet" href="roaming-v07.css"><link rel="stylesheet" href="v08.css"><link rel="stylesheet" href="v09.css"><link rel="stylesheet" href="v10.css"><link rel="stylesheet" href="v11.css"><link rel="stylesheet" href="v12.css"><link rel="stylesheet" href="galaxies.css"><script src="content.js" defer></script><script src="china-map.js" defer></script><script src="app.js" defer></script></head><body><div class="page-atmosphere" id="page-atmosphere" aria-hidden="true"></div><a class="skip" href="#main">跳至正文</a><header class="site-header"><a class="brand" href="#/" aria-label="清舟的杂货铺 首页"><img class="cat-mark" src="assets/sleeping-cat.svg" width="88" height="64" alt=""><span>清舟的杂货铺<small>QINGZHOU’S CURIOSITY SHOP</small></span></a><div class="header-compass"><nav aria-label="主导航"><a href="#/" data-nav="index">入口</a><a href="#/notes" data-nav="notes">诗集</a><a href="#/works" data-nav="works">摄影</a><a href="#/lab" data-nav="lab">AI 实验</a><a href="#/traces" data-nav="traces">足迹</a></nav><aside class="music-dock" id="music-dock" aria-label="声音藏品"><button id="dock-toggle" class="dock-toggle" type="button" aria-expanded="false" aria-controls="dock-panel" aria-label="展开音乐播放器"><span aria-hidden="true">♫</span><span class="dock-title">有光的地方</span><span class="dock-pulse" aria-hidden="true"></span></button><audio id="dock-audio" src="assets/where-the-light-settles.mp3" preload="metadata"></audio></aside></div><span class="edition">VOL. 001 / v1.4 <span>小店，慢慢生长</span></span></header><section class="dock-panel" id="dock-panel" hidden aria-label="有光的地方播放器"><button type="button" class="dock-close" id="dock-close" aria-label="收起音乐播放器">收起</button><span class="dock-eyebrow">一件声音作品</span><h2>有光的地方</h2><p>与 AI 共同编曲，并通过 MIDI 演奏</p><div class="dock-controls"><button type="button" id="dock-play" aria-label="播放《有光的地方》">▶</button><div class="dock-timeline"><label for="dock-progress" class="sr-only">播放进度</label><input id="dock-progress" type="range" min="0" max="1000" value="0" step="1"><div class="dock-times"><output id="dock-elapsed">0:00</output><span id="dock-duration">3:19</span></div></div></div></section><main id="main" tabindex="-1"></main><footer><a href="#/" class="footer-title">倚山水暖风走过，傍夕阳皓月而行</a><div><span>QINGZHOU’S CURIOSITY SHOP</span><span>一间私人的小店 · 公开预览版</span><a href="#/" id="footer-wish-link">光河许愿池</a><a href="#/about">关于这间小店</a><a href="#/credits">演示内容与影像来源 ↗</a><a href="#main">回到页首 ↑</a></div></footer><dialog id="lightbox" aria-labelledby="viewer-title"><div class="viewer-bar"><span id="viewer-title"></span><button id="close-viewer" aria-label="关闭放大浏览">关闭 ESC ×</button></div><img id="viewer-image" alt=""><div class="viewer-bottom"><button id="previous-image" aria-label="上一张照片">← 上一张</button><span id="viewer-count" aria-live="polite"></span><button id="next-image" aria-label="下一张照片">下一张 →</button></div></dialog></body></html>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#050a14" />
+  <title>清舟的杂货铺 · 一镜到底空间剧场 (B-612 × Blender 3D)</title>
+  <link rel="icon" type="image/svg+xml" href="./assets/sleeping-cat.svg" />
+  <meta name="description" content="清舟的杂货铺立体宇宙版本：降落暖金 B-612 清舟星与三枚摄影卫星，穿过屋顶落入《墨盐》阁楼长案与实验暗室，推窗俯瞰华夏山河舆图，顺水停泊在屋檐与乌篷归舟之间。" />
+  <link rel="stylesheet" href="./unified.css" />
+</head>
+<body class="onetake-cinema" data-zone="works" data-portal="none">
+  <canvas id="onetake-canvas" aria-label="清舟的杂货铺三维一镜到底空间舞台"></canvas>
+  <div id="aperture-vignette" aria-hidden="true"></div>
+  <div id="spatial-markers" aria-hidden="false"></div>
+
+  <!-- Top Optical Viewfinder Header -->
+  <header id="hud-topbar" aria-label="空间航线导航">
+    <div class="hud-brand">
+      <button type="button" class="brand-seal" id="btn-home-reset" title="返回 B-612 清舟星起点 (t=0.00)">
+        <span class="seal-mark">舟</span>
+      </button>
+      <div class="brand-titles">
+        <div class="brand-name">清舟的杂货铺 <span class="brand-badge">B-612 · ONE-TAKE</span></div>
+        <div class="brand-solar" id="hud-solar-term">节气读取中…</div>
+      </div>
+    </div>
+
+    <nav class="hud-stations" aria-label="五境空间锚点">
+      <button type="button" class="station-pill is-active" data-station="works" data-t="0.00">
+        <span class="st-idx">01</span><span class="st-name">清舟星</span>
+      </button>
+      <button type="button" class="station-pill" data-station="notes" data-t="0.32">
+        <span class="st-idx">02</span><span class="st-name">墨盐</span>
+      </button>
+      <button type="button" class="station-pill" data-station="labs" data-t="0.50">
+        <span class="st-idx">03</span><span class="st-name">实验</span>
+      </button>
+      <button type="button" class="station-pill" data-station="traces" data-t="0.75">
+        <span class="st-idx">04</span><span class="st-name">山河</span>
+      </button>
+      <button type="button" class="station-pill" data-station="about" data-t="0.96">
+        <span class="st-idx">05</span><span class="st-name">归舟</span>
+      </button>
+    </nav>
+
+    <div class="hud-actions">
+      <span class="portal-pill" id="hud-portal-pill" hidden>降落星屋</span>
+      <button type="button" class="hud-btn hud-btn-primary" id="btn-autoplay" aria-pressed="false" title="空格键启停自动长镜头">
+        <span id="autoplay-icon">▶</span> <span id="autoplay-label">一镜巡游</span>
+      </button>
+      <span class="telemetry-readout" id="hud-telemetry">T 0.00</span>
+
+      <div id="music-dock" class="music-dock">
+        <button type="button" class="hud-btn" id="dock-toggle" aria-expanded="false" aria-label="展开音乐播放器">
+          ♪ <span>声景</span>
+        </button>
+        <div id="dock-panel" class="dock-panel" hidden>
+          <div class="dock-head">
+            <span>有光的地方 · BGM</span>
+            <button type="button" id="dock-close" aria-label="关闭音乐面板">×</button>
+          </div>
+          <div class="dock-controls">
+            <button type="button" id="dock-play" aria-label="播放《有光的地方》">▶</button>
+            <input type="range" id="dock-progress" min="0" max="1000" value="0" aria-label="音乐进度" />
+            <span class="dock-time"><span id="dock-elapsed">0:00</span> / <span id="dock-duration">3:42</span></span>
+          </div>
+        </div>
+        <audio id="dock-audio" preload="none" src="./assets/where-the-light-settles.mp3"></audio>
+      </div>
+
+      <a class="hud-btn hud-btn-ghost" href="./archive.html" title="切回原始独立平面档案">原版站点 ↗</a>
+    </div>
+  </header>
+
+  <!-- Adaptive Floating Station Deck -->
+  <aside id="station-deck" aria-label="当前空间展签">
+    <div class="station-deck-head">
+      <div>
+        <div class="deck-eyebrow" id="deck-eyebrow">ZONE 01 · PLANET B-612</div>
+        <h2 class="deck-title" id="deck-title">B-612 清舟星 · 星屋与摄影卫星</h2>
+      </div>
+      <div class="deck-head-btns">
+        <button type="button" class="icon-btn" id="btn-deck-about" title="杂货铺扉页与鸣谢">店志</button>
+        <button type="button" class="icon-btn" id="btn-deck-toggle" aria-expanded="true" title="收起/展开空间展签">—</button>
+      </div>
+    </div>
+    <div class="station-deck-body" id="station-deck-body"></div>
+  </aside>
+
+  <!-- Bottom Camera Scrubber Rail -->
+  <footer id="timeline-rail" aria-label="长镜头进度轨道">
+    <div class="rail-hint">滚轮 / 拖拽轨道穿行五境 · 点击场景器物交互</div>
+    <div class="rail-track-wrap" id="rail-track-wrap" role="slider" aria-label="长镜头时间轴" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+      <div class="rail-track-bg"></div>
+      <div class="rail-track-fill" id="rail-track-fill"></div>
+      <div class="rail-thumb" id="rail-thumb"></div>
+      <button type="button" class="rail-tick is-station" style="left:0%" data-t="0.00" title="01 B-612 清舟星">星</button>
+      <button type="button" class="rail-tick is-portal" style="left:20%" data-t="0.20" title="降落星屋入阁楼"></button>
+      <button type="button" class="rail-tick is-station" style="left:32%" data-t="0.32" title="02 墨盐书房">书</button>
+      <button type="button" class="rail-tick is-station" style="left:50%" data-t="0.50" title="03 实验暗室">研</button>
+      <button type="button" class="rail-tick is-portal" style="left:61%" data-t="0.61" title="推开木窗"></button>
+      <button type="button" class="rail-tick is-station" style="left:75%" data-t="0.75" title="04 华夏山河">山</button>
+      <button type="button" class="rail-tick is-portal" style="left:86%" data-t="0.86" title="顺水入夜河"></button>
+      <button type="button" class="rail-tick is-station" style="left:96%" data-t="0.96" title="05 檐下归舟">舟</button>
+    </div>
+    <div class="rail-pct" id="rail-pct">00%</div>
+  </footer>
+
+  <!-- Full Reading / Exhibition / Specimen Dossier Modal -->
+  <div id="dossier-modal" class="dossier-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="dossier-title">
+    <div class="dossier-backdrop" id="dossier-backdrop"></div>
+    <article class="dossier-dialog">
+      <header class="dossier-head">
+        <div>
+          <div class="dossier-kicker" id="dossier-kicker">DOSSIER</div>
+          <h3 class="dossier-title" id="dossier-title">档案阅读</h3>
+        </div>
+        <div class="dossier-head-actions">
+          <button type="button" class="hud-btn" id="dossier-fly-btn" hidden>飞往空间坐标 ↗</button>
+          <button type="button" class="icon-btn" id="dossier-close" aria-label="关闭档案">✕</button>
+        </div>
+      </header>
+      <div class="dossier-body" id="dossier-body"></div>
+    </article>
+  </div>
+
+  <!-- Fullscreen Darkroom Contact-Sheet Photography Viewer -->
+  <div id="darkroom-modal" class="darkroom-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="星空暗房摄影观片台">
+    <header class="dr-topbar">
+      <div class="dr-tabs" id="dr-tabs" role="tablist" aria-label="摄影系列切换"></div>
+      <div class="dr-controls">
+        <span class="dr-counter" id="dr-counter">01 / 02</span>
+        <button type="button" class="hud-btn" id="dr-intro-toggle" aria-expanded="false">展签导言</button>
+        <button type="button" class="hud-btn" id="dr-zoom-btn" aria-pressed="false">1.8× 细节</button>
+        <button type="button" class="hud-btn hud-btn-primary" id="dr-fly-study-btn">↓ 降落书房</button>
+        <button type="button" class="icon-btn" id="dr-close" aria-label="关闭摄影看图器">✕</button>
+      </div>
+    </header>
+
+    <div class="dr-stage" id="dr-stage">
+      <button type="button" class="dr-nav dr-prev" id="dr-prev" aria-label="上一幅">‹</button>
+      <div class="dr-img-wrap" id="dr-img-wrap">
+        <img id="dr-main-img" src="" alt="" />
+      </div>
+      <button type="button" class="dr-nav dr-next" id="dr-next" aria-label="下一幅">›</button>
+
+      <aside class="dr-intro-drawer" id="dr-intro-drawer" hidden>
+        <div class="dr-intro-meta" id="dr-intro-meta"></div>
+        <h3 class="dr-intro-title" id="dr-intro-title"></h3>
+        <p class="dr-intro-text" id="dr-intro-text"></p>
+      </aside>
+    </div>
+
+    <footer class="dr-bottom">
+      <div class="dr-caption-bar">
+        <span class="dr-caption-main" id="dr-caption-main"></span>
+        <span class="dr-caption-credit" id="dr-caption-credit"></span>
+      </div>
+      <div class="dr-filmstrip" id="dr-filmstrip" aria-label="摄影底片联系表"></div>
+    </footer>
+  </div>
+
+  <!-- Cinema Loading Curtain -->
+  <div id="cinema-loader" class="cinema-loader" aria-live="polite">
+    <div class="loader-ring"></div>
+    <div class="loader-title">清舟的杂货铺 · B-612 一镜到底空间正在显影</div>
+    <div class="loader-sub" id="loader-status">正在载入 Blender 空间架构与星海着色器…</div>
+  </div>
+
+  <!-- Floating Status Toast -->
+  <div id="cinema-toast" class="cinema-toast" hidden role="status"></div>
+
+  <script defer src="./content.js"></script>
+  <script type="module" src="./unified.js"></script>
+</body>
+</html>

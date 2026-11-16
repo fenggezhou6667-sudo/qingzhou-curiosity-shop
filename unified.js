@@ -1843,7 +1843,7 @@ function openAboutDossier() {
       <li><strong>木窗门户 · Dynamic Sash</strong>：苏式雕花对开木窗随镜头临近自动缓缓推开，迎面展开双层台地华夏山河与浑仪罗盘底座。</li>
       <li><strong>第五境 · 屋檐与乌篷归舟</strong>：9 肋放样弧形乌篷灯船在 GLSL 动态水波与金色灯影倒映中轻轻摇曳，马头墙民居与飞檐黑猫静守水乡夜色。</li>
     </ul>
-    <p style="color:var(--ink-muted);">原版独立平面多系统档案仍在 <a href="./index.html" style="color:var(--gold-brass);">./index.html</a> 完整保留，互不覆盖。</p>
+    <p style="color:var(--ink-muted);">原版独立平面多系统档案已完整备份保留于 <a href="./archive.html" style="color:var(--gold-brass);">./archive.html</a>，互不覆盖。</p>
   `;
   openDossier('COLOPHON · 一镜到底空间志 v2.0', '关于清舟的立体杂货铺', html);
 }
