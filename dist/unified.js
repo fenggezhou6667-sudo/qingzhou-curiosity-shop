@@ -222,6 +222,8 @@ function addRiverWish(text) {
 }
 
 /* ---------- UI State ---------- */
+const prefersReducedMotion = Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
 const state = {
   targetT: 0.0,
   currentT: 0.0,
@@ -231,7 +233,7 @@ const state = {
   pointerY: 0,
   activeStationId: 'works',
   activePortal: 'none',
-  deckCollapsed: false,
+  deckCollapsed: typeof window !== 'undefined' && window.innerWidth <= 900,
   selectedWorkSlug: 'still-water',
   poemCategory: '全部',
   selectedPoemSlug: 'poem-001',
@@ -242,8 +244,48 @@ const state = {
   darkroomWorkSlug: 'still-water',
   darkroomPhotoIdx: 0,
   darkroomZoomed: false,
+  darkroomPanX: 0,
+  darkroomPanY: 0,
+  darkroomLoadingToken: 0,
   darkroomIntroOpen: false
 };
+
+let activeModalEl = null;
+let lastFocusBeforeModal = null;
+
+function openModalFocus(modal) {
+  if (!modal) return;
+  if (!activeModalEl) lastFocusBeforeModal = document.activeElement;
+  activeModalEl = modal;
+  requestAnimationFrame(() => {
+    const first = modal.querySelector('button:not([hidden]):not([disabled]), a[href], input, select, [tabindex="0"]');
+    first?.focus({ preventScroll: true });
+  });
+}
+
+function closeModalFocus() {
+  activeModalEl = null;
+  if (lastFocusBeforeModal && typeof lastFocusBeforeModal.focus === 'function' && lastFocusBeforeModal.isConnected) {
+    lastFocusBeforeModal.focus({ preventScroll: true });
+  }
+  lastFocusBeforeModal = null;
+}
+
+function handleModalTabTrap(e) {
+  if (e.key !== 'Tab' || !activeModalEl || activeModalEl.hidden) return;
+  const focusables = [...activeModalEl.querySelectorAll('button:not([hidden]):not([disabled]), a[href]:not([hidden]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+    .filter((el) => el.offsetParent !== null);
+  if (!focusables.length) return;
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
 
 let cameraTrack = [];
 let posCurve = null;
@@ -828,20 +870,34 @@ function updateBookMoyanTexture() {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    const toVertChar = (ch) => ({ '（': '︵', '(': '︵', '）': '︶', ')': '︶', '—': '丨', '「': '﹁', '」': '﹂' }[ch] || ch);
+    const toVertChar = (ch) => ({
+      '（': '︵', '(': '︵', '）': '︶', ')': '︶',
+      '「': '﹁', '」': '﹂', '『': '﹃', '』': '﹄',
+      '《': '︽', '》': '︾', '〈': '︿', '〉': '﹀',
+      '“': '﹁', '”': '﹂', '‘': '﹃', '’': '﹄',
+      '—': '丨', '–': '丨', '…': '⋮'
+    }[ch] || ch);
+    const drawVertGlyph = (ch, x, y) => {
+      const mapped = toVertChar(ch);
+      if ('，。、：；？！'.includes(mapped)) {
+        ctx.fillText(mapped, x + 9, y - 7);
+      } else {
+        ctx.fillText(mapped, x, y);
+      }
+    };
 
     // Col 0 (far right): Poem Title & date/place
     const titleChars = [...poem.title.slice(0, 14)];
     ctx.fillStyle = '#1b1713';
     ctx.font = 'bold 34px "Noto Serif SC", "Songti SC", Georgia, serif';
     titleChars.forEach((ch, idx) => {
-      ctx.fillText(toVertChar(ch), allCols[0], 118 + idx * 44);
+      drawVertGlyph(ch, allCols[0], 118 + idx * 44);
     });
     const metaStr = `${poem.date || ''}${poem.place ? ' · ' + poem.place : ''}`;
     ctx.fillStyle = '#8b2f24';
     ctx.font = '20px "Noto Serif SC", "Songti SC", Georgia, serif';
     [...metaStr.slice(0, 14)].forEach((ch, idx) => {
-      ctx.fillText(toVertChar(ch), allCols[1], 122 + idx * 32);
+      drawVertGlyph(ch, allCols[1], 122 + idx * 32);
     });
 
     // Poem body vertical lines across columns 2..11
@@ -857,7 +913,7 @@ function updateBookMoyanTexture() {
         const slice = chars.slice(i, i + maxPerCol);
         const cx = allCols[colIdx++];
         slice.forEach((ch, rIdx) => {
-          ctx.fillText(toVertChar(ch), cx, 114 + rIdx * 42);
+          drawVertGlyph(ch, cx, 114 + rIdx * 42);
         });
       }
     }
@@ -972,31 +1028,124 @@ function makeHerbariumSlideTexture(idx) {
   cvs.height = 512;
   const ctx = cvs.getContext('2d');
   const s = HERBARIUM_SAMPLES[idx] || HERBARIUM_SAMPLES[0];
-  ctx.fillStyle = '#0e2824';
+  const bgPalettes = [
+    { bg: '#0e2824', stroke: '#6cf0d6', fill: 'rgba(108, 240, 214, 0.24)', ink: '#d4fff5' },
+    { bg: '#261e12', stroke: '#f0cb7e', fill: 'rgba(240, 203, 126, 0.24)', ink: '#fff0d1' },
+    { bg: '#281a14', stroke: '#ffbe7d', fill: 'rgba(255, 190, 125, 0.24)', ink: '#ffe8d2' },
+    { bg: '#102230', stroke: '#86d6ff', fill: 'rgba(134, 214, 255, 0.22)', ink: '#dff4ff' }
+  ];
+  const pal = bgPalettes[idx % 4];
+  ctx.fillStyle = pal.bg;
   ctx.fillRect(0, 0, 256, 512);
-  ctx.strokeStyle = '#6cf0d6';
+  ctx.strokeStyle = pal.stroke;
   ctx.lineWidth = 3;
   ctx.strokeRect(14, 14, 228, 484);
+  ctx.fillStyle = pal.fill;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
 
-  // Draw stylized leaf vein specimen
-  ctx.beginPath();
-  ctx.moveTo(128, 390);
-  ctx.bezierCurveTo(116, 260, 140, 170, 128, 65);
-  ctx.stroke();
-  ctx.fillStyle = 'rgba(110, 240, 210, 0.25)';
-  ctx.beginPath();
-  ctx.ellipse(128, 220, 62, 128, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  for (let y = 120; y <= 310; y += 34) {
+  if (idx === 0) {
+    // 1. 雨后青苔 Bryophyta: cushion moss mound + slender nodding sporophyte setae & capsules
     ctx.beginPath();
-    ctx.moveTo(128, y);
-    ctx.lineTo(80, y - 22);
-    ctx.moveTo(128, y);
-    ctx.lineTo(176, y - 22);
+    ctx.ellipse(128, 355, 76, 32, 0, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    for (let k = -3; k <= 3; k++) {
+      const bx = 128 + k * 18;
+      const topY = 125 + Math.abs(k) * 26;
+      const cx = bx + k * 6;
+      ctx.beginPath();
+      ctx.moveTo(bx, 340);
+      ctx.quadraticCurveTo(bx - k * 3, 240, cx, topY);
+      ctx.stroke();
+      ctx.save();
+      ctx.translate(cx, topY);
+      ctx.rotate(k * 0.22 + 0.35);
+      ctx.beginPath();
+      ctx.ellipse(0, -10, 8, 15, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+  } else if (idx === 1) {
+    // 2. 九月梧桐 Firmiana: 5-lobed palmate leaf + palmate veins
+    ctx.beginPath();
+    ctx.moveTo(128, 385);
+    ctx.lineTo(128, 305);
+    ctx.lineTo(64, 305);
+    ctx.quadraticCurveTo(48, 265, 76, 246);
+    ctx.lineTo(44, 185);
+    ctx.quadraticCurveTo(68, 175, 92, 198);
+    ctx.lineTo(128, 86);
+    ctx.lineTo(164, 198);
+    ctx.quadraticCurveTo(188, 175, 212, 185);
+    ctx.lineTo(180, 246);
+    ctx.quadraticCurveTo(208, 265, 192, 305);
+    ctx.lineTo(128, 305);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    for (const [vx, vy] of [[128, 96], [52, 192], [204, 192], [68, 294], [188, 294]]) {
+      ctx.beginPath();
+      ctx.moveTo(128, 302);
+      ctx.lineTo(vx, vy);
+      ctx.stroke();
+    }
+  } else if (idx === 2) {
+    // 3. 晚霞与桂子 Osmanthus: twig with opposite elliptical leaves + dense 4-petal floret clusters
+    ctx.beginPath();
+    ctx.moveTo(128, 388);
+    ctx.bezierCurveTo(118, 285, 138, 180, 124, 72);
+    ctx.stroke();
+    for (const [lx, ly, ang] of [[84, 300, -0.55], [172, 274, 0.52], [86, 178, -0.48], [168, 152, 0.5]]) {
+      ctx.save();
+      ctx.translate(lx, ly);
+      ctx.rotate(ang);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 18, 48, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, -40);
+      ctx.lineTo(0, 42);
+      ctx.stroke();
+      ctx.restore();
+    }
+    for (const [fx, fy] of [[112, 232], [142, 224], [126, 206], [108, 128], [144, 118], [126, 102]]) {
+      for (let p = 0; p < 4; p++) {
+        const a = (p * Math.PI) / 2;
+        ctx.beginPath();
+        ctx.arc(fx + Math.cos(a) * 6, fy + Math.sin(a) * 6, 4.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+  } else {
+    // 4. 山谷雾松 Cedrus: branched twig with radiating pine needle fascicles & ovoid pinecone
+    ctx.beginPath();
+    ctx.moveTo(128, 388);
+    ctx.lineTo(128, 105);
+    ctx.moveTo(128, 285);
+    ctx.lineTo(74, 215);
+    ctx.moveTo(128, 225);
+    ctx.lineTo(182, 162);
+    ctx.stroke();
+    for (const [nx, ny] of [[74, 215], [182, 162], [128, 118], [96, 245], [160, 186]]) {
+      for (let k = -5; k <= 5; k++) {
+        const a = -Math.PI / 2 + k * 0.24;
+        ctx.beginPath();
+        ctx.moveTo(nx, ny);
+        ctx.lineTo(nx + Math.cos(a) * 40, ny + Math.sin(a) * 44);
+        ctx.stroke();
+      }
+    }
+    ctx.beginPath();
+    ctx.ellipse(128, 326, 20, 30, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.stroke();
   }
-  ctx.fillStyle = '#d4fff5';
+
+  ctx.fillStyle = pal.ink;
   ctx.font = 'bold 24px "Noto Serif SC", serif';
   ctx.textAlign = 'center';
   ctx.fillText(s.tag, 128, 438);
@@ -1152,15 +1301,34 @@ function setupLighting() {
   scene.add(pointerLight);
 }
 
+function makeRippleTexture() {
+  const cvs = document.createElement('canvas');
+  cvs.width = cvs.height = 128;
+  const ctx = cvs.getContext('2d');
+  const g = ctx.createRadialGradient(64, 64, 22, 64, 64, 62);
+  g.addColorStop(0.0, 'rgba(98, 229, 208, 0.0)');
+  g.addColorStop(0.55, 'rgba(98, 229, 208, 0.14)');
+  g.addColorStop(0.76, 'rgba(162, 248, 232, 0.55)');
+  g.addColorStop(0.88, 'rgba(98, 229, 208, 0.18)');
+  g.addColorStop(1.0, 'rgba(98, 229, 208, 0.0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 function createWaterRipples() {
+  const rippleTex = makeRippleTexture();
   for (let i = 0; i < riverBoats.length; i++) {
     const boat = riverBoats[i].obj;
-    const geo = new THREE.RingGeometry(0.95, 1.08, 32);
+    const geo = new THREE.PlaneGeometry(2.65, 2.65);
     geo.rotateX(-Math.PI / 2);
     const mat = new THREE.MeshBasicMaterial({
-      color: 0x62e5d0,
+      map: rippleTex,
       transparent: true,
-      opacity: 0.38,
+      opacity: 0.55,
+      blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false
     });
@@ -1247,7 +1415,8 @@ function getActiveMarkerSpecs() {
   const specs = [];
   if (t < 0.17) {
     specs.push(
-      { id: 'B612_Cottage', label: '清舟星木屋 · 点击降落 ↘', tone: 'gold', dy: 2.55 },
+      { id: 'B612_Cottage', label: '清舟星木屋 · 降落', tone: 'gold', dy: 4.35, dx: -0.45 },
+      { id: 'B612_Rose_Cloche', label: '玻璃罩玫瑰', tone: 'seal', dy: 0.65 },
       { id: 'Orrery_0', label: 'P—001 在寂静的岸边', tone: 'gold', dy: 1.35 },
       { id: 'Orrery_1', label: 'P—002 光的形状', tone: 'gold', dy: 1.12 },
       { id: 'Orrery_2', label: 'P—003 漫长的下午', tone: 'jade', dy: 1.30 }
@@ -1287,6 +1456,9 @@ function getActiveMarkerSpecs() {
 }
 
 const projVec = new THREE.Vector3();
+const markerAnchorBox = new THREE.Box3();
+const markerAnchorCenter = new THREE.Vector3();
+
 function updateSpatialMarkers() {
   const container = document.getElementById('spatial-markers');
   if (!container || !glbRoot) return;
@@ -1300,6 +1472,20 @@ function updateSpatialMarkers() {
 
   const w = window.innerWidth;
   const h = window.innerHeight;
+  const topRect = document.getElementById('hud-topbar')?.getBoundingClientRect();
+  const railRect = document.getElementById('timeline-rail')?.getBoundingClientRect();
+  const deckEl = document.getElementById('station-deck');
+  const deckRect = deckEl ? deckEl.getBoundingClientRect() : null;
+
+  const safeTop = (topRect ? topRect.bottom : 64) + 10;
+  let safeBot = (railRect ? railRect.top : h - 64) - 10;
+  if (w <= 900 && deckRect && deckRect.height > 0) {
+    safeBot = Math.min(safeBot, deckRect.top - 10);
+  }
+  const safeLeft = w < 600 ? 64 : 48;
+  const safeRight = (w > 900 && deckRect && !state.deckCollapsed) ? Math.min(w - 48, deckRect.left - 14) : w - (w < 600 ? 64 : 48);
+
+  const visibleItems = [];
   for (const spec of activeSpecs) {
     const targetObj = namedObjects.get(spec.id);
     if (!targetObj) continue;
@@ -1315,7 +1501,12 @@ function updateSpatialMarkers() {
     }
 
     if (spec.id === 'B612_Cottage') {
-      projVec.set(b612Center.x, b612Center.y + spec.dy, b612Center.z);
+      projVec.set(b612Center.x + (spec.dx || 0), b612Center.y + spec.dy, b612Center.z);
+    } else if (spec.id === 'B612_Rose_Cloche' || targetObj.position.lengthSq() < 1e-4) {
+      markerAnchorBox.setFromObject(targetObj);
+      markerAnchorBox.getCenter(markerAnchorCenter);
+      projVec.copy(markerAnchorCenter);
+      projVec.y += spec.dy || 0.7;
     } else {
       targetObj.getWorldPosition(projVec);
       projVec.y += spec.dy || 0.8;
@@ -1323,21 +1514,56 @@ function updateSpatialMarkers() {
     projVec.project(camera);
 
     const visible = projVec.z >= -1 && projVec.z <= 1;
-    const sx = (projVec.x * 0.5 + 0.5) * w;
-    const sy = (-projVec.y * 0.5 + 0.5) * h;
+    let sx = (projVec.x * 0.5 + 0.5) * w;
+    let sy = (-projVec.y * 0.5 + 0.5) * h;
 
-    const padX = w < 600 ? 78 : 44;
-    const padTop = w < 600 ? 136 : 72;
-    const padBot = w < 600 ? 112 : 72;
-    if (!visible || sx < padX || sx > w - padX || sy < padTop || sy > h - padBot) {
+    if (!visible || sx < 12 || sx > w - 12 || sy < 40 || sy > h - 30) {
       btn.style.display = 'none';
       continue;
     }
 
-    btn.style.display = 'inline-flex';
     btn.className = `spatial-marker is-${spec.tone}${spec.selected ? ' is-highlighted' : ''}`;
     btn.querySelector('.spatial-text').textContent = spec.label;
-    btn.style.transform = `translate3d(${Math.round(sx)}px, ${Math.round(sy)}px, 0) translate(-50%, -100%)`;
+    btn.style.display = 'inline-flex';
+    const bw = Math.max(btn.offsetWidth || 110, 96);
+    const bh = Math.max(btn.offsetHeight || 30, 30);
+
+    sx = clamp(sx, safeLeft + bw * 0.5, Math.max(safeLeft + bw * 0.5, safeRight - bw * 0.5));
+    sy = clamp(sy, safeTop + bh, Math.max(safeTop + bh, safeBot));
+    visibleItems.push({ spec, btn, sx, sy, bw, bh });
+  }
+
+  // Screen-space de-collision pass (prevents overlaps e.g. 苏州 vs 上海, mobile cottage vs moon)
+  for (let pass = 0; pass < 3; pass++) {
+    for (let i = 0; i < visibleItems.length; i++) {
+      for (let j = i + 1; j < visibleItems.length; j++) {
+        const a = visibleItems[i], b = visibleItems[j];
+        const minDX = (a.bw + b.bw) * 0.5 + 8;
+        const minDY = (a.bh + b.bh) * 0.5 + 6;
+        const dx = b.sx - a.sx;
+        const dy = b.sy - a.sy;
+        if (Math.abs(dx) < minDX && Math.abs(dy) < minDY) {
+          const preferX = Math.abs(dx) >= Math.abs(dy) * 0.85;
+          if (preferX) {
+            const push = (minDX - Math.abs(dx)) * 0.52 * (dx >= 0 ? 1 : -1);
+            a.sx -= push;
+            b.sx += push;
+          } else {
+            const push = (minDY - Math.abs(dy)) * 0.55 * (dy >= 0 ? 1 : -1);
+            a.sy -= push;
+            b.sy += push;
+          }
+          a.sx = clamp(a.sx, safeLeft + a.bw * 0.5, Math.max(safeLeft + a.bw * 0.5, safeRight - a.bw * 0.5));
+          b.sx = clamp(b.sx, safeLeft + b.bw * 0.5, Math.max(safeLeft + b.bw * 0.5, safeRight - b.bw * 0.5));
+          a.sy = clamp(a.sy, safeTop + a.bh, Math.max(safeTop + a.bh, safeBot));
+          b.sy = clamp(b.sy, safeTop + b.bh, Math.max(safeTop + b.bh, safeBot));
+        }
+      }
+    }
+  }
+
+  for (const item of visibleItems) {
+    item.btn.style.transform = `translate3d(${Math.round(item.sx)}px, ${Math.round(item.sy)}px, 0) translate(-50%, -100%)`;
   }
 }
 
@@ -1385,7 +1611,8 @@ function toggleDeckCollapse(force) {
 
 function renderStationDeck(force = false) {
   const station = getStationByT(state.currentT);
-  const deckKey = `${station.id}`;
+  const portal = getPortalByT(state.currentT);
+  const deckKey = `${station.id}:${portal ? portal.id : 'none'}`;
   if (!force && lastStationKey === deckKey) return;
   lastStationKey = deckKey;
 
@@ -1394,8 +1621,13 @@ function renderStationDeck(force = false) {
   const body = document.getElementById('station-deck-body');
   if (!eyebrow || !title || !body) return;
 
-  eyebrow.textContent = station.eyebrow;
-  title.textContent = station.title;
+  if (portal && (portal.id === 'skylight' || portal.id === 'window' || portal.id === 'cascade')) {
+    eyebrow.textContent = `${station.eyebrow} · PORTAL TRANSIT`;
+    title.textContent = portal.label;
+  } else {
+    eyebrow.textContent = station.eyebrow;
+    title.textContent = station.title;
+  }
 
   if (station.id === 'works') {
     const works = archive().works || [];
@@ -1437,8 +1669,8 @@ function renderStationDeck(force = false) {
       <div class="deck-chips">
         ${cats.map((c) => `<button type="button" class="deck-chip${c === state.poemCategory ? ' is-active' : ''}" data-poem-cat="${esc(c)}">${esc(c)}</button>`).join('')}
       </div>
-      <div class="deck-chips" style="max-height:66px;overflow-y:auto;">
-        ${filtered.slice(0, 12).map((n) => `<button type="button" class="deck-chip${n.slug === state.selectedPoemSlug ? ' is-active' : ''}" data-poem-select="${esc(n.slug)}">${esc(n.title.replace(/^墨檐（其[一二三四五六七]）·?/, ''))}</button>`).join('')}
+      <div class="deck-chips" style="max-height:92px;overflow-y:auto;">
+        ${filtered.map((n) => `<button type="button" class="deck-chip${n.slug === state.selectedPoemSlug ? ' is-active' : ''}" data-poem-select="${esc(n.slug)}">${esc(n.title.replace(/^墨檐（其[一二三四五六七]）·?/, ''))}</button>`).join('')}
       </div>
       ${activePoem ? `
         <div class="poem-preview-box">
@@ -1542,7 +1774,7 @@ function renderStationDeck(force = false) {
         ${filteredCities.map((p) => `<button type="button" class="deck-chip${p.hasDirectPoem ? ' is-poem-city' : ''}${p.name === activeCity.name ? ' is-active' : ''}" data-city-pick="${esc(p.name)}">${esc(p.name)}</button>`).join('')}
       </div>
       <div class="deck-btn-row">
-        ${linkedCity ? `<button type="button" class="deck-action-btn" id="btn-city-to-poem">飞回书房 · 读「${esc(linkedCity)}」之诗 ↗</button>` : ''}
+        ${linkedCity ? `<button type="button" class="deck-action-btn" id="btn-city-to-poem">${activeCity.hasDirectPoem ? `飞回书房 · 读「${esc(linkedCity)}」之诗 ↗` : `${esc(activeCity.name)}暂无直系诗作 · 顺访邻近「${esc(linkedCity)}」之诗 ↗`}</button>` : ''}
         <button type="button" class="deck-action-btn is-jade" data-fly-t="0.96">↓ 顺长江入人间夜河</button>
       </div>
     `;
@@ -1580,7 +1812,17 @@ function renderStationDeck(force = false) {
     body.querySelector('#river-wish-form')?.addEventListener('submit', (e) => {
       e.preventDefault();
       const inp = body.querySelector('#wish-input-field');
-      if (!inp || !inp.value.trim()) return;
+      if (!inp || !inp.value.trim()) {
+        if (inp) {
+          inp.classList.remove('is-invalid');
+          void inp.offsetWidth;
+          inp.classList.add('is-invalid');
+          inp.focus();
+          setTimeout(() => inp.classList.remove('is-invalid'), 480);
+        }
+        showToast('请先写下一句心愿寄语再放灯 🏮');
+        return;
+      }
       addRiverWish(inp.value);
       playWaterSplashSound();
       showToast('一盏新河灯已顺水漂进乌篷舟阵 ✨');
@@ -1612,6 +1854,18 @@ function getWorkPhotos(work) {
   });
 }
 
+function applyDarkroomTransform() {
+  const imgWrap = document.getElementById('dr-img-wrap');
+  if (!imgWrap) return;
+  const maxPanX = Math.round(imgWrap.clientWidth * 0.42);
+  const maxPanY = Math.round(imgWrap.clientHeight * 0.42);
+  state.darkroomPanX = state.darkroomZoomed ? clamp(state.darkroomPanX, -maxPanX, maxPanX) : 0;
+  state.darkroomPanY = state.darkroomZoomed ? clamp(state.darkroomPanY, -maxPanY, maxPanY) : 0;
+  imgWrap.style.setProperty('--pan-x', `${Math.round(state.darkroomPanX)}px`);
+  imgWrap.style.setProperty('--pan-y', `${Math.round(state.darkroomPanY)}px`);
+  imgWrap.style.setProperty('--dr-scale', state.darkroomZoomed ? '1.8' : '1');
+}
+
 function renderDarkroomViewer() {
   const modal = document.getElementById('darkroom-modal');
   const tabsEl = document.getElementById('dr-tabs');
@@ -1624,6 +1878,7 @@ function renderDarkroomViewer() {
   const introMeta = document.getElementById('dr-intro-meta');
   const introText = document.getElementById('dr-intro-text');
   const imgWrap = document.getElementById('dr-img-wrap');
+  const loadingEl = document.getElementById('dr-loading');
   const zoomBtn = document.getElementById('dr-zoom-btn');
   if (!modal || !tabsEl || !mainImg) return;
 
@@ -1649,21 +1904,47 @@ function renderDarkroomViewer() {
       state.darkroomWorkSlug = btn.dataset.drWork;
       state.darkroomPhotoIdx = 0;
       state.darkroomZoomed = false;
+      state.darkroomPanX = 0;
+      state.darkroomPanY = 0;
       playWoodTapSound();
       renderDarkroomViewer();
     });
   });
 
   if (cur) {
-    mainImg.src = cur.src;
+    const token = ++state.darkroomLoadingToken;
     mainImg.alt = cur.alt || cur.cap;
     capMain.textContent = cur.cap;
     capCredit.textContent = cur.credit ? `摄影致谢：${cur.credit}` : `${activeWork.medium || ''}`;
+    if (mainImg.dataset.loadedSrc === cur.src) {
+      if (imgWrap) imgWrap.classList.remove('is-loading');
+      if (loadingEl) loadingEl.hidden = true;
+      if (mainImg.getAttribute('src') !== cur.src) mainImg.src = cur.src;
+    } else {
+      if (mainImg.getAttribute('src') !== cur.thumb) mainImg.src = cur.thumb;
+      if (imgWrap) imgWrap.classList.add('is-loading');
+      if (loadingEl) loadingEl.hidden = false;
+      const hi = new Image();
+      hi.onload = () => {
+        if (token !== state.darkroomLoadingToken) return;
+        mainImg.src = cur.src;
+        mainImg.dataset.loadedSrc = cur.src;
+        if (imgWrap) imgWrap.classList.remove('is-loading');
+        if (loadingEl) loadingEl.hidden = true;
+      };
+      hi.onerror = () => {
+        if (token !== state.darkroomLoadingToken) return;
+        if (imgWrap) imgWrap.classList.remove('is-loading');
+        if (loadingEl) loadingEl.hidden = true;
+      };
+      hi.src = cur.src;
+    }
   }
   counterEl.textContent = `${String(state.darkroomPhotoIdx + 1).padStart(2, '0')} / ${String(photos.length).padStart(2, '0')}`;
 
   if (imgWrap) imgWrap.classList.toggle('is-zoomed', state.darkroomZoomed);
   if (zoomBtn) zoomBtn.setAttribute('aria-pressed', String(state.darkroomZoomed));
+  applyDarkroomTransform();
 
   const introStr = Array.isArray(activeWork.intro) ? activeWork.intro.join('\n') : (activeWork.intro || '');
   if (introMeta) introMeta.textContent = `${activeWork.id} · ${activeWork.en || ''} · ${activeWork.year || ''}`;
@@ -1679,6 +1960,8 @@ function renderDarkroomViewer() {
     btn.addEventListener('click', () => {
       state.darkroomPhotoIdx = Number(btn.dataset.drIdx);
       state.darkroomZoomed = false;
+      state.darkroomPanX = 0;
+      state.darkroomPanY = 0;
       playWoodTapSound();
       renderDarkroomViewer();
     });
@@ -1692,6 +1975,8 @@ function openDarkroomViewer(workSlug, photoIdx = 0) {
   state.darkroomWorkSlug = workSlug || state.selectedWorkSlug || 'still-water';
   state.darkroomPhotoIdx = photoIdx;
   state.darkroomZoomed = false;
+  state.darkroomPanX = 0;
+  state.darkroomPanY = 0;
   state.darkroomIntroOpen = false;
   const drawer = document.getElementById('dr-intro-drawer');
   const introBtn = document.getElementById('dr-intro-toggle');
@@ -1700,6 +1985,7 @@ function openDarkroomViewer(workSlug, photoIdx = 0) {
   renderDarkroomViewer();
   modal.hidden = false;
   modal.setAttribute('aria-hidden', 'false');
+  openModalFocus(modal);
 }
 
 function closeDarkroomViewer() {
@@ -1708,6 +1994,9 @@ function closeDarkroomViewer() {
   modal.hidden = true;
   modal.setAttribute('aria-hidden', 'true');
   state.darkroomZoomed = false;
+  state.darkroomPanX = 0;
+  state.darkroomPanY = 0;
+  closeModalFocus();
 }
 
 function stepDarkroomPhoto(delta) {
@@ -1717,6 +2006,8 @@ function stepDarkroomPhoto(delta) {
   const n = activeWork.photos.length;
   state.darkroomPhotoIdx = (state.darkroomPhotoIdx + delta + n) % n;
   state.darkroomZoomed = false;
+  state.darkroomPanX = 0;
+  state.darkroomPanY = 0;
   playWoodTapSound();
   renderDarkroomViewer();
 }
@@ -1748,6 +2039,7 @@ function openDossier(kicker, titleText, html, flyOpts = null) {
 
   modal.hidden = false;
   modal.setAttribute('aria-hidden', 'false');
+  openModalFocus(modal);
 }
 
 function closeDossier() {
@@ -1755,6 +2047,7 @@ function closeDossier() {
   if (!modal) return;
   modal.hidden = true;
   modal.setAttribute('aria-hidden', 'true');
+  closeModalFocus();
 }
 
 function openPoemDossier(slug) {
@@ -1768,18 +2061,18 @@ function openPoemDossier(slug) {
     .flatMap((stanza) => stanza.split('\n'))
     .map((line, idx) => {
       const note = annos[idx];
-      return `<div class="poem-stanza-line" data-line-idx="${idx}" title="点击添加朱砂批注">${esc(line)}${note ? `<span class="poem-note-badge">${esc(note)}</span>` : ''}</div>`;
+      return `<button type="button" class="poem-stanza-line" data-line-idx="${idx}" title="点击添加或修改朱砂批注"><span>${esc(line)}</span>${note ? `<span class="poem-note-badge">${esc(note)}</span>` : ''}</button>`;
     })
     .join('');
 
   const html = `
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
       <span style="color:var(--gold-brass);font-family:var(--font-mono);font-size:12px;">${esc(p.id)} · ${esc(p.date || '')}${p.place ? ` · ${esc(p.place)}` : ''} · 点击任意诗行可写朱砂眉批</span>
-      <select id="dossier-poem-picker" style="background:rgba(255,255,255,0.06);border:1px solid var(--border-gold);border-radius:8px;padding:4px 8px;color:var(--ink-ivory);">
+      <select id="dossier-poem-picker" aria-label="选择诗作" style="background:rgba(255,255,255,0.06);border:1px solid var(--border-gold);border-radius:8px;padding:4px 8px;color:var(--ink-ivory);">
         ${notes.map((n) => `<option value="${esc(n.slug)}"${n.slug === p.slug ? ' selected' : ''} style="background:#0b121d;color:#f3e6cf;">${esc(n.id)} · ${esc(n.title)}</option>`).join('')}
       </select>
     </div>
-    <div style="padding:14px 18px;border-radius:12px;background:rgba(243,230,207,0.04);border:1px solid var(--border-soft);">
+    <div class="poem-sheet-xuan">
       ${linesHtml}
     </div>
   `;
@@ -1794,14 +2087,54 @@ function openPoemDossier(slug) {
   document.querySelectorAll('#dossier-body [data-line-idx]').forEach((lineEl) => {
     lineEl.addEventListener('click', () => {
       const idx = Number(lineEl.dataset.lineIdx);
-      const val = window.prompt('写下一句朱砂批注（保存在本地浏览器）：', annos[idx] || '');
-      if (val !== null) {
-        addPoemAnnotation(p.slug, idx, val.trim());
+      document.querySelectorAll('#dossier-body .poem-anno-editor').forEach((ed) => ed.remove());
+      const ed = document.createElement('form');
+      ed.className = 'poem-anno-editor';
+      ed.innerHTML = `
+        <input type="text" maxlength="64" placeholder="写下一句朱砂眉批…" value="${esc(annos[idx] || '')}" aria-label="朱砂批注内容" />
+        <button type="submit" class="hud-btn hud-btn-primary">保存批注</button>
+        ${annos[idx] ? '<button type="button" class="hud-btn" data-clear-anno>清除</button>' : ''}
+        <button type="button" class="hud-btn" data-cancel-anno>取消</button>
+      `;
+      lineEl.after(ed);
+      const inp = ed.querySelector('input');
+      inp?.focus();
+      inp?.select();
+      ed.addEventListener('submit', (ev) => {
+        ev.preventDefault();
+        addPoemAnnotation(p.slug, idx, (inp?.value || '').trim());
+        playWoodTapSound();
+        showToast('朱砂眉批已保存 ✨');
+        openPoemDossier(p.slug);
+      });
+      ed.querySelector('[data-clear-anno]')?.addEventListener('click', () => {
+        addPoemAnnotation(p.slug, idx, '');
         playWoodTapSound();
         openPoemDossier(p.slug);
-      }
+      });
+      ed.querySelector('[data-cancel-anno]')?.addEventListener('click', () => {
+        ed.remove();
+        lineEl.focus();
+      });
+      inp?.addEventListener('keydown', (ke) => {
+        if (ke.key === 'Escape') {
+          ke.stopPropagation();
+          ed.remove();
+          lineEl.focus();
+        }
+      });
     });
   });
+}
+
+function getLabSchematicSvg(slug) {
+  if (slug === 'rongrong') {
+    return `<svg class="lab-schematic-svg" viewBox="0 0 420 110" aria-label="L-004 共鸣回路示意图"><rect x="8" y="8" width="404" height="94" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.25"/><path d="M26 55 C85 18, 130 92, 190 55 C240 22, 295 88, 394 55" fill="none" stroke="#5fe2cc" stroke-width="2"/><circle cx="210" cy="55" r="22" fill="none" stroke="currentColor" stroke-dasharray="4 4"/><circle cx="210" cy="55" r="7" fill="currentColor"/><text x="20" y="26" fill="currentColor" font-size="10" opacity="0.8">FIG.01 · DIALOGUE &amp; MEMORY KERNEL</text></svg>`;
+  }
+  if (slug === 'machine-herbarium') {
+    return `<svg class="lab-schematic-svg" viewBox="0 0 420 110" aria-label="L-002 机器植物志感知矩阵"><rect x="8" y="8" width="404" height="94" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.25"/><g stroke="#5fe2cc" fill="none" stroke-width="1.5"><rect x="44" y="28" width="60" height="62" rx="4"/><rect x="134" y="28" width="60" height="62" rx="4"/><rect x="224" y="28" width="60" height="62" rx="4"/><rect x="314" y="28" width="60" height="62" rx="4"/><path d="M74 78 V40 M60 54 L74 44 L88 54 M164 78 V40 M148 56 Q164 38 180 56 M254 78 V40 M344 78 V40"/></g><text x="20" y="22" fill="currentColor" font-size="10" opacity="0.8">FIG.02 · 4-CHANNEL CYANOTYPE SENSOR ARRAY</text></svg>`;
+  }
+  return `<svg class="lab-schematic-svg" viewBox="0 0 420 110" aria-label="L-003 地形声场等高线"><rect x="8" y="8" width="404" height="94" rx="6" fill="none" stroke="currentColor" stroke-opacity="0.25"/><g fill="none" stroke="currentColor" stroke-opacity="0.65"><ellipse cx="210" cy="58" rx="140" ry="30"/><ellipse cx="210" cy="58" rx="95" ry="20" stroke="#5fe2cc"/><ellipse cx="210" cy="58" rx="46" ry="10"/></g><circle cx="210" cy="58" r="4" fill="#d44d38"/><text x="20" y="24" fill="currentColor" font-size="10" opacity="0.8">FIG.03 · TOPOGRAPHIC ACOUSTIC CONTOUR</text></svg>`;
 }
 
 function openLabDossier(slug) {
@@ -1821,6 +2154,7 @@ function openLabDossier(slug) {
   const asList = (v) => (Array.isArray(v) ? v : v ? [String(v)] : []);
   const html = `
     <p style="color:var(--jade-glow);font-family:var(--font-mono);font-size:12px;">${esc(lab.en || '')} · 状态：${esc(lab.status || '')}</p>
+    <div class="lab-schematic-box">${getLabSchematicSvg(lab.slug)}</div>
     ${asList(lab.intro).map((t) => `<p>${esc(t)}</p>`).join('')}
     ${asList(lab.record).map((t) => `<p style="color:var(--ink-muted);">${esc(t)}</p>`).join('')}
     <h4 style="margin:18px 0 10px;color:var(--gold-brass);">月下玻璃标本匣 · 四件植物切片</h4>
@@ -1881,21 +2215,27 @@ function initSoundDock() {
   });
 
   let analyser = null, freqBins = null;
+  audio.addEventListener('loadedmetadata', () => {
+    if (Number.isFinite(audio.duration) && duration) duration.textContent = fmt(audio.duration);
+  });
   play.addEventListener('click', async () => {
     if (audio.paused) {
       try {
-        if (!analyser && (window.AudioContext || window.webkitAudioContext)) {
-          const Ctx = window.AudioContext || window.webkitAudioContext;
-          const actx = new Ctx();
-          const src = actx.createMediaElementSource(audio);
-          analyser = actx.createAnalyser();
-          analyser.fftSize = 128;
-          freqBins = new Uint8Array(analyser.frequencyBinCount);
-          src.connect(analyser);
-          analyser.connect(actx.destination);
+        if (!analyser) {
+          const actx = ensureSfx();
+          if (actx) {
+            const src = actx.createMediaElementSource(audio);
+            analyser = actx.createAnalyser();
+            analyser.fftSize = 128;
+            freqBins = new Uint8Array(analyser.frequencyBinCount);
+            src.connect(analyser);
+            analyser.connect(actx.destination);
+          }
         }
         await audio.play();
-      } catch { /* ignore */ }
+      } catch (err) {
+        showToast('声音暂时无法播放，请检查浏览器音频权限 ♪');
+      }
     } else {
       audio.pause();
     }
@@ -2047,9 +2387,14 @@ function bindEvents(canvas) {
   }, { passive: true });
   window.addEventListener('touchend', () => { touchY = null; });
 
+  let lastRaycastAt = 0;
   window.addEventListener('pointermove', (e) => {
     state.pointerX = (e.clientX / window.innerWidth) * 2 - 1;
     state.pointerY = -(e.clientY / window.innerHeight) * 2 + 1;
+    if (activeModalEl && !activeModalEl.hidden) return;
+    const now = performance.now();
+    if (now - lastRaycastAt < 40) return;
+    lastRaycastAt = now;
     if (canvas && clickableRoots.length) {
       const rc = new THREE.Raycaster();
       rc.setFromCamera({ x: state.pointerX, y: state.pointerY }, camera);
@@ -2118,18 +2463,69 @@ function bindEvents(canvas) {
   document.getElementById('dossier-close')?.addEventListener('click', closeDossier);
   document.getElementById('dossier-backdrop')?.addEventListener('click', closeDossier);
 
-  // Darkroom Modal Bindings
+  // Darkroom Modal Bindings (zoom + drag-to-pan)
   document.getElementById('dr-close')?.addEventListener('click', closeDarkroomViewer);
   document.getElementById('dr-prev')?.addEventListener('click', () => stepDarkroomPhoto(-1));
   document.getElementById('dr-next')?.addEventListener('click', () => stepDarkroomPhoto(1));
   document.getElementById('dr-zoom-btn')?.addEventListener('click', () => {
     state.darkroomZoomed = !state.darkroomZoomed;
+    if (!state.darkroomZoomed) {
+      state.darkroomPanX = 0;
+      state.darkroomPanY = 0;
+    }
     renderDarkroomViewer();
   });
-  document.getElementById('dr-main-img')?.addEventListener('click', () => {
-    state.darkroomZoomed = !state.darkroomZoomed;
-    renderDarkroomViewer();
-  });
+
+  const drImgWrap = document.getElementById('dr-img-wrap');
+  const drMainImg = document.getElementById('dr-main-img');
+  if (drImgWrap && drMainImg) {
+    let panDragging = false, panMoved = false, startX = 0, startY = 0, basePanX = 0, basePanY = 0;
+    drImgWrap.addEventListener('pointerdown', (e) => {
+      if (!state.darkroomZoomed) {
+        startX = e.clientX;
+        startY = e.clientY;
+        panMoved = false;
+        return;
+      }
+      panDragging = true;
+      panMoved = false;
+      startX = e.clientX;
+      startY = e.clientY;
+      basePanX = state.darkroomPanX;
+      basePanY = state.darkroomPanY;
+      drImgWrap.classList.add('is-dragging');
+      drImgWrap.setPointerCapture?.(e.pointerId);
+    });
+    drImgWrap.addEventListener('pointermove', (e) => {
+      if (!panDragging || !state.darkroomZoomed) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (Math.hypot(dx, dy) > 4) panMoved = true;
+      state.darkroomPanX = basePanX + dx;
+      state.darkroomPanY = basePanY + dy;
+      applyDarkroomTransform();
+    });
+    const finishPan = () => {
+      if (!panDragging) return;
+      panDragging = false;
+      drImgWrap.classList.remove('is-dragging');
+    };
+    drImgWrap.addEventListener('pointerup', finishPan);
+    drImgWrap.addEventListener('pointercancel', finishPan);
+    drMainImg.addEventListener('click', () => {
+      if (panMoved) {
+        panMoved = false;
+        return;
+      }
+      state.darkroomZoomed = !state.darkroomZoomed;
+      if (!state.darkroomZoomed) {
+        state.darkroomPanX = 0;
+        state.darkroomPanY = 0;
+      }
+      renderDarkroomViewer();
+    });
+  }
+
   document.getElementById('dr-intro-toggle')?.addEventListener('click', () => {
     state.darkroomIntroOpen = !state.darkroomIntroOpen;
     const drawer = document.getElementById('dr-intro-drawer');
@@ -2143,6 +2539,7 @@ function bindEvents(canvas) {
   });
 
   window.addEventListener('keydown', (e) => {
+    handleModalTabTrap(e);
     const dr = document.getElementById('darkroom-modal');
     if (dr && !dr.hidden) {
       if (e.key === 'Escape') return closeDarkroomViewer();
@@ -2153,7 +2550,7 @@ function bindEvents(canvas) {
     if (e.key === 'Escape') {
       const dm = document.getElementById('dossier-modal');
       if (dm && !dm.hidden) return closeDossier();
-    } else if (e.key === ' ' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+    } else if (e.key === ' ' && !['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(document.activeElement?.tagName)) {
       e.preventDefault();
       state.autoPlay = !state.autoPlay;
       syncAutoPlayButton();
@@ -2177,21 +2574,41 @@ function applyCameraAtT(t, elapsedSec = 0) {
   posCurve.getPoint(u, tmpPos);
   lookCurve.getPoint(u, tmpTarget);
 
-  tmpTarget.x += state.pointerX * 0.42;
-  tmpTarget.y += state.pointerY * 0.24 + Math.sin(elapsedSec * 0.6) * 0.025;
+  const motionScale = prefersReducedMotion ? 0 : 1;
+  tmpTarget.x += state.pointerX * 0.42 * motionScale;
+  tmpTarget.y += state.pointerY * 0.24 * motionScale + Math.sin(elapsedSec * 0.6) * 0.025 * motionScale;
 
   const portrait = camera.aspect < 0.85;
-  if (portrait && t < 0.24) {
-    const b612W = 1 - THREE.MathUtils.smoothstep(t, 0.12, 0.24);
+  let extraFov = 0;
+  if (portrait) {
     const narrow = clamp((0.85 - camera.aspect) / 0.39, 0, 1.35);
-    tmpPos.x -= 0.45 * b612W * narrow;
-    tmpPos.y += 1.15 * b612W * narrow;
-    tmpPos.z += 9.6 * b612W * narrow;
-    tmpTarget.x -= 0.65 * b612W * narrow;
-    tmpTarget.y -= 1.10 * b612W * narrow;
+    extraFov = (0.85 - camera.aspect) * 34;
+    if (t < 0.24) {
+      const b612W = 1 - THREE.MathUtils.smoothstep(t, 0.12, 0.24);
+      tmpPos.x -= 1.65 * b612W * narrow;
+      tmpPos.y += 1.05 * b612W * narrow;
+      tmpPos.z += 12.6 * b612W * narrow;
+      tmpTarget.x -= 1.55 * b612W * narrow;
+      tmpTarget.y -= 0.35 * b612W * narrow;
+    } else if (t >= 0.42 && t <= 0.62) {
+      const labW = Math.sin(THREE.MathUtils.smoothstep(t, 0.42, 0.62) * Math.PI);
+      tmpPos.x -= 1.25 * labW * narrow;
+      tmpPos.y += 1.65 * labW * narrow;
+      tmpPos.z += 2.95 * labW * narrow;
+      tmpTarget.x -= 1.35 * labW * narrow;
+      extraFov += 12 * labW * narrow;
+    } else if (t >= 0.84) {
+      const riverW = THREE.MathUtils.smoothstep(t, 0.84, 0.96);
+      tmpPos.x -= 0.4 * riverW * narrow;
+      tmpPos.y += 1.15 * riverW * narrow;
+      tmpPos.z += 4.6 * riverW * narrow;
+      tmpTarget.x -= 1.65 * riverW * narrow;
+      tmpTarget.y += 0.55 * riverW * narrow;
+      extraFov += 10 * riverW * narrow;
+    }
   }
   camera.position.copy(tmpPos);
-  camera.fov = sampleFov(t) + (portrait ? (0.85 - camera.aspect) * 32 : 0);
+  camera.fov = sampleFov(t) + extraFov;
   camera.updateProjectionMatrix();
   camera.lookAt(tmpTarget);
 
@@ -2232,9 +2649,11 @@ async function bootCinema() {
   buildRefinedCosmosEffects();
   bindEvents(canvas);
 
+  let loadedOk = false;
   try {
     if (statusEl) statusEl.textContent = '载入 B-612 长镜头轨线…';
     const camRes = await fetch('./assets/qingzhou-world-camera.json');
+    if (!camRes.ok) throw new Error(`HTTP ${camRes.status} camera.json`);
     const camJson = await camRes.json();
     cameraTrack = camJson.cameraTrack || [];
     posCurve = new THREE.CatmullRomCurve3(cameraTrack.map((k) => new THREE.Vector3(...k.pos)), false, 'catmullrom', 0.35);
@@ -2285,15 +2704,23 @@ async function bootCinema() {
     upgradeRiverBedShader();
     createWaterRipples();
     window.__glbLoaded = true;
+    loadedOk = true;
   } catch (err) {
     console.error('One-Take 3D boot error:', err);
-    if (statusEl) statusEl.textContent = '3D 资源加载受限：' + (err?.message || err);
+    const titleEl = document.getElementById('loader-title');
+    const actionsEl = document.getElementById('loader-actions');
+    if (loaderEl) loaderEl.classList.add('is-error');
+    if (titleEl) titleEl.textContent = '3D 空间资源未能顺利显影';
+    if (statusEl) statusEl.textContent = `可能由于网络波动或浏览器 WebGL 受限（${err?.message || err}），你可以重试或直接浏览原版平面档案。`;
+    if (actionsEl) actionsEl.hidden = false;
+    document.getElementById('btn-loader-retry')?.addEventListener('click', () => window.location.reload());
   }
 
+  toggleDeckCollapse(state.deckCollapsed);
   renderStationDeck(true);
   renderOnceAndSync(0);
-  window.__onetakeReady = true;
-  if (loaderEl) loaderEl.classList.add('is-ready');
+  window.__onetakeReady = loadedOk;
+  if (loadedOk && loaderEl) loaderEl.classList.add('is-ready');
 
   window.__qzSetT = (t, instant = true) => {
     state.autoPlay = false;
@@ -2332,7 +2759,12 @@ async function bootCinema() {
     requestAnimationFrame(animate);
     const dt = Math.min((nowMs - prevMs) * 0.001, 0.08);
     prevMs = nowMs;
-    const elapsed = nowMs * 0.001;
+    const elapsed = prefersReducedMotion ? 0 : nowMs * 0.001;
+
+    const drModal = document.getElementById('darkroom-modal');
+    const dsModal = document.getElementById('dossier-modal');
+    const modalOpen = Boolean((drModal && !drModal.hidden) || (dsModal && !dsModal.hidden));
+    if (modalOpen) return;
 
     if (state.autoPlay) {
       state.targetT = Math.min(1, state.targetT + dt * 0.028);
@@ -2354,30 +2786,32 @@ async function bootCinema() {
     if (b612MistMat) b612MistMat.uniforms.time.value = elapsed;
 
     const starRing = namedObjects.get('B612_Star_Ring');
-    if (starRing) starRing.rotation.y = elapsed * 0.20;
+    if (starRing && !prefersReducedMotion) starRing.rotation.y = elapsed * 0.20;
 
     for (let i = 0; i < 3; i++) {
       const orr = namedObjects.get(`Orrery_${i}`);
-      if (orr) {
+      if (orr && !prefersReducedMotion) {
         orr.rotation.y = elapsed * (0.28 + i * 0.06);
         orr.rotation.x = Math.sin(elapsed * 0.4 + i) * 0.12;
       }
     }
 
     const chime = namedObjects.get('Roof_Windchime');
-    if (chime) chime.rotation.z = Math.sin(elapsed * 1.4) * 0.08;
+    if (chime && !prefersReducedMotion) chime.rotation.z = Math.sin(elapsed * 1.4) * 0.08;
 
     for (const [idx, entry] of cityBeaconMeshes.entries()) {
       const place = PLACES_22[idx];
       const isSelected = place && place.name === state.selectedCityName;
-      const pulse = 1 + (isSelected ? 0.35 + 0.22 * Math.sin(elapsed * 4.5) : 0.08 * Math.sin(elapsed * 2 + idx));
+      const pulse = 1 + (isSelected ? (prefersReducedMotion ? 0.25 : 0.35 + 0.22 * Math.sin(elapsed * 4.5)) : (prefersReducedMotion ? 0 : 0.08 * Math.sin(elapsed * 2 + idx)));
       entry.obj.scale.set(isSelected ? 1.38 : 1.0, pulse, isSelected ? 1.38 : 1.0);
     }
 
     for (let i = 0; i < riverBoats.length; i++) {
       const b = riverBoats[i];
-      b.obj.position.y = b.baseY + Math.sin(elapsed * 1.5 + b.phase) * 0.055;
-      b.obj.rotation.z = Math.sin(elapsed * 1.1 + b.phase) * 0.038;
+      if (!prefersReducedMotion) {
+        b.obj.position.y = b.baseY + Math.sin(elapsed * 1.5 + b.phase) * 0.055;
+        b.obj.rotation.z = Math.sin(elapsed * 1.1 + b.phase) * 0.038;
+      }
       if (waterShaderMat && waterShaderMat.uniforms.uBoats.value[i]) {
         waterShaderMat.uniforms.uBoats.value[i].set(b.obj.position.x, b.obj.position.y, b.obj.position.z - 1.1);
       }
@@ -2386,12 +2820,12 @@ async function bootCinema() {
 
     for (const rp of rippleRings) {
       const cycle = ((elapsed * 0.42 + rp.phase) % 1);
-      const sc = 0.75 + cycle * 1.5;
+      const sc = prefersReducedMotion ? 1.1 : (0.75 + cycle * 1.5);
       rp.ring.scale.set(sc, sc, sc);
-      rp.ring.material.opacity = (1 - cycle) * 0.38;
+      rp.ring.material.opacity = prefersReducedMotion ? 0.35 : ((1 - cycle) * 0.52);
     }
 
-    if (cascadePoints && worldGroup?.visible) {
+    if (cascadePoints && worldGroup?.visible && !prefersReducedMotion) {
       const posAttr = cascadePoints.geometry.getAttribute('position');
       for (let i = 0; i < cascadeVelocities.length; i++) {
         const meta = cascadeVelocities[i];

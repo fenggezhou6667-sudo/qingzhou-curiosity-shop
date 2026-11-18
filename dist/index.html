@@ -7,6 +7,11 @@
   <title>清舟的杂货铺 · 一镜到底空间剧场 (B-612 × Blender 3D)</title>
   <link rel="icon" type="image/svg+xml" href="./assets/sleeping-cat.svg" />
   <meta name="description" content="清舟的杂货铺立体宇宙版本：降落暖金 B-612 清舟星与三枚摄影卫星，穿过屋顶落入《墨盐》阁楼长案与实验暗室，推窗俯瞰华夏山河舆图，顺水停泊在屋檐与乌篷归舟之间。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="清舟的杂货铺 · B-612 一镜到底空间剧场" />
+  <meta property="og:description" content="降落暖金 B-612 清舟星与摄影卫星，穿入《墨盐》阁楼诗房与月下实验桌，推窗俯瞰华夏山河舆图，停泊江南灯火夜河。" />
+  <meta property="og:image" content="https://fenggezhou6667-sudo.github.io/qingzhou-curiosity-shop/assets/lake-1600.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
   <link rel="stylesheet" href="./unified.css" />
 </head>
 <body class="onetake-cinema" data-zone="works" data-portal="none">
@@ -63,7 +68,7 @@
           <div class="dock-controls">
             <button type="button" id="dock-play" aria-label="播放《有光的地方》">▶</button>
             <input type="range" id="dock-progress" min="0" max="1000" value="0" aria-label="音乐进度" />
-            <span class="dock-time"><span id="dock-elapsed">0:00</span> / <span id="dock-duration">3:42</span></span>
+            <span class="dock-time"><span id="dock-elapsed">0:00</span> / <span id="dock-duration">3:19</span></span>
           </div>
         </div>
         <audio id="dock-audio" preload="none" src="./assets/where-the-light-settles.mp3"></audio>
@@ -142,6 +147,10 @@
       <button type="button" class="dr-nav dr-prev" id="dr-prev" aria-label="上一幅">‹</button>
       <div class="dr-img-wrap" id="dr-img-wrap">
         <img id="dr-main-img" src="" alt="" />
+        <div id="dr-loading" class="dr-loading" hidden aria-live="polite">
+          <span class="loader-ring"></span>
+          <span>暗房高精度底片显影中…</span>
+        </div>
       </div>
       <button type="button" class="dr-nav dr-next" id="dr-next" aria-label="下一幅">›</button>
 
@@ -163,9 +172,13 @@
 
   <!-- Cinema Loading Curtain -->
   <div id="cinema-loader" class="cinema-loader" aria-live="polite">
-    <div class="loader-ring"></div>
-    <div class="loader-title">清舟的杂货铺 · B-612 一镜到底空间正在显影</div>
+    <div class="loader-ring" id="loader-spinner"></div>
+    <div class="loader-title" id="loader-title">清舟的杂货铺 · B-612 一镜到底空间正在显影</div>
     <div class="loader-sub" id="loader-status">正在载入 Blender 空间架构与星海着色器…</div>
+    <div class="loader-actions" id="loader-actions" hidden>
+      <button type="button" class="hud-btn hud-btn-primary" id="btn-loader-retry">重新载入空间</button>
+      <a class="hud-btn" href="./archive.html">前往原版平面站点 ↗</a>
+    </div>
   </div>
 
   <!-- Floating Status Toast -->

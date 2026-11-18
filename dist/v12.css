@@ -2545,3 +2545,112 @@ body[data-room="home"] .roaming-night[data-intro="playing"] .mobile-reveal-lab {
   0% { transform-origin: 30px 13px; transform: scale(0.9); }
   100% { transform-origin: 30px 13px; transform: scale(1.2); }
 }
+
+/* ========================================================
+   Mobile Responsive Fixes for archive.html (< 768px only)
+   ======================================================== */
+@media (max-width: 767px) {
+  html,
+  body,
+  body .page-atmosphere,
+  body main {
+    max-width: 100%;
+    overflow-x: clip !important;
+  }
+
+  /* #/ Mobile river text clearance from lantern boats */
+  body[data-room=home] .roaming-night {
+    overflow: hidden;
+  }
+  body[data-room=home] .wander-node {
+    max-width: 72vw !important;
+    padding: 8px 0 8px 18px !important;
+  }
+  body[data-room=home] .node-photos {
+    left: auto !important;
+    right: 6% !important;
+    top: 13% !important;
+  }
+  body[data-room=home] .node-poems {
+    left: 10% !important;
+    top: 30% !important;
+  }
+  body[data-room=home] .node-traces {
+    left: auto !important;
+    right: 5% !important;
+    top: 60.5% !important;
+  }
+  body[data-room=home] .node-lab {
+    left: 10% !important;
+    top: 76% !important;
+  }
+
+  /* #/notes Single-column stacked book spread on narrow screens */
+  .book-open {
+    grid-template-columns: 1fr !important;
+    padding: 12px 10px 14px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 20px 44px rgba(2, 11, 10, 0.65), inset 0 0 0 1px rgba(184, 150, 108, 0.42) !important;
+  }
+  .book-open:before,
+  .book-open:after {
+    display: none !important;
+  }
+  .book-sheet {
+    min-height: 0 !important;
+    padding: 24px 18px 26px !important;
+    border-radius: 6px !important;
+  }
+  .book-sheet:after {
+    top: 12px !important;
+    bottom: 12px !important;
+    left: 10px !important;
+    right: 10px !important;
+  }
+  .book-left {
+    margin-bottom: 12px;
+    border-radius: 6px !important;
+    box-shadow: inset 0 0 14px rgba(58, 38, 22, 0.18) !important;
+  }
+  .book-right {
+    border-radius: 6px !important;
+    box-shadow: inset 0 0 14px rgba(58, 38, 22, 0.18) !important;
+  }
+  .book-left h2 {
+    font-size: 24px !important;
+    margin: 8px 0 14px !important;
+  }
+  .book-index {
+    max-height: 220px !important;
+    margin-bottom: 10px !important;
+  }
+  .book-footnote {
+    position: static !important;
+    margin-top: 12px !important;
+  }
+  .book-index-item {
+    grid-template-columns: 28px minmax(0, 1fr) !important;
+    padding: 9px 8px !important;
+    font-size: 14px !important;
+  }
+  .book-index-item span:last-child {
+    white-space: normal;
+    word-break: keep-all;
+  }
+
+  /* #/lab Eliminate horizontal overflow from lamp glow */
+  #lab-desk {
+    overflow: hidden !important;
+  }
+  .lab-lamp-glow {
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .lab-workbench {
+    grid-template-columns: 1fr !important;
+  }
+  .lab-interactive-box {
+    padding: 18px 14px !important;
+  }
+}
