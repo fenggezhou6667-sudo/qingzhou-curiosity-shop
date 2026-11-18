@@ -1,3 +1,19 @@
+@font-face {
+  font-family: "Noto Serif SC";
+  src: url("./assets/fonts/NotoSerifSC-Regular.woff2") format("woff2");
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Serif SC";
+  src: url("./assets/fonts/NotoSerifSC-SemiBold.woff2") format("woff2");
+  font-weight: 600 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --bg-cosmos: #050a14;
   --bg-river: #060f16;
@@ -147,9 +163,17 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
 }
 
 .spatial-marker:hover,
-.spatial-marker.is-highlighted {
+.spatial-marker.is-highlighted,
+.spatial-marker.is-hovered {
   border-color: var(--gold-brass);
-  background: rgba(18, 28, 42, 0.9);
+  background: rgba(18, 28, 42, 0.92);
+  box-shadow: 0 0 0 1px rgba(232, 184, 109, 0.45), 0 8px 26px rgba(0, 0, 0, 0.56);
+}
+
+.spatial-marker.is-jade.is-hovered,
+.spatial-marker.is-jade:hover {
+  border-color: var(--jade-glow);
+  box-shadow: 0 0 0 1px rgba(95, 226, 204, 0.45), 0 8px 26px rgba(0, 0, 0, 0.56);
 }
 
 .spatial-marker.is-jade {
@@ -1191,12 +1215,17 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
   filter: blur(8px) brightness(0.75);
 }
 
+.dr-img-wrap.is-zoomed,
 .dr-img-wrap.is-zoomed #dr-main-img {
   cursor: grab;
 }
 
+.dr-img-wrap.is-dragging,
 .dr-img-wrap.is-dragging #dr-main-img {
   cursor: grabbing;
+}
+
+.dr-img-wrap.is-dragging #dr-main-img {
   transition: none;
 }
 
@@ -1479,9 +1508,10 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
   }
 
   .spatial-marker {
-    min-height: 38px;
-    padding: 7px 12px 7px 9px;
-    font-size: 12px;
+    min-height: 36px;
+    padding: 5px 10px 5px 7px;
+    font-size: 11px;
+    gap: 5px;
   }
 
   #station-deck {
@@ -1520,17 +1550,29 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
     margin-left: 4px;
   }
 
-  .rail-tick {
+  .rail-tick:not(.is-portal) {
     min-width: 28px;
     min-height: 26px;
     display: grid;
     place-items: center;
   }
 
+  .rail-tick.is-portal {
+    width: 9px;
+    height: 9px;
+    min-width: 9px;
+    min-height: 9px;
+    padding: 0;
+  }
+
   .rail-tick::after {
     content: "";
     position: absolute;
     inset: -8px;
+  }
+
+  .rail-tick.is-portal::after {
+    inset: -16px;
   }
 
   .dr-topbar {

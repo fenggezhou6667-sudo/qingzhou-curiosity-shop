@@ -292,6 +292,9 @@ let posCurve = null;
 let lookCurve = null;
 let lastRenderedZone = '';
 let lastStationKey = '';
+let lastHudT = -1;
+let hoveredTargetName = null;
+const hoverMaterials = new Map();
 
 let scene, camera, renderer;
 let glbRoot = null;
@@ -694,6 +697,11 @@ function attachOrreryPlanetShaders() {
     const sphereMesh = new THREE.Mesh(new THREE.SphereGeometry(0.62, 28, 20), pMat);
     sphereMesh.name = `${sp.name}_CoreShader`;
     sphereMesh.userData.__qzInteractiveName = sp.name;
+    orr.traverse((child) => {
+      if (child.isMesh && child !== sphereMesh && child.material?.name !== 'WarmBrass') {
+        child.visible = false;
+      }
+    });
     orr.add(sphereMesh);
     orreryShaderMats.push(pMat);
 
@@ -776,7 +784,6 @@ function attachB612PlanetShader() {
   body.traverse((child) => {
     if (child.isMesh && child.material && child.material.name === 'B612GoldSoil') {
       child.material = planetMat;
-      child.userData.__qzInteractiveName = child.userData.__qzInteractiveName || 'B612_Asteroid_Body';
     }
   });
 }
@@ -985,9 +992,9 @@ function makeBlueprintTexture(kind) {
   cvs.height = 384;
   const ctx = cvs.getContext('2d');
   const palettes = [
-    { bg: '#0b2236', grid: 'rgba(130, 210, 255, 0.16)', ink: '#9ce6ff', title: 'L—004 · 绒绒', sub: 'RESONANT COMPANION' },
-    { bg: '#0b2924', grid: 'rgba(95, 226, 204, 0.18)', ink: '#74f5db', title: 'L—002 · 机器的植物志', sub: 'MACHINE HERBARIUM' },
-    { bg: '#261b12', grid: 'rgba(232, 184, 109, 0.20)', ink: '#ffd38a', title: 'L—003 · 记忆的地形', sub: 'TOPOGRAPHIC MEMORY' }
+    { bg: '#0b2236', grid: 'rgba(130, 210, 255, 0.16)', ink: '#9ce6ff', accent: '#62e5d0', title: 'L—004 · 绒绒', sub: 'RESONANT COMPANION' },
+    { bg: '#0b2924', grid: 'rgba(95, 226, 204, 0.18)', ink: '#74f5db', accent: '#f3e6cf', title: 'L—002 · 机器的植物志', sub: 'MACHINE HERBARIUM' },
+    { bg: '#261b12', grid: 'rgba(232, 184, 109, 0.20)', ink: '#ffd38a', accent: '#7cf2da', title: 'L—003 · 记忆的地形', sub: 'TOPOGRAPHIC MEMORY' }
   ];
   const p = palettes[kind % 3];
   ctx.fillStyle = p.bg;
@@ -1004,18 +1011,96 @@ function makeBlueprintTexture(kind) {
   ctx.lineWidth = 3;
   ctx.strokeRect(18, 18, 476, 348);
 
-  // Geometric constellation / contour diagram
-  ctx.beginPath();
-  for (let r = 36; r <= 108; r += 24) {
-    ctx.moveTo(310 + r, 198);
-    ctx.arc(310, 198, r, 0, Math.PI * 2);
+  const plateKind = kind % 3;
+  if (plateKind === 0) {
+    // L-004 绒绒: Dual-node resonant companion & harmonic acoustic waveform
+    ctx.strokeStyle = 'rgba(156, 230, 255, 0.35)';
+    ctx.lineWidth = 1.6;
+    for (let k = 0; k < 3; k++) {
+      ctx.beginPath();
+      ctx.ellipse(306, 178, 72 + k * 28, 34 + k * 14, -0.22, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = p.ink;
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    for (let x = 44; x <= 468; x += 4) {
+      const f = (x - 44) / 424;
+      const env = Math.sin(f * Math.PI);
+      const y = 296 - env * (26 * Math.sin(f * 26) + 12 * Math.cos(f * 13));
+      if (x === 44) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    // Companion dual resonance nodes
+    ctx.fillStyle = p.accent;
+    for (const [nx, ny, r] of [[256, 174, 8], [356, 182, 6]]) {
+      ctx.beginPath(); ctx.arc(nx, ny, r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.font = '12px "JetBrains Mono", monospace';
+    ctx.fillText('RESONANCE 432Hz · DIALOGUE KERNEL', 36, 342);
+  } else if (plateKind === 1) {
+    // L-002 机器的植物志: Botanical venation topology graph & landmark nodes
+    ctx.strokeStyle = p.ink;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(220, 324);
+    ctx.bezierCurveTo(255, 255, 310, 170, 368, 92);
+    ctx.stroke();
+    const veins = [
+      [[264, 248], [218, 206], [198, 176]],
+      [[292, 206], [238, 162], [220, 134]],
+      [[322, 164], [274, 124], [262, 102]],
+      [[272, 238], [336, 224], [378, 202]],
+      [[304, 192], [372, 174], [408, 150]],
+      [[336, 146], [392, 128], [418, 106]]
+    ];
+    ctx.lineWidth = 1.8;
+    for (const [a, b, c] of veins) {
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1]);
+      ctx.quadraticCurveTo(b[0], b[1], c[0], c[1]);
+      ctx.stroke();
+      ctx.fillStyle = p.accent;
+      ctx.beginPath(); ctx.arc(c[0], c[1], 4, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(116, 245, 219, 0.35)';
+    ctx.strokeRect(184, 78, 252, 248);
+    ctx.fillStyle = p.ink;
+    ctx.font = '12px "JetBrains Mono", monospace';
+    ctx.fillText('VEIN NODES: 12 · CONFIDENCE 0.94', 36, 342);
+  } else {
+    // L-003 记忆的地形: Irregular organic elevation contours & survey azimuth grid
+    ctx.strokeStyle = p.ink;
+    for (let lvl = 0; lvl < 6; lvl++) {
+      const baseR = 26 + lvl * 18;
+      ctx.lineWidth = lvl % 2 === 0 ? 2.4 : 1.3;
+      ctx.beginPath();
+      for (let s = 0; s <= 48; s++) {
+        const a = (s / 48) * Math.PI * 2;
+        const wob = 1 + 0.18 * Math.sin(a * 3 + lvl * 0.7) + 0.10 * Math.cos(a * 2 - 0.5);
+        const rx = 312 + Math.cos(a) * baseR * 1.24 * wob;
+        const ry = 212 + Math.sin(a) * baseR * 0.88 * wob;
+        if (s === 0) ctx.moveTo(rx, ry); else ctx.lineTo(rx, ry);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
+    ctx.strokeStyle = p.accent;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(190, 290); ctx.lineTo(426, 128);
+    ctx.moveTo(312, 108); ctx.lineTo(312, 316);
+    ctx.stroke();
+    ctx.fillStyle = p.ink;
+    ctx.font = '12px "JetBrains Mono", monospace';
+    ctx.fillText('AZIMUTH N28°E · CONTOUR Δ 50m', 36, 342);
   }
-  ctx.stroke();
+
   ctx.fillStyle = p.ink;
   ctx.font = 'bold 26px "Noto Serif SC", Georgia, serif';
-  ctx.fillText(p.title, 36, 70);
+  ctx.fillText(p.title, 36, 68);
   ctx.font = '15px "JetBrains Mono", monospace';
-  ctx.fillText(p.sub, 36, 100);
+  ctx.fillText(p.sub, 36, 98);
   const tex = new THREE.CanvasTexture(cvs);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.flipY = false;
@@ -1157,16 +1242,205 @@ function makeHerbariumSlideTexture(idx) {
   return tex;
 }
 
+function heightCanvasToNormalTexture(srcCanvas, strength = 2.0, repeatX = 1, repeatY = 1) {
+  const w = srcCanvas.width;
+  const h = srcCanvas.height;
+  const src = srcCanvas.getContext('2d').getImageData(0, 0, w, h).data;
+  const outCvs = document.createElement('canvas');
+  outCvs.width = w;
+  outCvs.height = h;
+  const outCtx = outCvs.getContext('2d');
+  const outImg = outCtx.createImageData(w, h);
+  const dst = outImg.data;
+  const lumaAt = (x, y) => {
+    const cx = (x + w) % w;
+    const cy = (y + h) % h;
+    const i = (cy * w + cx) * 4;
+    return (src[i] * 0.3 + src[i + 1] * 0.59 + src[i + 2] * 0.11) / 255;
+  };
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const dx = (lumaAt(x + 1, y) - lumaAt(x - 1, y)) * strength;
+      const dy = (lumaAt(x, y + 1) - lumaAt(x, y - 1)) * strength;
+      let nx = -dx, ny = -dy, nz = 1.0;
+      const invLen = 1 / Math.hypot(nx, ny, nz);
+      nx *= invLen; ny *= invLen; nz *= invLen;
+      const idx = (y * w + x) * 4;
+      dst[idx] = Math.round((nx * 0.5 + 0.5) * 255);
+      dst[idx + 1] = Math.round((ny * 0.5 + 0.5) * 255);
+      dst[idx + 2] = Math.round((nz * 0.5 + 0.5) * 255);
+      dst[idx + 3] = 255;
+    }
+  }
+  outCtx.putImageData(outImg, 0, 0);
+  const tex = new THREE.CanvasTexture(outCvs);
+  tex.colorSpace = THREE.NoColorSpace;
+  tex.flipY = false;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(repeatX, repeatY);
+  return tex;
+}
+
+function makeLinearRoughNormalMaps(w, h, drawHeightFn, strength = 1.8, repeatX = 1, repeatY = 1) {
+  const cvs = document.createElement('canvas');
+  cvs.width = w;
+  cvs.height = h;
+  const ctx = cvs.getContext('2d');
+  drawHeightFn(ctx, w, h);
+  const roughTex = new THREE.CanvasTexture(cvs);
+  roughTex.colorSpace = THREE.NoColorSpace;
+  roughTex.flipY = false;
+  roughTex.wrapS = THREE.RepeatWrapping;
+  roughTex.wrapT = THREE.RepeatWrapping;
+  roughTex.repeat.set(repeatX, repeatY);
+  const normalTex = heightCanvasToNormalTexture(cvs, strength, repeatX, repeatY);
+  return { roughTex, normalTex };
+}
+
 function applyProceduralPBRTextures() {
+  const deskTex = makeWalnutTexture();
+  const deskNormal = heightCanvasToNormalTexture(deskTex.image, 1.8, 1, 1);
+  const deskRough = new THREE.CanvasTexture(deskTex.image);
+  deskRough.colorSpace = THREE.NoColorSpace;
+  deskRough.flipY = false;
+
   const deskMat = materialsByName.get('DeskTopWood');
   if (deskMat) {
-    const tex = makeWalnutTexture();
     deskMat.color.setHex(0xffffff);
-    deskMat.map = tex;
-    deskMat.bumpMap = tex;
-    deskMat.bumpScale = 0.015;
+    deskMat.map = deskTex;
+    deskMat.normalMap = deskNormal;
+    deskMat.normalScale = new THREE.Vector2(0.45, 0.45);
+    deskMat.roughnessMap = deskRough;
+    deskMat.roughness = 0.52;
+    deskMat.envMapIntensity = 0.65;
     deskMat.needsUpdate = true;
   }
+
+  // Shared wood grain micro-maps on WarmOak & DarkWood
+  const woodNormal = heightCanvasToNormalTexture(deskTex.image, 1.6, 2.5, 2.5);
+  for (const wName of ['WarmOak', 'DarkWood']) {
+    const wm = materialsByName.get(wName);
+    if (wm) {
+      wm.normalMap = woodNormal;
+      wm.normalScale = new THREE.Vector2(0.32, 0.32);
+      wm.envMapIntensity = 0.55;
+      wm.needsUpdate = true;
+    }
+  }
+
+  // Concentric groove normalMap & roughnessMap on vinyl/ink platter (InkPoolGloss) & brass dials
+  const concentricMaps = makeLinearRoughNormalMaps(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#383838';
+    ctx.fillRect(0, 0, w, h);
+    const cx = w * 0.5, cy = h * 0.5;
+    for (let r = 8; r < 126; r += 2) {
+      const lum = Math.round(42 + 48 * (0.5 + 0.5 * Math.sin(r * 1.8)));
+      ctx.strokeStyle = `rgb(${lum},${lum},${lum})`;
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }, 2.4, 1, 1);
+
+  const inkPoolMat = materialsByName.get('InkPoolGloss');
+  if (inkPoolMat) {
+    inkPoolMat.normalMap = concentricMaps.normalTex;
+    inkPoolMat.normalScale = new THREE.Vector2(0.42, 0.42);
+    inkPoolMat.roughnessMap = concentricMaps.roughTex;
+    inkPoolMat.roughness = 0.24;
+    inkPoolMat.envMapIntensity = 1.25;
+    inkPoolMat.needsUpdate = true;
+  }
+
+  // Roof Slate Tile vertical flute normal & damp roughness maps
+  const slateMaps = makeLinearRoughNormalMaps(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#9a9a9a';
+    ctx.fillRect(0, 0, w, h);
+    for (let x = 0; x < w; x++) {
+      const flute = Math.round(135 + 48 * Math.sin((x / w) * Math.PI * 16));
+      ctx.fillStyle = `rgb(${flute},${flute},${flute})`;
+      ctx.fillRect(x, 0, 1, h);
+    }
+    for (let y = 0; y < h; y += 32) {
+      ctx.fillStyle = 'rgba(40,40,40,0.45)';
+      ctx.fillRect(0, y, w, 3);
+    }
+  }, 2.2, 4, 4);
+  const slateMat = materialsByName.get('SlateTile');
+  if (slateMat) {
+    slateMat.normalMap = slateMaps.normalTex;
+    slateMat.normalScale = new THREE.Vector2(0.45, 0.45);
+    slateMat.roughnessMap = slateMaps.roughTex;
+    slateMat.roughness = 0.72;
+    slateMat.envMapIntensity = 0.6;
+    slateMat.needsUpdate = true;
+  }
+
+  // Mineral trowel plaster roughness & normal maps for LimeWall
+  const limeMaps = makeLinearRoughNormalMaps(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#cfcfcf';
+    ctx.fillRect(0, 0, w, h);
+    let seed = 8817;
+    const rnd = () => { seed = (1664525 * seed + 1013904223) >>> 0; return seed / 4294967296; };
+    for (let i = 0; i < 650; i++) {
+      const g = Math.round(175 + rnd() * 55);
+      ctx.fillStyle = `rgba(${g},${g},${g},0.35)`;
+      ctx.beginPath();
+      ctx.arc(rnd() * w, rnd() * h, 4 + rnd() * 14, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }, 1.35, 3, 3);
+  const limeMat = materialsByName.get('LimeWall');
+  if (limeMat) {
+    limeMat.normalMap = limeMaps.normalTex;
+    limeMat.normalScale = new THREE.Vector2(0.28, 0.28);
+    limeMat.roughnessMap = limeMaps.roughTex;
+    limeMat.roughness = 0.88;
+    limeMat.needsUpdate = true;
+  }
+
+  // Balance metallics & glazed ceramics against procedural PMREM environment
+  const envTune = [
+    ['WarmBrass', 1.35, 0.22],
+    ['ChinaGoldRim', 1.25, 0.42],
+    ['CeladonCup', 1.20, 0.25],
+    ['EmeraldShade', 1.15, 0.72],
+    ['InkStone', 1.05, 0.28],
+    ['TeaLiquid', 1.15, 0.35]
+  ];
+  for (const [mName, envInt, emInt] of envTune) {
+    const m = materialsByName.get(mName);
+    if (m) {
+      m.envMapIntensity = envInt;
+      if (m.emissiveIntensity !== undefined) m.emissiveIntensity = emInt;
+      m.needsUpdate = true;
+    }
+  }
+
+  // Upgrade GlassCase (rose cloche + herbarium glass + lab frame covers) to Fresnel MeshPhysicalMaterial
+  const physGlassMat = new THREE.MeshPhysicalMaterial({
+    name: 'GlassCase',
+    color: new THREE.Color(0xcff6ef),
+    transparent: true,
+    opacity: 0.24,
+    roughness: 0.08,
+    metalness: 0.04,
+    ior: 1.5,
+    reflectivity: 0.92,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.06,
+    envMapIntensity: 1.45,
+    depthWrite: false,
+    side: THREE.DoubleSide
+  });
+  scene?.traverse((child) => {
+    if (child.isMesh && child.material && child.material.name === 'GlassCase') {
+      child.material = physGlassMat;
+    }
+  });
+  materialsByName.set('GlassCase', physGlassMat);
 
   for (let i = 0; i < 3; i++) {
     const bp = materialsByName.get(`LabBlueprintMat_${i}`);
@@ -1195,6 +1469,109 @@ function applyProceduralPBRTextures() {
   }
 
   updateBookMoyanTexture();
+}
+
+function buildProceduralEnvMap() {
+  if (!renderer || !scene) return;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envScene = new THREE.Scene();
+  const domeMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    vertexShader: `
+      varying vec3 vDir;
+      void main() {
+        vDir = normalize(position);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vDir;
+      void main() {
+        float h = clamp(vDir.y * 0.5 + 0.5, 0.0, 1.0);
+        vec3 deep = vec3(0.03, 0.06, 0.11);
+        vec3 mid = vec3(0.08, 0.16, 0.22);
+        vec3 warm = vec3(0.55, 0.36, 0.16);
+        vec3 col = mix(deep, mid, smoothstep(0.15, 0.85, h));
+        float keySpot = pow(max(0.0, dot(vDir, normalize(vec3(-0.4, 0.7, 0.6)))), 6.0);
+        float jadeSpot = pow(max(0.0, dot(vDir, normalize(vec3(0.6, 0.4, -0.7)))), 5.0);
+        col += warm * keySpot * 1.15 + vec3(0.18, 0.58, 0.52) * jadeSpot * 0.75;
+        gl_FragColor = vec4(col, 1.0);
+      }
+    `
+  });
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(20, 24, 16), domeMat);
+  envScene.add(dome);
+  const envRT = pmrem.fromScene(envScene, 0.04);
+  scene.environment = envRT.texture;
+  scene.environmentIntensity = 0.88;
+  dome.geometry.dispose();
+  domeMat.dispose();
+  pmrem.dispose();
+}
+
+function addContactShadowDecals() {
+  if (!worldGroup) return;
+  const cvs = document.createElement('canvas');
+  cvs.width = 256;
+  cvs.height = 256;
+  const ctx = cvs.getContext('2d');
+  const grad = ctx.createRadialGradient(128, 128, 16, 128, 128, 124);
+  grad.addColorStop(0.0, 'rgba(6, 10, 15, 0.56)');
+  grad.addColorStop(0.45, 'rgba(8, 12, 18, 0.30)');
+  grad.addColorStop(0.80, 'rgba(10, 14, 20, 0.08)');
+  grad.addColorStop(1.0, 'rgba(10, 14, 20, 0.0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+  const shadowTex = new THREE.CanvasTexture(cvs);
+  shadowTex.colorSpace = THREE.SRGBColorSpace;
+
+  const shadowMat = new THREE.MeshBasicMaterial({
+    map: shadowTex,
+    transparent: true,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -2
+  });
+
+  // Desk props contact shadows on Long_Desk_Table top (y = 8.404)
+  const deskShadows = [
+    [-3.65, 8.404, -5.85, 2.55, 1.85],   // Book_Moyan
+    [-5.35, 8.404, -6.25, 1.18, 0.90],   // Study_Inkstone
+    [-4.80, 8.404, -5.53, 0.45, 0.80],   // Brush rest
+    [-2.05, 8.404, -5.25, 0.52, 0.52],   // ZhuSha_Seal_Block
+    [-1.53, 8.404, -5.47, 0.62, 0.62],   // Seal paste box
+    [-2.37, 8.404, -6.50, 0.64, 0.64],   // Celadon teacup
+    [0.15,  8.404, -5.90, 1.32, 1.22],   // Loft_Compass_Tray
+    [5.85,  8.404, -6.65, 1.05, 1.05],   // Lab_Desk_Lamp
+    [4.05,  8.404, -6.20, 2.25, 1.52],   // Herbarium_Specimen_Box
+    [2.25,  8.404, -5.05, 1.24, 0.92],   // Lab_Plate_0
+    [4.05,  8.404, -4.90, 1.24, 0.92],   // Lab_Plate_1
+    [5.80,  8.404, -5.12, 1.24, 0.92]    // Lab_Plate_2
+  ];
+  for (const [sx, sy, sz, w, d] of deskShadows) {
+    const geo = new THREE.PlaneGeometry(w, d);
+    geo.rotateX(-Math.PI / 2);
+    const m = new THREE.Mesh(geo, shadowMat);
+    m.position.set(sx, sy, sz);
+    worldGroup.add(m);
+  }
+
+  // B-612 surface contact shadows under cottage, tree & rose cloche
+  if (cosmosGroup) {
+    const b612Shadows = [
+      [b612Center.x, b612Center.y + 2.34, b612Center.z + 0.08, 1.85, 1.55, 0.14, 0.0, -0.18],
+      [b612Center.x - 1.48, b612Center.y + 1.63, b612Center.z + 0.62, 0.72, 0.72, 0.18, 0.0, 0.68],
+      [b612Center.x + 1.48, b612Center.y + 1.66, b612Center.z + 0.65, 0.82, 0.82, 0.20, 0.0, -0.58]
+    ];
+    for (const [px, py, pz, w, d, rx, ry, rz] of b612Shadows) {
+      const geo = new THREE.PlaneGeometry(w, d);
+      geo.rotateX(-Math.PI / 2);
+      const m = new THREE.Mesh(geo, shadowMat);
+      m.position.set(px, py, pz);
+      m.rotation.set(rx, ry, rz);
+      cosmosGroup.add(m);
+    }
+  }
 }
 
 /* ---------- GLSL Night River Reflection & Ripple Shader ---------- */
@@ -1305,14 +1682,30 @@ function makeRippleTexture() {
   const cvs = document.createElement('canvas');
   cvs.width = cvs.height = 128;
   const ctx = cvs.getContext('2d');
-  const g = ctx.createRadialGradient(64, 64, 22, 64, 64, 62);
-  g.addColorStop(0.0, 'rgba(98, 229, 208, 0.0)');
-  g.addColorStop(0.55, 'rgba(98, 229, 208, 0.14)');
-  g.addColorStop(0.76, 'rgba(162, 248, 232, 0.55)');
-  g.addColorStop(0.88, 'rgba(98, 229, 208, 0.18)');
-  g.addColorStop(1.0, 'rgba(98, 229, 208, 0.0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 128, 128);
+  const img = ctx.createImageData(128, 128);
+  const d = img.data;
+  for (let y = 0; y < 128; y++) {
+    for (let x = 0; x < 128; x++) {
+      const dx = (x - 64) / 64;
+      const dy = (y - 64) / 56;
+      const theta = Math.atan2(dy, dx);
+      const noise = 0.055 * Math.sin(theta * 5 + 0.4) + 0.032 * Math.cos(theta * 9 - 0.7);
+      const r = Math.hypot(dx, dy) + noise;
+      let a = 0;
+      if (r > 0.34 && r < 0.98) {
+        const ring1 = Math.exp(-Math.pow((r - 0.76) / 0.11, 2));
+        const ring2 = Math.exp(-Math.pow((r - 0.56) / 0.08, 2)) * 0.45;
+        const fade = 1 - Math.max(0, (r - 0.86) / 0.12);
+        a = Math.min(1, (ring1 + ring2) * fade) * 0.62;
+      }
+      const idx = (y * 128 + x) * 4;
+      d[idx] = 140;
+      d[idx + 1] = 242;
+      d[idx + 2] = 224;
+      d[idx + 3] = Math.round(a * 255);
+    }
+  }
+  ctx.putImageData(img, 0, 0);
   const tex = new THREE.CanvasTexture(cvs);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
@@ -1339,13 +1732,58 @@ function createWaterRipples() {
   }
 }
 
-const INTERACTIVE_NAME_RE = /^(B612_Asteroid_Body|B612_Cottage|B612_Rose_Cloche|Orrery_\d+|Book_Moyan|ZhuSha_Seal_Block|Herbarium_Specimen_Box|Lab_Plate_\d+|City_Beacon_\d+|River_Boat_Lantern_\d+|Roof_Cat_3D|Roof_Windchime)$/;
+const INTERACTIVE_NAME_RE = /^(B612_Cottage|B612_Rose_Cloche|Orrery_\d+|Book_Moyan|ZhuSha_Seal_Block|Herbarium_Specimen_Box|Lab_Plate_\d+|City_Beacon_\d+|River_Boat_Lantern_\d+|Roof_Cat_3D|Roof_Windchime)$/;
+
+function registerInteractiveHoverMeshes(targetName, obj) {
+  if (!hoverMaterials.has(targetName)) hoverMaterials.set(targetName, []);
+  const bucket = hoverMaterials.get(targetName);
+  obj.traverse((child) => {
+    if (!child.isMesh || !child.material || child.material.name === 'HitProxyMat') return;
+    const mats = Array.isArray(child.material) ? child.material : [child.material];
+    const cloned = mats.map((m) => {
+      if (m.userData && m.userData.__qzHoverTracked) return m;
+      const c = m.clone();
+      c.userData = { ...(m.userData || {}), __qzHoverTracked: true, __baseEmissive: c.emissiveIntensity ?? 0.5 };
+      return c;
+    });
+    child.material = Array.isArray(child.material) ? cloned : cloned[0];
+    for (const c of cloned) {
+      if (c.isMeshStandardMaterial || c.isMeshPhysicalMaterial) {
+        bucket.push(c);
+      }
+    }
+  });
+}
+
+function setHoveredInteractiveTarget(nextName) {
+  if (hoveredTargetName === nextName) return;
+  if (hoveredTargetName) {
+    const oldMarker = markerElements.get(hoveredTargetName);
+    if (oldMarker) oldMarker.classList.remove('is-hovered');
+    const oldMats = hoverMaterials.get(hoveredTargetName) || [];
+    for (const m of oldMats) {
+      m.emissiveIntensity = m.userData.__baseEmissive ?? 0.5;
+    }
+  }
+  hoveredTargetName = nextName || null;
+  if (hoveredTargetName) {
+    const newMarker = markerElements.get(hoveredTargetName);
+    if (newMarker) newMarker.classList.add('is-hovered');
+    const newMats = hoverMaterials.get(hoveredTargetName) || [];
+    for (const m of newMats) {
+      m.emissiveIntensity = (m.userData.__baseEmissive ?? 0.5) + 0.45;
+    }
+  }
+}
 
 function resolveClickTargetName(obj) {
   let cur = obj;
   while (cur) {
     if (cur.userData && cur.userData.__qzInteractiveName) {
       return cur.userData.__qzInteractiveName;
+    }
+    if (cur.userData && cur.userData.hitTarget) {
+      return cur.userData.hitTarget;
     }
     cur = cur.parent;
   }
@@ -1482,8 +1920,9 @@ function updateSpatialMarkers() {
   if (w <= 900 && deckRect && deckRect.height > 0) {
     safeBot = Math.min(safeBot, deckRect.top - 10);
   }
-  const safeLeft = w < 600 ? 64 : 48;
-  const safeRight = (w > 900 && deckRect && !state.deckCollapsed) ? Math.min(w - 48, deckRect.left - 14) : w - (w < 600 ? 64 : 48);
+  const sideMargin = w < 600 ? 16 : 48;
+  const safeLeft = sideMargin;
+  const safeRight = (w > 900 && deckRect && !state.deckCollapsed) ? Math.min(w - 48, deckRect.left - 14) : w - sideMargin;
 
   const visibleItems = [];
   for (const spec of activeSpecs) {
@@ -1500,7 +1939,10 @@ function updateSpatialMarkers() {
       markerElements.set(spec.id, btn);
     }
 
-    if (spec.id === 'B612_Cottage') {
+    const anchorObj = namedObjects.get(`Anchor_${spec.id}`);
+    if (anchorObj) {
+      anchorObj.getWorldPosition(projVec);
+    } else if (spec.id === 'B612_Cottage') {
       projVec.set(b612Center.x + (spec.dx || 0), b612Center.y + spec.dy, b612Center.z);
     } else if (spec.id === 'B612_Rose_Cloche' || targetObj.position.lengthSq() < 1e-4) {
       markerAnchorBox.setFromObject(targetObj);
@@ -1517,15 +1959,22 @@ function updateSpatialMarkers() {
     let sx = (projVec.x * 0.5 + 0.5) * w;
     let sy = (-projVec.y * 0.5 + 0.5) * h;
 
-    if (!visible || sx < 12 || sx > w - 12 || sy < 40 || sy > h - 30) {
+    if (!visible || sx < 8 || sx > w - 8 || sy < 36 || sy > h - 24) {
       btn.style.display = 'none';
       continue;
     }
+    if (spec.id === 'B612_Rose_Cloche' && w < 600) {
+      sx += 26;
+      sy += 62;
+    }
 
-    btn.className = `spatial-marker is-${spec.tone}${spec.selected ? ' is-highlighted' : ''}`;
-    btn.querySelector('.spatial-text').textContent = spec.label;
-    btn.style.display = 'inline-flex';
-    const bw = Math.max(btn.offsetWidth || 110, 96);
+    const hovCls = hoveredTargetName === spec.id ? ' is-hovered' : '';
+    const nextCls = `spatial-marker is-${spec.tone}${spec.selected ? ' is-highlighted' : ''}${hovCls}`;
+    if (btn.className !== nextCls) btn.className = nextCls;
+    const textEl = btn.querySelector('.spatial-text');
+    if (textEl && textEl.textContent !== spec.label) textEl.textContent = spec.label;
+    if (btn.style.display !== 'inline-flex') btn.style.display = 'inline-flex';
+    const bw = Math.max(btn.offsetWidth || 100, 84);
     const bh = Math.max(btn.offsetHeight || 30, 30);
 
     sx = clamp(sx, safeLeft + bw * 0.5, Math.max(safeLeft + bw * 0.5, safeRight - bw * 0.5));
@@ -1533,37 +1982,56 @@ function updateSpatialMarkers() {
     visibleItems.push({ spec, btn, sx, sy, bw, bh });
   }
 
-  // Screen-space de-collision pass (prevents overlaps e.g. 苏州 vs 上海, mobile cottage vs moon)
-  for (let pass = 0; pass < 3; pass++) {
+  // Screen-space de-collision pass: falls back to vertical separation whenever X clamps against margins
+  visibleItems.sort((a, b) => a.sy - b.sy || a.sx - b.sx);
+  for (let pass = 0; pass < 8; pass++) {
+    let anyMoved = false;
     for (let i = 0; i < visibleItems.length; i++) {
       for (let j = i + 1; j < visibleItems.length; j++) {
         const a = visibleItems[i], b = visibleItems[j];
         const minDX = (a.bw + b.bw) * 0.5 + 8;
         const minDY = (a.bh + b.bh) * 0.5 + 6;
-        const dx = b.sx - a.sx;
-        const dy = b.sy - a.sy;
+        let dx = b.sx - a.sx;
+        let dy = b.sy - a.sy;
         if (Math.abs(dx) < minDX && Math.abs(dy) < minDY) {
-          const preferX = Math.abs(dx) >= Math.abs(dy) * 0.85;
+          anyMoved = true;
+          const crowdedBottom = Math.max(a.sy, b.sy) >= safeBot - 16 || (w < 600 && safeRight - safeLeft < a.bw + b.bw + 18);
+          const preferX = !crowdedBottom && Math.abs(dx) >= Math.abs(dy) * 0.85;
           if (preferX) {
-            const push = (minDX - Math.abs(dx)) * 0.52 * (dx >= 0 ? 1 : -1);
-            a.sx -= push;
-            b.sx += push;
-          } else {
-            const push = (minDY - Math.abs(dy)) * 0.55 * (dy >= 0 ? 1 : -1);
-            a.sy -= push;
-            b.sy += push;
+            const push = (minDX - Math.abs(dx)) * 0.55 * (dx >= 0 ? 1 : -1);
+            a.sx = clamp(a.sx - push, safeLeft + a.bw * 0.5, Math.max(safeLeft + a.bw * 0.5, safeRight - a.bw * 0.5));
+            b.sx = clamp(b.sx + push, safeLeft + b.bw * 0.5, Math.max(safeLeft + b.bw * 0.5, safeRight - b.bw * 0.5));
+            dx = b.sx - a.sx;
           }
-          a.sx = clamp(a.sx, safeLeft + a.bw * 0.5, Math.max(safeLeft + a.bw * 0.5, safeRight - a.bw * 0.5));
-          b.sx = clamp(b.sx, safeLeft + b.bw * 0.5, Math.max(safeLeft + b.bw * 0.5, safeRight - b.bw * 0.5));
-          a.sy = clamp(a.sy, safeTop + a.bh, Math.max(safeTop + a.bh, safeBot));
-          b.sy = clamp(b.sy, safeTop + b.bh, Math.max(safeTop + b.bh, safeBot));
+          if (Math.abs(dx) < minDX && Math.abs(dy) < minDY) {
+            const neededY = minDY - Math.abs(dy) + 3;
+            const upper = a.sy <= b.sy ? a : b;
+            const lower = upper === a ? b : a;
+            if (lower.sy >= safeBot - 18) {
+              upper.sy -= neededY;
+            } else if (upper.sy <= safeTop + upper.bh + 14) {
+              lower.sy += neededY;
+            } else {
+              upper.sy -= neededY * 0.54;
+              lower.sy += neededY * 0.54;
+            }
+            upper.sy = clamp(upper.sy, safeTop + upper.bh, Math.max(safeTop + upper.bh, safeBot));
+            lower.sy = clamp(lower.sy, safeTop + lower.bh, Math.max(safeTop + lower.bh, safeBot));
+          }
         }
       }
     }
+    if (!anyMoved) break;
   }
 
   for (const item of visibleItems) {
-    item.btn.style.transform = `translate3d(${Math.round(item.sx)}px, ${Math.round(item.sy)}px, 0) translate(-50%, -100%)`;
+    const px = Math.round(item.sx);
+    const py = Math.round(item.sy);
+    const posKey = `${px},${py}`;
+    if (item.btn.dataset.lastPos !== posKey) {
+      item.btn.dataset.lastPos = posKey;
+      item.btn.style.transform = `translate3d(${px}px, ${py}px, 0) translate(-50%, -100%)`;
+    }
   }
 }
 
@@ -2274,23 +2742,28 @@ function syncAutoPlayButton() {
 function syncHudAndTimeline() {
   const t = state.currentT;
   const pct = Math.round(t * 100);
-  const fill = document.getElementById('rail-track-fill');
-  const thumb = document.getElementById('rail-thumb');
-  const pctEl = document.getElementById('rail-pct');
-  const telEl = document.getElementById('hud-telemetry');
-  const slider = document.getElementById('rail-track-wrap');
-  if (fill) fill.style.width = `${t * 100}%`;
-  if (thumb) thumb.style.left = `${t * 100}%`;
-  if (pctEl) pctEl.textContent = `${String(pct).padStart(2, '0')}%`;
-  if (telEl) telEl.textContent = `T ${t.toFixed(2)}`;
-  if (slider) slider.setAttribute('aria-valuenow', String(pct));
+  if (Math.abs(t - lastHudT) > 0.0003) {
+    lastHudT = t;
+    const fill = document.getElementById('rail-track-fill');
+    const thumb = document.getElementById('rail-thumb');
+    const pctEl = document.getElementById('rail-pct');
+    const telEl = document.getElementById('hud-telemetry');
+    const slider = document.getElementById('rail-track-wrap');
+    if (fill) fill.style.width = `${t * 100}%`;
+    if (thumb) thumb.style.left = `${t * 100}%`;
+    if (pctEl) pctEl.textContent = `${String(pct).padStart(2, '0')}%`;
+    if (telEl) telEl.textContent = `T ${t.toFixed(2)}`;
+    if (slider) slider.setAttribute('aria-valuenow', String(pct));
+  }
 
   const station = getStationByT(t);
-  state.activeStationId = station.id;
-  document.body.dataset.zone = station.id;
-  document.querySelectorAll('.station-pill').forEach((btn) => {
-    btn.classList.toggle('is-active', btn.dataset.station === station.id);
-  });
+  if (state.activeStationId !== station.id) {
+    state.activeStationId = station.id;
+    document.body.dataset.zone = station.id;
+    document.querySelectorAll('.station-pill').forEach((btn) => {
+      btn.classList.toggle('is-active', btn.dataset.station === station.id);
+    });
+  }
 
   const portal = getPortalByT(t);
   const vignette = document.getElementById('aperture-vignette');
@@ -2309,10 +2782,8 @@ function syncHudAndTimeline() {
     }
   }
 
-  if (lastRenderedZone !== station.id) {
-    lastRenderedZone = station.id;
-    renderStationDeck(true);
-  }
+  lastRenderedZone = station.id;
+  renderStationDeck(false);
 }
 
 function updateSceneStageIsolations(t) {
@@ -2391,7 +2862,11 @@ function bindEvents(canvas) {
   window.addEventListener('pointermove', (e) => {
     state.pointerX = (e.clientX / window.innerWidth) * 2 - 1;
     state.pointerY = -(e.clientY / window.innerHeight) * 2 + 1;
-    if (activeModalEl && !activeModalEl.hidden) return;
+    if (activeModalEl && !activeModalEl.hidden) {
+      setHoveredInteractiveTarget(null);
+      if (canvas) canvas.style.cursor = 'default';
+      return;
+    }
     const now = performance.now();
     if (now - lastRaycastAt < 40) return;
     lastRaycastAt = now;
@@ -2404,11 +2879,17 @@ function bindEvents(canvas) {
         return true;
       });
       const hitName = hits.length ? resolveClickTargetName(hits[0].object) : null;
-      canvas.style.cursor = hitName ? 'pointer' : 'grab';
+      canvas.style.cursor = hitName ? 'pointer' : 'default';
+      setHoveredInteractiveTarget(hitName);
     }
   });
 
   if (canvas) {
+    canvas.style.cursor = 'default';
+    canvas.addEventListener('pointerleave', () => {
+      canvas.style.cursor = 'default';
+      setHoveredInteractiveTarget(null);
+    });
     let downX = 0, downY = 0;
     canvas.addEventListener('pointerdown', (e) => { downX = e.clientX; downY = e.clientY; });
     canvas.addEventListener('pointerup', (e) => {
@@ -2458,6 +2939,23 @@ function bindEvents(canvas) {
     });
     rail.addEventListener('pointermove', (e) => { if (dragging) scrub(e.clientX); });
     rail.addEventListener('pointerup', () => { dragging = false; });
+    rail.addEventListener('keydown', (e) => {
+      const k = e.key;
+      let next = null;
+      if (k === 'Home') next = 0;
+      else if (k === 'End') next = 1;
+      else if (k === 'PageUp') next = clamp(state.targetT + 0.1, 0, 1);
+      else if (k === 'PageDown') next = clamp(state.targetT - 0.1, 0, 1);
+      else if (k === 'ArrowRight' || k === 'ArrowUp') next = clamp(state.targetT + 0.02, 0, 1);
+      else if (k === 'ArrowLeft' || k === 'ArrowDown') next = clamp(state.targetT - 0.02, 0, 1);
+      if (next !== null) {
+        e.preventDefault();
+        e.stopPropagation();
+        state.autoPlay = false;
+        syncAutoPlayButton();
+        state.targetT = next;
+      }
+    });
   }
 
   document.getElementById('dossier-close')?.addEventListener('click', closeDossier);
@@ -2582,14 +3080,14 @@ function applyCameraAtT(t, elapsedSec = 0) {
   let extraFov = 0;
   if (portrait) {
     const narrow = clamp((0.85 - camera.aspect) / 0.39, 0, 1.35);
-    extraFov = (0.85 - camera.aspect) * 34;
+    extraFov = (0.85 - camera.aspect) * 38;
     if (t < 0.24) {
       const b612W = 1 - THREE.MathUtils.smoothstep(t, 0.12, 0.24);
-      tmpPos.x -= 1.65 * b612W * narrow;
+      tmpPos.x -= 1.45 * b612W * narrow;
       tmpPos.y += 1.05 * b612W * narrow;
-      tmpPos.z += 12.6 * b612W * narrow;
-      tmpTarget.x -= 1.55 * b612W * narrow;
-      tmpTarget.y -= 0.35 * b612W * narrow;
+      tmpPos.z += 12.2 * b612W * narrow;
+      tmpTarget.x -= 1.45 * b612W * narrow;
+      tmpTarget.y -= 0.12 * b612W * narrow;
     } else if (t >= 0.42 && t <= 0.62) {
       const labW = Math.sin(THREE.MathUtils.smoothstep(t, 0.42, 0.62) * Math.PI);
       tmpPos.x -= 1.25 * labW * narrow;
@@ -2608,9 +3106,15 @@ function applyCameraAtT(t, elapsedSec = 0) {
     }
   }
   camera.position.copy(tmpPos);
-  camera.fov = sampleFov(t) + extraFov;
+  camera.fov = Math.min(68, sampleFov(t) + extraFov);
   camera.updateProjectionMatrix();
   camera.lookAt(tmpTarget);
+
+  if (scene?.fog) {
+    const riverMist = THREE.MathUtils.smoothstep(t, 0.78, 0.96);
+    const interiorEase = THREE.MathUtils.smoothstep(t, 0.20, 0.32);
+    scene.fog.density = 0.0038 + 0.0014 * interiorEase + 0.0063 * riverMist;
+  }
 
   if (pointerLight) {
     pointerLight.position.set(tmpTarget.x, tmpTarget.y + 1.5, tmpTarget.z);
@@ -2646,6 +3150,7 @@ async function bootCinema() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   setupLighting();
+  buildProceduralEnvMap();
   buildRefinedCosmosEffects();
   bindEvents(canvas);
 
@@ -2664,10 +3169,10 @@ async function bootCinema() {
     const gltf = await loader.loadAsync('./assets/qingzhou-world.glb');
     glbRoot = gltf.scene;
 
-    // Partition top-level GLB nodes into cosmosGroup (B612_* / Orrery_*) vs worldGroup
+    // Partition top-level GLB nodes (including Anchor_* & HitProxy_*) into cosmosGroup vs worldGroup
     const topNodes = [...glbRoot.children];
     for (const node of topNodes) {
-      if (/^(B612_|Orrery_)/.test(node.name || '')) {
+      if (/^(B612_|Orrery_|Anchor_(?:B612|Orrery)|HitProxy_(?:B612|Orrery))/.test(node.name || '')) {
         cosmosGroup.add(node);
       } else {
         worldGroup.add(node);
@@ -2678,6 +3183,12 @@ async function bootCinema() {
       if (obj.material) {
         const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
         for (const m of mats) {
+          if (m.name === 'HitProxyMat') {
+            m.transparent = true;
+            m.opacity = 0;
+            m.colorWrite = false;
+            m.depthWrite = false;
+          }
           if (m.name && !materialsByName.has(m.name)) {
             materialsByName.set(m.name, m);
           }
@@ -2685,7 +3196,10 @@ async function bootCinema() {
       }
       if (!obj.name) return;
       if (!namedObjects.has(obj.name)) namedObjects.set(obj.name, obj);
-      if (INTERACTIVE_NAME_RE.test(obj.name)) {
+      if (obj.userData && obj.userData.isHitProxy && obj.userData.hitTarget) {
+        obj.userData.__qzInteractiveName = obj.userData.hitTarget;
+        clickableRoots.push(obj);
+      } else if (INTERACTIVE_NAME_RE.test(obj.name)) {
         obj.userData.__qzInteractiveName = obj.name;
         clickableRoots.push(obj);
       }
@@ -2701,8 +3215,31 @@ async function bootCinema() {
     attachOrreryPlanetShaders();
     attachB612PlanetShader();
     applyProceduralPBRTextures();
+    for (const objName of namedObjects.keys()) {
+      if (INTERACTIVE_NAME_RE.test(objName)) {
+        registerInteractiveHoverMeshes(objName, namedObjects.get(objName));
+      }
+    }
+    addContactShadowDecals();
     upgradeRiverBedShader();
     createWaterRipples();
+    document.fonts?.ready?.then(() => {
+      for (let i = 0; i < 3; i++) {
+        const bp = materialsByName.get(`LabBlueprintMat_${i}`);
+        if (bp) {
+          const tex = makeBlueprintTexture(i);
+          bp.map = tex; bp.emissiveMap = tex; bp.needsUpdate = true;
+        }
+      }
+      for (let i = 0; i < 4; i++) {
+        const sm = materialsByName.get(`HerbariumSlideMat_${i}`);
+        if (sm) {
+          const tex = makeHerbariumSlideTexture(i);
+          sm.map = tex; sm.emissiveMap = tex; sm.needsUpdate = true;
+        }
+      }
+      updateBookMoyanTexture();
+    });
     window.__glbLoaded = true;
     loadedOk = true;
   } catch (err) {
@@ -2785,47 +3322,54 @@ async function bootCinema() {
     if (deepStarMat) deepStarMat.uniforms.time.value = elapsed;
     if (b612MistMat) b612MistMat.uniforms.time.value = elapsed;
 
-    const starRing = namedObjects.get('B612_Star_Ring');
-    if (starRing && !prefersReducedMotion) starRing.rotation.y = elapsed * 0.20;
-
-    for (let i = 0; i < 3; i++) {
-      const orr = namedObjects.get(`Orrery_${i}`);
-      if (orr && !prefersReducedMotion) {
-        orr.rotation.y = elapsed * (0.28 + i * 0.06);
-        orr.rotation.x = Math.sin(elapsed * 0.4 + i) * 0.12;
+    if (cosmosGroup?.visible && !prefersReducedMotion) {
+      const starRing = namedObjects.get('B612_Star_Ring');
+      if (starRing) starRing.rotation.y = elapsed * 0.20;
+      for (let i = 0; i < 3; i++) {
+        const orr = namedObjects.get(`Orrery_${i}`);
+        if (orr) {
+          orr.rotation.y = elapsed * (0.28 + i * 0.06);
+          orr.rotation.x = Math.sin(elapsed * 0.4 + i) * 0.12;
+        }
       }
     }
 
     const chime = namedObjects.get('Roof_Windchime');
-    if (chime && !prefersReducedMotion) chime.rotation.z = Math.sin(elapsed * 1.4) * 0.08;
-
-    for (const [idx, entry] of cityBeaconMeshes.entries()) {
-      const place = PLACES_22[idx];
-      const isSelected = place && place.name === state.selectedCityName;
-      const pulse = 1 + (isSelected ? (prefersReducedMotion ? 0.25 : 0.35 + 0.22 * Math.sin(elapsed * 4.5)) : (prefersReducedMotion ? 0 : 0.08 * Math.sin(elapsed * 2 + idx)));
-      entry.obj.scale.set(isSelected ? 1.38 : 1.0, pulse, isSelected ? 1.38 : 1.0);
+    if (chime && worldGroup?.visible && !prefersReducedMotion && state.currentT < 0.35) {
+      chime.rotation.z = Math.sin(elapsed * 1.4) * 0.08;
     }
 
-    for (let i = 0; i < riverBoats.length; i++) {
-      const b = riverBoats[i];
-      if (!prefersReducedMotion) {
-        b.obj.position.y = b.baseY + Math.sin(elapsed * 1.5 + b.phase) * 0.055;
-        b.obj.rotation.z = Math.sin(elapsed * 1.1 + b.phase) * 0.038;
+    if (worldGroup?.visible && state.currentT >= 0.50) {
+      for (const [idx, entry] of cityBeaconMeshes.entries()) {
+        const place = PLACES_22[idx];
+        const isSelected = place && place.name === state.selectedCityName;
+        const pulse = 1 + (isSelected ? (prefersReducedMotion ? 0.25 : 0.35 + 0.22 * Math.sin(elapsed * 4.5)) : (prefersReducedMotion ? 0 : 0.08 * Math.sin(elapsed * 2 + idx)));
+        entry.obj.scale.set(isSelected ? 1.38 : 1.0, pulse, isSelected ? 1.38 : 1.0);
       }
-      if (waterShaderMat && waterShaderMat.uniforms.uBoats.value[i]) {
-        waterShaderMat.uniforms.uBoats.value[i].set(b.obj.position.x, b.obj.position.y, b.obj.position.z - 1.1);
+
+      if (state.currentT >= 0.68) {
+        for (let i = 0; i < riverBoats.length; i++) {
+          const b = riverBoats[i];
+          if (!prefersReducedMotion) {
+            b.obj.position.y = b.baseY + Math.sin(elapsed * 1.5 + b.phase) * 0.055;
+            b.obj.rotation.z = Math.sin(elapsed * 1.1 + b.phase) * 0.038;
+          }
+          if (waterShaderMat && waterShaderMat.uniforms.uBoats.value[i]) {
+            waterShaderMat.uniforms.uBoats.value[i].set(b.obj.position.x, b.obj.position.y, b.obj.position.z - 1.1);
+          }
+        }
+        if (waterShaderMat) waterShaderMat.uniforms.uTime.value = elapsed;
+
+        for (const rp of rippleRings) {
+          const cycle = ((elapsed * 0.42 + rp.phase) % 1);
+          const sc = prefersReducedMotion ? 1.1 : (0.75 + cycle * 1.5);
+          rp.ring.scale.set(sc, sc, sc);
+          rp.ring.material.opacity = prefersReducedMotion ? 0.35 : ((1 - cycle) * 0.52);
+        }
       }
     }
-    if (waterShaderMat) waterShaderMat.uniforms.uTime.value = elapsed;
 
-    for (const rp of rippleRings) {
-      const cycle = ((elapsed * 0.42 + rp.phase) % 1);
-      const sc = prefersReducedMotion ? 1.1 : (0.75 + cycle * 1.5);
-      rp.ring.scale.set(sc, sc, sc);
-      rp.ring.material.opacity = prefersReducedMotion ? 0.35 : ((1 - cycle) * 0.52);
-    }
-
-    if (cascadePoints && worldGroup?.visible && !prefersReducedMotion) {
+    if (cascadePoints && worldGroup?.visible && !prefersReducedMotion && state.currentT >= 0.48) {
       const posAttr = cascadePoints.geometry.getAttribute('position');
       for (let i = 0; i < cascadeVelocities.length; i++) {
         const meta = cascadeVelocities[i];
