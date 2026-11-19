@@ -1535,22 +1535,7 @@ function addContactShadowDecals() {
     worldGroup.add(m);
   }
 
-  // B-612 surface contact shadows under cottage, tree & rose cloche
-  if (cosmosGroup) {
-    const b612Shadows = [
-      [b612Center.x, b612Center.y + 2.34, b612Center.z + 0.08, 1.85, 1.55, 0.14, 0.0, -0.18],
-      [b612Center.x - 1.48, b612Center.y + 1.63, b612Center.z + 0.62, 0.72, 0.72, 0.18, 0.0, 0.68],
-      [b612Center.x + 1.48, b612Center.y + 1.66, b612Center.z + 0.65, 0.82, 0.82, 0.20, 0.0, -0.58]
-    ];
-    for (const [px, py, pz, w, d, rx, ry, rz] of b612Shadows) {
-      const geo = new THREE.PlaneGeometry(w, d);
-      geo.rotateX(-Math.PI / 2);
-      const m = new THREE.Mesh(geo, shadowMat);
-      m.position.set(px, py, pz);
-      m.rotation.set(rx, ry, rz);
-      cosmosGroup.add(m);
-    }
-  }
+
 }
 
 /* ---------- GLSL Night River Reflection & Ripple Shader ---------- */
@@ -1750,7 +1735,7 @@ function registerInteractiveHoverMeshes(targetName, obj) {
   const bucket = hoverMaterials.get(targetName);
   obj.traverse((child) => {
     if (!child.isMesh || !child.material || child.material.name === 'HitProxyMat') return;
-    if (targetName === 'B612_Cottage' && child.material.name !== 'LanternGlow') return;
+    if (targetName === 'B612_Cottage' && child.material.name !== 'Honey lamplight') return;
     const mats = Array.isArray(child.material) ? child.material : [child.material];
     const cloned = mats.map((m) => {
       if (m.userData && m.userData.__qzHoverTracked) return m;
@@ -2992,7 +2977,7 @@ function enterStudyMatchCut() {
   setHoveredInteractiveTarget(null);
 
   const startPos = camera.position.clone();
-  const targetOutsideWin = new THREE.Vector3(-1.38, 30.72, 31.35);
+  const targetOutsideWin = B612_WINDOW_WORLD.clone().add(new THREE.Vector3(0, 0, 1.65));
   const d = startPos.distanceTo(targetOutsideWin);
   const approachPos = startPos.clone().lerp(targetOutsideWin, d > 12 ? 0.45 : 0.65);
   const aimWin = computeAimYawPitch(approachPos, B612_WINDOW_WORLD);
@@ -3280,6 +3265,23 @@ function bindEvents(canvas) {
     startRoamFlight(landing.pos, landing.yaw, landing.pitch, 1.5);
   });
 
+  document.getElementById('dr-garden-btn').addEventListener('click', () => {
+    closeDarkroomViewer();
+    if (state.mode !== 'roam') enterRoamMode({ target: 'home', instant: true });
+    enterRoamMode({ target: 'b612' });
+  });
+  document.getElementById('garden-land').addEventListener('click', () => {
+    const portrait = camera.aspect < 0.85;
+    const position = B612_CENTER.clone().add(portrait
+      ? new THREE.Vector3(2.15, 3.05, 4.65) : new THREE.Vector3(1.88, 3.05, 3.90));
+    const focus = B612_CENTER.clone().add(new THREE.Vector3(portrait ? .78 : .49, 2.59, .32));
+    const { yaw, pitch } = computeAimYawPitch(position, focus);
+    startRoamFlight(position, yaw, pitch, 1.45);
+  });
+  document.getElementById('garden-rose').addEventListener('click', () => handleInteractiveHit('B612_Rose_Cloche'));
+  document.getElementById('garden-study').addEventListener('click', () => handleInteractiveHit('B612_Cottage'));
+  document.getElementById('garden-orbit').addEventListener('click', () => enterRoamMode({ target: 'b612' }));
+
   // Ink Atlas Overlay & Top HUD Navigation
   document.getElementById('btn-menu-open')?.addEventListener('click', openInkAtlas);
   document.getElementById('btn-atlas-open')?.addEventListener('click', openInkAtlas);
@@ -3534,7 +3536,19 @@ function applyCameraAtT(t, elapsedSec = 0) {
   }
 }
 
+const gardenActions = document.getElementById('garden-actions');
+const gardenGuide = document.getElementById('star-guide-btn');
+const gardenView = new THREE.Vector3();
 function renderFrame() {
+  gardenView.copy(B612_AIM_POINT).project(camera);
+  const nearGarden = state.mode === 'roam' && !matchCutState && !roamState.flight &&
+    camera.position.distanceTo(B612_AIM_POINT) < 15.5 && gardenView.z > -1 && gardenView.z < 1 &&
+    Math.abs(gardenView.x) < 1.35 && window.__glbLoaded;
+  gardenActions.hidden = !nearGarden;
+  if (nearGarden) {
+    gardenGuide.hidden = true;
+    gardenActions.classList.toggle('on-path', camera.position.distanceTo(B612_AIM_POINT) < 6);
+  }
   if (composer) composer.render();
   else if (renderer && scene && camera) renderer.render(scene, camera);
 }
@@ -3612,12 +3626,21 @@ async function bootCinema() {
 
     if (statusEl) statusEl.textContent = '载入 Blender 实体空间建筑 (GLB)…';
     const loader = new GLTFLoader();
-    const gltf = await loader.loadAsync('./assets/qingzhou-world.glb');
+    const [gltf, garden] = await Promise.all([
+      loader.loadAsync('./assets/qingzhou-world.glb'),
+      loader.loadAsync('./assets/rose-garden.glb')
+    ]);
+    garden.scene.position.copy(B612_CENTER);
+    cosmosGroup.add(garden.scene);
     glbRoot = gltf.scene;
 
     // Partition top-level GLB nodes (including Anchor_* & HitProxy_*) into cosmosGroup vs worldGroup
     const topNodes = [...glbRoot.children];
     for (const node of topNodes) {
+      // The legacy world still serves all five stations. The standalone garden
+      // owns the outdoor planet geometry and its two raycast targets.
+      if (/^B612_(Asteroid_Body|Cottage|Cat|Tree|Rose_Cloche|Creek)$/.test(node.name) ||
+          /^HitProxy_B612_(Cottage|Rose_Cloche)$/.test(node.name)) continue;
       if (/^(B612_|Orrery_|Anchor_(?:B612|Orrery)|HitProxy_(?:B612|Orrery))/.test(node.name || '')) {
         cosmosGroup.add(node);
       } else {
@@ -3663,7 +3686,7 @@ async function bootCinema() {
 
     hideOrreryNodes(namedObjects);
     applyProceduralPBRTextures();
-    sculptB612TwilightLook({ namedObjects, b612HaloMat, b612MistMat, cosmosGroup });
+    sculptB612TwilightLook({ b612HaloMat, b612MistMat, cosmosGroup });
     photoFrames = createScatteredPhotoFrames(cosmosGroup, archive());
     for (const f of photoFrames) {
       clickableRoots.push(f.photoMesh);

@@ -1,10 +1,10 @@
 import * as THREE from './vendor/three/three.module.js';
 
 export const B612_CENTER = new THREE.Vector3(-1.35, 28.0, 29.0);
-export const B612_AIM_POINT = new THREE.Vector3(-1.35, 30.15, 29.15);
-export const B612_WINDOW_WORLD = new THREE.Vector3(-1.38, 30.72, 29.68);
-export const B612_LANDING_POS_DESKTOP = new THREE.Vector3(-0.35, 29.85, 38.6);
-export const B612_LANDING_POS_PORTRAIT = new THREE.Vector3(-0.15, 29.95, 42.8);
+export const B612_AIM_POINT = new THREE.Vector3(-1.35, 28.92, 29.0);
+export const B612_WINDOW_WORLD = new THREE.Vector3(-1.07, 30.84, 29.61);
+export const B612_LANDING_POS_DESKTOP = new THREE.Vector3(2.90, 32.15, 37.95);
+export const B612_LANDING_POS_PORTRAIT = new THREE.Vector3(3.12, 32.7, 41.85);
 
 export const COSMOS_CENTER = new THREE.Vector3(-4.0, 27.5, 34.0);
 export const COSMOS_R_MAX = 64.0;
@@ -44,41 +44,6 @@ export function computeAimYawPitch(fromPos, targetPos) {
 }
 
 /**
- * Strip the 12-triangle diagonal skylight plate (Y > 31.15) from B612_Cottage's
- * LanternGlow mesh while preserving all 204 warm window, door, and lantern triangles.
- */
-export function stripB612SkylightPlate(cottageObj) {
-  if (!cottageObj) return;
-  cottageObj.traverse((child) => {
-    if (!child.isMesh) return;
-    if (/skylight/i.test(child.name || '')) {
-      child.visible = false;
-      return;
-    }
-    if (child.material?.name !== 'LanternGlow') return;
-    const geom = child.geometry;
-    const posAttr = geom?.getAttribute('position');
-    if (!posAttr) return;
-    const idxAttr = geom.getIndex();
-    const kept = [];
-    if (idxAttr) {
-      for (let i = 0; i < idxAttr.count; i += 3) {
-        const a = idxAttr.getX(i);
-        const b = idxAttr.getX(i + 1);
-        const c = idxAttr.getX(i + 2);
-        const maxY = Math.max(posAttr.getY(a), posAttr.getY(b), posAttr.getY(c));
-        if (maxY <= 31.15) kept.push(a, b, c);
-      }
-      if (kept.length > 0 && kept.length < idxAttr.count) {
-        geom.setIndex(kept);
-        geom.computeBoundingBox();
-        geom.computeBoundingSphere();
-      }
-    }
-  });
-}
-
-/**
  * Completely hide Orrery_0..2 satellites/rings and the B612_Star_Ring orbital track.
  */
 export function hideOrreryNodes(namedObjects) {
@@ -100,11 +65,11 @@ export function hideOrreryNodes(namedObjects) {
  * Sculpt twilight-navy atmosphere, backlit rim silhouette, and HDR warm window/rose
  * bloom accents around B-612 without disturbing worldGroup (02~05) shared materials.
  */
-export function sculptB612TwilightLook({ namedObjects, b612HaloMat, b612MistMat, cosmosGroup }) {
+export function sculptB612TwilightLook({ b612HaloMat, b612MistMat, cosmosGroup }) {
   // 1. Twilight-navy atmospheric Fresnel halo hugging the planet limb
   if (b612HaloMat) {
     b612HaloMat.uniforms.glowColor.value.setHex(0x21407a);
-    b612HaloMat.uniforms.opacity.value = 0.46;
+    b612HaloMat.uniforms.opacity.value = 0.23;
     b612HaloMat.fragmentShader = `
       varying vec3 vNormalView;
       varying vec3 vViewPos;
@@ -126,201 +91,7 @@ export function sculptB612TwilightLook({ namedObjects, b612HaloMat, b612MistMat,
     b612MistMat.uniforms.opacity.value = 0.28;
   }
 
-  // 3. Twilight-navy planet surface shader with FogExp2 support & local warm window spill
-  const body = namedObjects.get('B612_Asteroid_Body');
-  if (body) {
-    const planetMat = new THREE.ShaderMaterial({
-      fog: true,
-      uniforms: THREE.UniformsUtils.merge([
-        THREE.UniformsLib.fog,
-        {
-          sunDir: { value: new THREE.Vector3(-0.48, 0.72, -0.52).normalize() }
-        }
-      ]),
-      vertexShader: `
-        varying vec3 vLocalPos;
-        varying vec3 vNormalWorld;
-        varying vec3 vNormalView;
-        #include <fog_pars_vertex>
-        void main() {
-          vLocalPos = position;
-          vNormalWorld = normalize(mat3(modelMatrix) * normal);
-          vNormalView = normalize(normalMatrix * normal);
-          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-          gl_Position = projectionMatrix * mvPosition;
-          #include <fog_vertex>
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 sunDir;
-        varying vec3 vLocalPos;
-        varying vec3 vNormalWorld;
-        varying vec3 vNormalView;
-        #include <fog_pars_fragment>
-        void main() {
-          vec3 p = vLocalPos;
-          vec3 nw = normalize(vNormalWorld);
-          float ndl = dot(nw, normalize(sunDir));
-          float lit = smoothstep(-0.15, 0.80, ndl);
-          float hill = smoothstep(-0.35, 0.55, sin(p.x * 2.4 + 0.6) * cos(p.z * 2.1) + 0.5 * cos(p.y * 3.2));
-          float micro = sin(p.x * 8.5 + p.y * 6.0) * cos(p.z * 7.5) * 0.008;
-          vec3 twilight = vec3(0.014, 0.020, 0.048);
-          vec3 moonSlate = mix(vec3(0.036, 0.050, 0.095), vec3(0.025, 0.044, 0.070), hill * 0.65) + micro;
-          vec3 surface = mix(twilight, moonSlate, lit * 0.65);
-
-          // Localized warm window light spill onto upper-front meadow
-          vec3 winPos = vec3(0.0, 2.25, 0.68);
-          float winSpill = exp(-dot(p - winPos, p - winPos) * 0.75);
-          surface += vec3(0.68, 0.32, 0.09) * winSpill * 0.45;
-
-          // Localized warm rose cloche spill on right shoulder
-          vec3 rosePos = vec3(1.55, 1.68, 0.75);
-          float roseSpill = exp(-dot(p - rosePos, p - rosePos) * 1.55);
-          surface += vec3(0.60, 0.20, 0.14) * roseSpill * 0.34;
-
-          // Cool twilight-navy Fresnel rim
-          float rim = pow(clamp(1.0 - abs(vNormalView.z), 0.0, 1.0), 3.1);
-          vec3 col = surface + vec3(0.22, 0.38, 0.72) * rim * (0.24 + 0.40 * lit);
-          gl_FragColor = vec4(col, 1.0);
-          #include <fog_fragment>
-          #include <colorspace_fragment>
-        }
-      `
-    });
-    body.traverse((child) => {
-      if (!child.isMesh || !child.material) return;
-      if (child.material.name === 'B612GoldSoil') {
-        child.material = planetMat;
-      } else if (child.material.name === 'WarmOak') {
-        const stones = child.material.clone();
-        stones.color.setHex(0x282128);
-        stones.emissiveIntensity = 0.0;
-        stones.roughness = 0.88;
-        stones.envMapIntensity = 0.18;
-        child.material = stones;
-      }
-    });
-  }
-
-  // 4. Clone & sculpt B612_Cottage materials (keep worldGroup materials untouched)
-  const cottage = namedObjects.get('B612_Cottage');
-  if (cottage) {
-    stripB612SkylightPlate(cottage);
-    cottage.traverse((child) => {
-      if (!child.isMesh || !child.material || child.material.name === 'HitProxyMat') return;
-      const m = child.material.clone();
-      if (m.name === 'LanternGlow') {
-        // Cross threshold > 0.78 for UnrealBloomPass
-        m.color.setHex(0xffb45c);
-        m.emissive.setHex(0xff9636);
-        m.emissiveIntensity = 2.15;
-      } else if (m.name === 'LimeWall') {
-        m.color.setHex(0x283042);
-        m.emissiveIntensity = 0.0;
-        m.roughness = 0.96;
-        m.metalness = 0.0;
-        m.normalMap = null;
-        m.roughnessMap = null;
-        m.envMapIntensity = 0.06;
-      } else if (m.name === 'DarkWood') {
-        m.color.setHex(0x161218);
-        m.emissiveIntensity = 0.0;
-        m.roughness = 0.92;
-        m.metalness = 0.0;
-        m.normalMap = null;
-        m.envMapIntensity = 0.06;
-      } else if (m.name === 'SlateTile') {
-        m.color.setHex(0x141d2e);
-        m.emissiveIntensity = 0.0;
-        m.roughness = 0.98;
-        m.metalness = 0.0;
-        m.normalMap = null;
-        m.roughnessMap = null;
-        m.envMapIntensity = 0.03;
-      }
-      m.needsUpdate = true;
-      child.material = m;
-    });
-  }
-
-  // 5. Roof silhouette cat (pure dark silhouette against behind-ridge twilight halo)
-  const cat = namedObjects.get('B612_Cat');
-  if (cat) {
-    cat.traverse((child) => {
-      if (!child.isMesh || !child.material) return;
-      const m = child.material.clone();
-      m.color.setHex(0x04060c);
-      m.emissiveIntensity = 0.0;
-      m.roughness = 0.96;
-      m.metalness = 0.0;
-      m.envMapIntensity = 0.04;
-      m.needsUpdate = true;
-      child.material = m;
-    });
-  }
-
-  // 6. Moody silhouette tree
-  const tree = namedObjects.get('B612_Tree');
-  if (tree) {
-    tree.traverse((child) => {
-      if (!child.isMesh || !child.material) return;
-      const m = child.material.clone();
-      if (m.name === 'B612Foliage') {
-        m.color.setHex(0x1b2c2a);
-        m.emissive.setHex(0x0e1c1a);
-        m.emissiveIntensity = 0.12;
-      } else {
-        m.color.setHex(0x181316);
-        m.emissiveIntensity = 0.0;
-      }
-      m.envMapIntensity = 0.14;
-      m.needsUpdate = true;
-      child.material = m;
-    });
-  }
-
-  // 7. Subtle moonlit creek
-  const creek = namedObjects.get('B612_Creek');
-  if (creek) {
-    creek.traverse((child) => {
-      if (!child.isMesh || !child.material) return;
-      const m = child.material.clone();
-      m.color.setHex(0x285678);
-      m.emissive.setHex(0x1b4c6e);
-      m.emissiveIntensity = 0.35;
-      m.envMapIntensity = 0.28;
-      m.needsUpdate = true;
-      child.material = m;
-    });
-  }
-
-  // 8. Warm glowing B612_Rose_Cloche
-  const rose = namedObjects.get('B612_Rose_Cloche');
-  if (rose) {
-    rose.traverse((child) => {
-      if (!child.isMesh || !child.material || child.material.name === 'HitProxyMat') return;
-      const m = child.material.clone();
-      if (m.name === 'VermilionSeal') {
-        m.color.setHex(0xff523c);
-        m.emissive.setHex(0xf04832);
-        m.emissiveIntensity = 1.45;
-      } else if (m.name === 'B612Moss') {
-        m.color.setHex(0x213c2d);
-        m.emissiveIntensity = 0.14;
-      } else if (m.name === 'WarmBrass') {
-        m.emissiveIntensity = 0.18;
-        m.envMapIntensity = 0.65;
-      } else if (m.name === 'DarkWood') {
-        m.color.setHex(0x1c1518);
-        m.emissiveIntensity = 0.0;
-        m.envMapIntensity = 0.18;
-      }
-      m.needsUpdate = true;
-      child.material = m;
-    });
-  }
-
-  // 9. Sculpted cosmos backlit rim, behind-roof twilight cat backdrop, & tight local warm beacons
+  // The editable GLB now owns the surface pigments, windows and rose.
   if (cosmosGroup) {
     const backRim = new THREE.DirectionalLight(0x5b82d6, 0.58);
     backRim.position.set(3.5, 32.5, 10.0);
@@ -360,11 +131,17 @@ export function sculptB612TwilightLook({ namedObjects, b612HaloMat, b612MistMat,
     ridgeHalo.position.set(-1.30, 31.35, 27.6);
     cosmosGroup.add(ridgeHalo);
 
-    const cottageWarm = new THREE.PointLight(0xffa248, 2.35, 8.2, 1.7);
+    const gardenKey = new THREE.PointLight(0xffe4bb, 41, 17, 1.8);
+    gardenKey.position.copy(B612_CENTER).add(new THREE.Vector3(-3.5, 6.5, 5.0));
+    cosmosGroup.add(gardenKey);
+    const gardenFill = new THREE.PointLight(0xa2c7df, 23, 16, 1.8);
+    gardenFill.position.copy(B612_CENTER).add(new THREE.Vector3(4, 2, 5));
+    cosmosGroup.add(gardenFill);
+    const cottageWarm = new THREE.PointLight(0xffa248, 0.17, 8.2, 1.7);
     cottageWarm.position.set(-1.35, 30.75, 29.95);
     cosmosGroup.add(cottageWarm);
 
-    const roseWarm = new THREE.PointLight(0xff6b52, 1.25, 4.0, 1.8);
+    const roseWarm = new THREE.PointLight(0xff8171, 0.13, 4.0, 1.8);
     roseWarm.position.set(0.35, 30.18, 29.85);
     cosmosGroup.add(roseWarm);
   }

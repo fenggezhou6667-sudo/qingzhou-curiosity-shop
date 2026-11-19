@@ -2105,3 +2105,24 @@ body[data-mode="station"] .hud-btn-light:hover {
     transform: none;
   }
 }
+
+
+/* Garden actions follow the nearby planet, within the existing roam HUD. */
+#garden-actions {
+  position: fixed;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  white-space: nowrap;
+  gap: 8px;
+}
+#garden-actions[hidden], #garden-actions:not(.on-path) :is(#garden-rose, #garden-study, #garden-orbit),
+#garden-actions.on-path #garden-land { display: none; }
+#garden-actions button { min-height: 44px; background-color: rgba(12, 21, 24, .86); }
+@media (max-width: 900px) {
+  #garden-actions { bottom: max(80px, calc(env(safe-area-inset-bottom) + 70px)); }
+  .dr-topbar { flex-wrap: wrap; }
+  .dr-controls { max-width: 100%; flex-wrap: wrap; gap: 4px; }
+}
