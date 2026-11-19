@@ -14,15 +14,28 @@
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="stylesheet" href="./unified.css" />
 </head>
-<body class="onetake-cinema" data-zone="works" data-portal="none">
+<body class="onetake-cinema" data-mode="roam" data-zone="works" data-portal="none">
   <canvas id="onetake-canvas" aria-label="清舟的杂货铺三维一镜到底空间舞台"></canvas>
   <div id="aperture-vignette" aria-hidden="true"></div>
+  <div id="matchcut-veil" aria-hidden="true"></div>
   <div id="spatial-markers" aria-hidden="false"></div>
+
+  <!-- Edge Star-Guide Pip toward B-612 (Roam Mode) -->
+  <button id="star-guide-btn" type="button" hidden aria-label="寻星微光指引">
+    <span class="star-guide-dot" aria-hidden="true"></span>
+    <span class="star-guide-label">寻星</span>
+  </button>
+
+  <!-- Mobile Forward Glide Strip (<=900px Roam Mode) -->
+  <button id="mobile-glide-pad" class="mobile-glide-pad" type="button" aria-label="长按向前飘移 · 单指滑动环顾">
+    <span class="glide-dot" aria-hidden="true"></span>
+    <span>长按向前飘移 · 单指滑动环顾</span>
+  </button>
 
   <!-- Top Optical Viewfinder Header -->
   <header id="hud-topbar" aria-label="空间航线导航">
     <div class="hud-brand">
-      <button type="button" class="brand-seal" id="btn-home-reset" title="返回 B-612 清舟星起点 (t=0.00)">
+      <button type="button" class="brand-seal" id="btn-menu-open" aria-haspopup="dialog" aria-controls="ink-atlas" aria-expanded="false" title="开启清舟卷目 · 空间导航与归档">
         <span class="seal-mark">舟</span>
       </button>
       <div class="brand-titles">
@@ -55,9 +68,10 @@
         <span id="autoplay-icon">▶</span> <span id="autoplay-label">一镜巡游</span>
       </button>
       <span class="telemetry-readout" id="hud-telemetry">T 0.00</span>
+      <button type="button" class="hud-btn hud-btn-light" id="btn-roam-return" title="返回星海漫游">✦ 返星海</button>
 
       <div id="music-dock" class="music-dock">
-        <button type="button" class="hud-btn" id="dock-toggle" aria-expanded="false" aria-label="展开音乐播放器">
+        <button type="button" class="hud-btn hud-btn-light" id="dock-toggle" aria-expanded="false" aria-label="展开音乐播放器">
           ♪ <span>声景</span>
         </button>
         <div id="dock-panel" class="dock-panel" hidden>
@@ -74,7 +88,9 @@
         <audio id="dock-audio" preload="none" src="./assets/where-the-light-settles.mp3"></audio>
       </div>
 
-      <a class="hud-btn hud-btn-ghost" href="./archive.html" title="切回原始独立平面档案">原版站点 ↗</a>
+      <button type="button" class="hud-btn hud-btn-light" id="btn-atlas-open" aria-haspopup="dialog" aria-controls="ink-atlas" aria-expanded="false" title="开启清舟卷目（五境直达与平面归档）">卷目</button>
+
+      <a class="hud-btn hud-btn-ghost" id="hud-archive-link" href="./archive.html" title="切回原始独立平面档案">原版站点 ↗</a>
     </div>
   </header>
 
@@ -111,6 +127,46 @@
     </div>
     <div class="rail-pct" id="rail-pct">00%</div>
   </footer>
+
+  <!-- Full-Screen Translucent Ink Atlas Overlay -->
+  <div id="ink-atlas" class="ink-atlas" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="ink-atlas-title">
+    <div id="atlas-backdrop" class="atlas-backdrop"></div>
+    <div class="atlas-panel">
+      <header class="atlas-head">
+        <div>
+          <div class="atlas-kicker">QINGZHOU CURIOSITY SHOP · 空间卷目</div>
+          <h2 class="atlas-title" id="ink-atlas-title">星海漫游与五境行录</h2>
+        </div>
+        <button type="button" class="atlas-close" id="atlas-close" aria-label="关闭卷目">✕</button>
+      </header>
+      <nav class="atlas-nav" aria-label="五境空间与归档直达">
+        <button type="button" class="atlas-link" data-atlas-action="roam">
+          <span class="atlas-link-main">01 · 星海漫游（B-612 青州星）</span>
+          <span class="atlas-link-sub">星海重游 · 自由环顾与六幅微光星框</span>
+        </button>
+        <button type="button" class="atlas-link" data-atlas-t="0.32">
+          <span class="atlas-link-main">02 · 墨盐书房（《墨盐》三十诗）</span>
+          <span class="atlas-link-sub">二层暖灯长案，可钤朱砂印与写眉批</span>
+        </button>
+        <button type="button" class="atlas-link" data-atlas-t="0.50">
+          <span class="atlas-link-main">03 · 月下实验桌（植物标本与蓝图）</span>
+          <span class="atlas-link-sub">青花蓝图板与四枚植物学标本玻匣</span>
+        </button>
+        <button type="button" class="atlas-link" data-atlas-t="0.75">
+          <span class="atlas-link-main">04 · 华夏山河舆图（廿二城行迹）</span>
+          <span class="atlas-link-sub">推窗俯瞰双层台地九州水系与行旅坐标</span>
+        </button>
+        <button type="button" class="atlas-link" data-atlas-t="0.96">
+          <span class="atlas-link-main">05 · 檐下夜河归舟（灯船祈愿）</span>
+          <span class="atlas-link-sub">水乡马头墙、屋檐黑猫与乌篷河灯</span>
+        </button>
+        <a class="atlas-link atlas-link-archive" href="./archive.html">
+          <span class="atlas-link-main">原版平面归档 ↗</span>
+          <span class="atlas-link-sub">切回原始独立平面多系统图文档案</span>
+        </a>
+      </nav>
+    </div>
+  </div>
 
   <!-- Full Reading / Exhibition / Specimen Dossier Modal -->
   <div id="dossier-modal" class="dossier-modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="dossier-title">

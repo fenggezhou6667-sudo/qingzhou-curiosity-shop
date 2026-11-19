@@ -1,5 +1,29 @@
 import * as THREE from './vendor/three/three.module.js';
 import { GLTFLoader } from './vendor/three/GLTFLoader.js';
+import { EffectComposer } from './vendor/three/postprocessing/EffectComposer.js';
+import { RenderPass } from './vendor/three/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from './vendor/three/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from './vendor/three/postprocessing/OutputPass.js';
+import {
+  B612_CENTER,
+  B612_AIM_POINT,
+  B612_WINDOW_WORLD,
+  B612_LANDING_POS_DESKTOP,
+  B612_LANDING_POS_PORTRAIT,
+  COSMOS_CENTER,
+  COSMOS_R_MAX,
+  COSMOS_R_HARD,
+  ROAM_HOME_POS,
+  ROAM_HOME_YAW,
+  ROAM_HOME_PITCH,
+  shortestAngleDelta,
+  computeAimYawPitch,
+  hideOrreryNodes,
+  sculptB612TwilightLook,
+  createScatteredPhotoFrames,
+  updatePhotoFrames,
+  updateStarGuidePip
+} from './cosmos-slice.js';
 
 const SOLAR_TERMS = [
   { name: '小寒', month: 1, day: 5, pentad: '雁北乡 / 鹊始巢 / 雉雊', mood: '岁暮天寒，围炉煮茗' },
@@ -225,6 +249,7 @@ function addRiverWish(text) {
 const prefersReducedMotion = Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 const state = {
+  mode: 'roam',
   targetT: 0.0,
   currentT: 0.0,
   autoPlay: false,
@@ -249,6 +274,28 @@ const state = {
   darkroomLoadingToken: 0,
   darkroomIntroOpen: false
 };
+
+const BASE_BLOOM_STRENGTH = 0.52;
+const STATION_BLOOM_STRENGTH = 0.24;
+const BASE_BLOOM_RADIUS = 0.58;
+const BASE_BLOOM_THRESHOLD = 0.78;
+const STATION_BLOOM_THRESHOLD = 0.85;
+const BASE_EXPOSURE = 1.18;
+
+const roamState = {
+  position: ROAM_HOME_POS.clone(),
+  velocity: new THREE.Vector3(),
+  yaw: ROAM_HOME_YAW,
+  pitch: ROAM_HOME_PITCH,
+  targetYaw: ROAM_HOME_YAW,
+  targetPitch: ROAM_HOME_PITCH,
+  flight: null,
+  keys: new Set(),
+  glidePadActive: false
+};
+
+let matchCutState = null;
+let photoFrames = [];
 
 let activeModalEl = null;
 let lastFocusBeforeModal = null;
@@ -297,6 +344,14 @@ let hoveredTargetName = null;
 const hoverMaterials = new Map();
 
 let scene, camera, renderer;
+let composer = null;
+let renderPass = null;
+let bloomPass = null;
+let outputPass = null;
+let hemiLight = null;
+let ambientLight = null;
+let moonDirLight = null;
+let rimDirLight = null;
 let glbRoot = null;
 let cosmosGroup = null;
 let worldGroup = null;
@@ -309,16 +364,16 @@ const riverBoats = [];
 const rippleRings = [];
 
 let deepStarMat = null;
+let midDustMat = null;
 let b612MistMat = null;
 let b612HaloMat = null;
-const orreryShaderMats = [];
 let waterShaderMat = null;
 let cascadePoints = null;
 let cascadeVelocities = [];
 let bookCanvas = null;
 let bookTex = null;
 
-const b612Center = new THREE.Vector3(-1.35, 28.0, 29.0);
+const b612Center = B612_CENTER;
 const markerElements = new Map();
 
 function showToast(msg) {
@@ -365,7 +420,6 @@ function getStationByT(t) {
 }
 
 function getPortalByT(t) {
-  if (t >= 0.13 && t <= 0.245) return { id: 'skylight', label: '降落清舟星 · 穿过天窗', strength: Math.sin(((t - 0.13) / 0.115) * Math.PI) };
   if (Math.abs(t - 0.61) < 0.05) return { id: 'window', label: '推开雕花木窗 · 见九州山河', strength: 0.7 };
   if (Math.abs(t - 0.86) < 0.045) return { id: 'cascade', label: '顺山河光瀑 · 停泊夜河归舟', strength: 0.65 };
   return null;
@@ -421,17 +475,17 @@ function buildRefinedCosmosEffects() {
     const u = rand() * 2 - 1;
     const phi = rand() * Math.PI * 2;
     const s = Math.sqrt(Math.max(0, 1 - u * u));
-    const r = 34 + Math.pow(rand(), 0.62) * 86;
-    sPos[i * 3] = b612Center.x + r * s * Math.cos(phi);
-    sPos[i * 3 + 1] = 10 + r * u * 0.85;
-    sPos[i * 3 + 2] = -15 + r * s * Math.sin(phi);
+    const r = 95 + Math.pow(rand(), 0.75) * 125;
+    sPos[i * 3] = COSMOS_CENTER.x + r * s * Math.cos(phi);
+    sPos[i * 3 + 1] = COSMOS_CENTER.y + r * u;
+    sPos[i * 3 + 2] = COSMOS_CENTER.z + r * s * Math.sin(phi);
 
-    const isBright = i % 16 === 0;
-    sSize[i] = isBright ? (1.8 + rand() * 1.3) : (0.75 + Math.pow(rand(), 1.8) * 1.1);
+    const isBright = i % 22 === 0;
+    sSize[i] = isBright ? (1.85 + rand() * 1.35) : (0.72 + Math.pow(rand(), 1.9) * 1.05);
     sPhase[i] = rand() * Math.PI * 2;
 
     const c = sPalette[i % sPalette.length];
-    const lum = isBright ? (0.78 + rand() * 0.22) : (0.28 + rand() * 0.45);
+    const lum = isBright ? (0.82 + rand() * 0.18) : (0.24 + rand() * 0.42);
     sCol[i * 3] = c.r * lum;
     sCol[i * 3 + 1] = c.g * lum;
     sCol[i * 3 + 2] = c.b * lum;
@@ -444,6 +498,7 @@ function buildRefinedCosmosEffects() {
   deepGeo.setAttribute('aPhase', new THREE.BufferAttribute(sPhase, 1));
 
   deepStarMat = new THREE.ShaderMaterial({
+    fog: false,
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
@@ -460,7 +515,7 @@ function buildRefinedCosmosEffects() {
         vColor = color;
         vTw = 0.72 + 0.28 * sin(time * 2.1 + aPhase);
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = clamp(24.0 * aSize * scale / max(8.0, -mv.z), 1.1, 4.2);
+        gl_PointSize = clamp(140.0 * aSize * scale / max(32.0, -mv.z), 1.0, 4.4);
         gl_Position = projectionMatrix * mv;
       }
     `,
@@ -481,6 +536,70 @@ function buildRefinedCosmosEffects() {
     `
   });
   scene.add(new THREE.Points(deepGeo, deepStarMat));
+
+  // 1b. Mid-Space Drifting Parallax Embers inside cosmosGroup
+  const dustCount = 720;
+  const dPos = new Float32Array(dustCount * 3);
+  const dCol = new Float32Array(dustCount * 3);
+  const dSize = new Float32Array(dustCount);
+  const dPhase = new Float32Array(dustCount);
+  for (let i = 0; i < dustCount; i++) {
+    const u = rand() * 2 - 1;
+    const phi = rand() * Math.PI * 2;
+    const s = Math.sqrt(Math.max(0, 1 - u * u));
+    const r = 10 + Math.pow(rand(), 0.7) * 44;
+    dPos[i * 3] = COSMOS_CENTER.x + r * s * Math.cos(phi);
+    dPos[i * 3 + 1] = COSMOS_CENTER.y + r * u * 0.78;
+    dPos[i * 3 + 2] = COSMOS_CENTER.z + r * s * Math.sin(phi);
+    dSize[i] = 0.75 + rand() * 1.15;
+    dPhase[i] = rand() * Math.PI * 2;
+    const c = i % 3 === 0 ? new THREE.Color(0x9bc8ff) : new THREE.Color(0xffd79c);
+    const l = 0.25 + rand() * 0.42;
+    dCol[i * 3] = c.r * l;
+    dCol[i * 3 + 1] = c.g * l;
+    dCol[i * 3 + 2] = c.b * l;
+  }
+  const dustGeo = new THREE.BufferGeometry();
+  dustGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
+  dustGeo.setAttribute('color', new THREE.BufferAttribute(dCol, 3));
+  dustGeo.setAttribute('aSize', new THREE.BufferAttribute(dSize, 1));
+  dustGeo.setAttribute('aPhase', new THREE.BufferAttribute(dPhase, 1));
+  midDustMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    vertexColors: true,
+    uniforms: { scale: { value: dpr }, time: { value: 0 }, opacity: { value: 0.45 } },
+    vertexShader: `
+      attribute float aSize;
+      attribute float aPhase;
+      varying vec3 vColor;
+      varying float vTw;
+      uniform float scale;
+      uniform float time;
+      void main() {
+        vColor = color;
+        vTw = 0.6 + 0.4 * sin(time * 1.2 + aPhase);
+        vec3 p = position + vec3(sin(time * 0.18 + aPhase), cos(time * 0.14 + aPhase * 1.3), sin(time * 0.16 - aPhase)) * 0.28;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_PointSize = clamp(24.0 * aSize * scale / max(5.0, -mv.z), 0.9, 3.8);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vColor;
+      varying float vTw;
+      uniform float opacity;
+      void main() {
+        float d = length(gl_PointCoord - vec2(0.5));
+        if (d > 0.5) discard;
+        float a = exp(-d * d * 20.0) * vTw * opacity;
+        gl_FragColor = vec4(vColor, a);
+        #include <colorspace_fragment>
+      }
+    `
+  });
+  cosmosGroup.add(new THREE.Points(dustGeo, midDustMat));
 
   // 2. B-612 Orbiting Golden Stardust Halo (2,200 fine warm motes)
   const mCount = 2200;
@@ -646,148 +765,6 @@ function buildRefinedCosmosEffects() {
   worldGroup.add(cascadePoints);
 }
 
-function attachOrreryPlanetShaders() {
-  const specs = [
-    { name: 'Orrery_0', day: 0x9bdcff, night: 0x16314c, rim: 0x62e5d0, ringA: 0x89d9ff, ringB: 0x4db8c8 },
-    { name: 'Orrery_1', day: 0xffd28c, night: 0x3f2414, rim: 0xffe4a8, ringA: 0xf4c274, ringB: 0xd47848 },
-    { name: 'Orrery_2', day: 0x8ef0bf, night: 0x153629, rim: 0x5fe2cc, ringA: 0x7ae6b8, ringB: 0x4ca6d8 }
-  ];
-  for (const sp of specs) {
-    const orr = namedObjects.get(sp.name);
-    if (!orr) continue;
-    const lightDir = b612Center.clone().sub(orr.position).normalize();
-    const pMat = new THREE.ShaderMaterial({
-      uniforms: {
-        dayColor: { value: new THREE.Color(sp.day) },
-        nightColor: { value: new THREE.Color(sp.night) },
-        rimColor: { value: new THREE.Color(sp.rim) },
-        lightDir: { value: lightDir }
-      },
-      vertexShader: `
-        varying vec3 vNormalWorld;
-        varying vec3 vNormalView;
-        varying vec3 vPosLocal;
-        void main() {
-          vPosLocal = position;
-          vNormalWorld = normalize(mat3(modelMatrix) * normal);
-          vNormalView = normalize(normalMatrix * normal);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 dayColor;
-        uniform vec3 nightColor;
-        uniform vec3 rimColor;
-        uniform vec3 lightDir;
-        varying vec3 vNormalWorld;
-        varying vec3 vNormalView;
-        varying vec3 vPosLocal;
-        void main() {
-          float ndl = dot(normalize(vNormalWorld), normalize(lightDir));
-          float lit = smoothstep(-0.22, 0.72, ndl);
-          float bands = sin(vPosLocal.y * 14.0 + sin(vPosLocal.x * 6.0) * 0.55) * 0.14;
-          vec3 surface = mix(nightColor, dayColor * (1.0 + bands), lit);
-          float rim = pow(clamp(1.0 - abs(vNormalView.z), 0.0, 1.0), 2.1);
-          vec3 col = surface + rimColor * rim * (0.45 + 0.65 * lit);
-          gl_FragColor = vec4(col, 1.0);
-          #include <colorspace_fragment>
-        }
-      `
-    });
-    const sphereMesh = new THREE.Mesh(new THREE.SphereGeometry(0.62, 28, 20), pMat);
-    sphereMesh.name = `${sp.name}_CoreShader`;
-    sphereMesh.userData.__qzInteractiveName = sp.name;
-    orr.traverse((child) => {
-      if (child.isMesh && child !== sphereMesh && child.material?.name !== 'WarmBrass') {
-        child.visible = false;
-      }
-    });
-    orr.add(sphereMesh);
-    orreryShaderMats.push(pMat);
-
-    const ringGeo = new THREE.RingGeometry(0.84, 1.38, 64, 1);
-    ringGeo.rotateX(-Math.PI / 2);
-    const ringMat = new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
-      uniforms: {
-        innerR: { value: 0.84 },
-        outerR: { value: 1.38 },
-        colA: { value: new THREE.Color(sp.ringA) },
-        colB: { value: new THREE.Color(sp.ringB) }
-      },
-      vertexShader: 'varying vec3 vPos; void main() { vPos = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-      fragmentShader: `
-        uniform float innerR; uniform float outerR; uniform vec3 colA; uniform vec3 colB; varying vec3 vPos;
-        void main() {
-          float r = length(vPos.xz);
-          float u = clamp((r - innerR) / (outerR - innerR), 0.0, 1.0);
-          float edge = smoothstep(0.0, 0.12, u) * (1.0 - smoothstep(0.86, 1.0, u));
-          float cassini = 1.0 - 0.82 * exp(-pow((u - 0.60) / 0.05, 2.0));
-          float fine = 0.78 + 0.22 * sin(u * 38.0);
-          vec3 col = mix(colA, colB, u) * fine;
-          gl_FragColor = vec4(col, edge * cassini * 0.78);
-          #include <colorspace_fragment>
-        }
-      `
-    });
-    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-    ringMesh.rotation.set(0.44, 0, -0.28);
-    orr.add(ringMesh);
-  }
-}
-
-function attachB612PlanetShader() {
-  const body = namedObjects.get('B612_Asteroid_Body');
-  if (!body) return;
-  const planetMat = new THREE.ShaderMaterial({
-    uniforms: {
-      sunDir: { value: new THREE.Vector3(-0.45, 0.75, 0.65).normalize() }
-    },
-    vertexShader: `
-      varying vec3 vLocalPos;
-      varying vec3 vNormalWorld;
-      varying vec3 vNormalView;
-      void main() {
-        vLocalPos = position;
-        vNormalWorld = normalize(mat3(modelMatrix) * normal);
-        vNormalView = normalize(normalMatrix * normal);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform vec3 sunDir;
-      varying vec3 vLocalPos;
-      varying vec3 vNormalWorld;
-      varying vec3 vNormalView;
-      void main() {
-        vec3 p = vLocalPos;
-        vec3 nw = normalize(vNormalWorld);
-        float ndl = dot(nw, normalize(sunDir));
-        float lit = smoothstep(-0.28, 0.75, ndl);
-        float hill = smoothstep(-0.35, 0.55, sin(p.x * 2.4 + 0.6) * cos(p.z * 2.1) + 0.5 * cos(p.y * 3.2));
-        float micro = sin(p.x * 8.5 + p.y * 6.0) * cos(p.z * 7.5) * 0.04;
-        vec3 honeyOchre = vec3(0.95, 0.76, 0.42);
-        vec3 sageMeadow = vec3(0.45, 0.66, 0.42);
-        vec3 twilight = vec3(0.26, 0.24, 0.34);
-        vec3 daySoil = mix(honeyOchre, sageMeadow, hill * 0.68) + micro;
-        vec3 surface = mix(twilight, daySoil, lit);
-        float rim = pow(clamp(1.0 - abs(vNormalView.z), 0.0, 1.0), 2.3);
-        vec3 col = surface + vec3(1.0, 0.84, 0.48) * rim * (0.28 + 0.42 * lit);
-        gl_FragColor = vec4(col, 1.0);
-        #include <colorspace_fragment>
-      }
-    `
-  });
-  body.traverse((child) => {
-    if (child.isMesh && child.material && child.material.name === 'B612GoldSoil') {
-      child.material = planetMat;
-    }
-  });
-}
-
 /* ---------- High-Res Procedural CanvasTexture Generators ---------- */
 function paintXuanPaperBase(ctx, w, h) {
   ctx.fillStyle = '#f3ead7';
@@ -946,11 +923,13 @@ function updateBookMoyanTexture() {
     bookTex.colorSpace = THREE.SRGBColorSpace;
     bookTex.flipY = false;
     bookTex.anisotropy = 4;
-    mat.color.setHex(0xffffff);
+    mat.color.setHex(0xe8dac2);
     mat.map = bookTex;
     mat.emissive.setHex(0xfff4df);
     mat.emissiveMap = bookTex;
-    mat.emissiveIntensity = 0.48;
+    mat.emissiveIntensity = 0.08;
+    mat.roughness = 0.92;
+    mat.envMapIntensity = 0.16;
     mat.needsUpdate = true;
   } else {
     bookTex.needsUpdate = true;
@@ -1450,7 +1429,7 @@ function applyProceduralPBRTextures() {
       bp.map = tex;
       bp.emissive.setHex(0xffffff);
       bp.emissiveMap = tex;
-      bp.emissiveIntensity = 0.65;
+      bp.emissiveIntensity = 0.28;
       bp.needsUpdate = true;
     }
   }
@@ -1463,7 +1442,7 @@ function applyProceduralPBRTextures() {
       sm.map = tex;
       sm.emissive.setHex(0xffffff);
       sm.emissiveMap = tex;
-      sm.emissiveIntensity = 0.72;
+      sm.emissiveIntensity = 0.30;
       sm.needsUpdate = true;
     }
   }
@@ -1649,33 +1628,65 @@ function upgradeRiverBedShader() {
 }
 
 function setupLighting() {
-  // Chiaroscuro balance: rich nocturnal depth + warm amber focal pools
-  scene.add(new THREE.HemisphereLight(0xcfe0ff, 0x16221e, 0.52));
-  scene.add(new THREE.AmbientLight(0x88a4cc, 0.24));
+  // Chiaroscuro balance: sculpted twilight in roam mode, warm pools in station interior
+  hemiLight = new THREE.HemisphereLight(0xcfe0ff, 0x16221e, 0.52);
+  scene.add(hemiLight);
 
-  const moonDir = new THREE.DirectionalLight(0xfff0d2, 1.05);
-  moonDir.position.set(-14, 42, 34);
-  scene.add(moonDir);
+  ambientLight = new THREE.AmbientLight(0x88a4cc, 0.24);
+  scene.add(ambientLight);
 
-  const rimDir = new THREE.DirectionalLight(0x76e8d6, 0.55);
-  rimDir.position.set(16, 18, -56);
-  scene.add(rimDir);
+  moonDirLight = new THREE.DirectionalLight(0xfff0d2, 1.05);
+  moonDirLight.position.set(-14, 42, 34);
+  scene.add(moonDirLight);
+
+  rimDirLight = new THREE.DirectionalLight(0x76e8d6, 0.55);
+  rimDirLight.position.set(16, 18, -56);
+  scene.add(rimDirLight);
 
   const addBeaconLight = (color, intensity, distance, x, y, z) => {
     const pt = new THREE.PointLight(color, intensity, distance, 1.35);
     pt.position.set(x, y, z);
-    scene.add(pt);
+    worldGroup.add(pt);
     return pt;
   };
-  addBeaconLight(0xffcf88, 2.5, 32, -1.35, 31.8, 30.2); // Zone 1 B-612 cottage warm lamp
-  addBeaconLight(0xffca82, 2.5, 18, -3.65, 10.6, -5.85); // Zone 2 Study Book_Moyan
-  addBeaconLight(0xffb662, 2.6, 18, 5.2, 10.2, -6.2);    // Zone 3 Lab Desk Lamp
-  addBeaconLight(0x80f2dc, 2.4, 42, 0.0, 12.2, -42.0);   // Zone 4 China Topo
-  addBeaconLight(0xffb45a, 2.7, 36, -3.5, -2.2, -74.0);  // Zone 5 River Eave Lantern
-  addBeaconLight(0xffcb78, 2.3, 36, 0.0, -2.5, -86.0);   // Zone 5 Arched Bridge & Canal
+  addBeaconLight(0xffca82, 1.45, 18, -3.65, 10.6, -5.85); // Zone 2 Study Book_Moyan
+  addBeaconLight(0xffb662, 1.85, 18, 5.2, 10.2, -6.2);    // Zone 3 Lab Desk Lamp
+  addBeaconLight(0x80f2dc, 2.2, 42, 0.0, 12.2, -42.0);   // Zone 4 China Topo
+  addBeaconLight(0xffb45a, 2.5, 36, -3.5, -2.2, -74.0);  // Zone 5 River Eave Lantern
+  addBeaconLight(0xffcb78, 2.1, 36, 0.0, -2.5, -86.0);   // Zone 5 Arched Bridge & Canal
 
   pointerLight = new THREE.PointLight(0xffecc2, 0.75, 16, 1.6);
-  scene.add(pointerLight);
+  worldGroup.add(pointerLight);
+}
+
+function applyLightingMode(mode) {
+  if (!hemiLight || !ambientLight || !moonDirLight || !rimDirLight) return;
+  if (mode === 'roam') {
+    hemiLight.color.setHex(0x3a568e);
+    hemiLight.groundColor.setHex(0x060912);
+    hemiLight.intensity = 0.22;
+    ambientLight.intensity = 0.08;
+    moonDirLight.intensity = 0.14;
+    rimDirLight.intensity = 0.08;
+    if (scene) scene.environmentIntensity = 0.26;
+    if (scene?.fog) scene.fog.density = 0.0085;
+    if (bloomPass) {
+      bloomPass.strength = BASE_BLOOM_STRENGTH;
+      bloomPass.threshold = BASE_BLOOM_THRESHOLD;
+    }
+  } else {
+    hemiLight.color.setHex(0xcfe0ff);
+    hemiLight.groundColor.setHex(0x16221e);
+    hemiLight.intensity = 0.46;
+    ambientLight.intensity = 0.20;
+    moonDirLight.intensity = 0.88;
+    rimDirLight.intensity = 0.50;
+    if (scene) scene.environmentIntensity = 0.76;
+    if (bloomPass) {
+      bloomPass.strength = STATION_BLOOM_STRENGTH;
+      bloomPass.threshold = STATION_BLOOM_THRESHOLD;
+    }
+  }
 }
 
 function makeRippleTexture() {
@@ -1732,13 +1743,14 @@ function createWaterRipples() {
   }
 }
 
-const INTERACTIVE_NAME_RE = /^(B612_Cottage|B612_Rose_Cloche|Orrery_\d+|Book_Moyan|ZhuSha_Seal_Block|Herbarium_Specimen_Box|Lab_Plate_\d+|City_Beacon_\d+|River_Boat_Lantern_\d+|Roof_Cat_3D|Roof_Windchime)$/;
+const INTERACTIVE_NAME_RE = /^(B612_Cottage|B612_Rose_Cloche|Book_Moyan|ZhuSha_Seal_Block|Herbarium_Specimen_Box|Lab_Plate_\d+|City_Beacon_\d+|River_Boat_Lantern_\d+|Roof_Cat_3D|Roof_Windchime)$/;
 
 function registerInteractiveHoverMeshes(targetName, obj) {
   if (!hoverMaterials.has(targetName)) hoverMaterials.set(targetName, []);
   const bucket = hoverMaterials.get(targetName);
   obj.traverse((child) => {
     if (!child.isMesh || !child.material || child.material.name === 'HitProxyMat') return;
+    if (targetName === 'B612_Cottage' && child.material.name !== 'LanternGlow') return;
     const mats = Array.isArray(child.material) ? child.material : [child.material];
     const cloned = mats.map((m) => {
       if (m.userData && m.userData.__qzHoverTracked) return m;
@@ -1758,6 +1770,10 @@ function registerInteractiveHoverMeshes(targetName, obj) {
 function setHoveredInteractiveTarget(nextName) {
   if (hoveredTargetName === nextName) return;
   if (hoveredTargetName) {
+    if (hoveredTargetName.startsWith('PhotoFrame_')) {
+      const idx = Number(hoveredTargetName.replace('PhotoFrame_', ''));
+      if (photoFrames[idx]) photoFrames[idx].hovered = false;
+    }
     const oldMarker = markerElements.get(hoveredTargetName);
     if (oldMarker) oldMarker.classList.remove('is-hovered');
     const oldMats = hoverMaterials.get(hoveredTargetName) || [];
@@ -1767,6 +1783,10 @@ function setHoveredInteractiveTarget(nextName) {
   }
   hoveredTargetName = nextName || null;
   if (hoveredTargetName) {
+    if (hoveredTargetName.startsWith('PhotoFrame_')) {
+      const idx = Number(hoveredTargetName.replace('PhotoFrame_', ''));
+      if (photoFrames[idx]) photoFrames[idx].hovered = true;
+    }
     const newMarker = markerElements.get(hoveredTargetName);
     if (newMarker) newMarker.classList.add('is-hovered');
     const newMats = hoverMaterials.get(hoveredTargetName) || [];
@@ -1792,9 +1812,8 @@ function resolveClickTargetName(obj) {
 
 function handleInteractiveHit(name) {
   if (!name) return;
-  if (name === 'B612_Asteroid_Body' || name === 'B612_Cottage') {
-    playChimeSound();
-    flyTo(0.32, { toast: '穿过清舟星木屋天窗，降落二层《墨盐》书房 ✨' });
+  if (name === 'B612_Cottage') {
+    enterStudyMatchCut();
     return;
   }
   if (name === 'B612_Rose_Cloche') {
@@ -1802,9 +1821,12 @@ function handleInteractiveHit(name) {
     showToast('小王子在玻璃钟罩下照料着他的玫瑰与微光清晨 🌹');
     return;
   }
-  if (name === 'Orrery_0') return openDarkroomViewer('still-water', 0);
-  if (name === 'Orrery_1') return openDarkroomViewer('shape-of-light', 0);
-  if (name === 'Orrery_2') return openDarkroomViewer('long-afternoon', 0);
+  if (name.startsWith('PhotoFrame_')) {
+    const idx = Number(name.replace('PhotoFrame_', ''));
+    const f = photoFrames[idx];
+    if (f) openDarkroomViewer(f.workSlug, f.photoIdx);
+    return;
+  }
   if (name === 'Roof_Windchime') {
     playChimeSound();
     showToast('檐角铜铃清响了一声，星光正在落入阁楼');
@@ -1900,6 +1922,10 @@ const markerAnchorCenter = new THREE.Vector3();
 function updateSpatialMarkers() {
   const container = document.getElementById('spatial-markers');
   if (!container || !glbRoot) return;
+  if (state.mode !== 'station') {
+    for (const btn of markerElements.values()) btn.style.display = 'none';
+    return;
+  }
 
   const activeSpecs = getActiveMarkerSpecs();
   const activeIds = new Set(activeSpecs.map((s) => s.id));
@@ -2049,7 +2075,17 @@ function selectCity(cityName, withToast = false) {
 }
 
 function flyTo(targetT, opts = {}) {
-  state.targetT = clamp(targetT, 0, 1);
+  const nextT = clamp(Number(targetT) || 0, 0, 1);
+  if (nextT < 0.24) {
+    enterRoamMode({ target: nextT <= 0.05 ? 'home' : 'b612', instant: Boolean(opts.instant) });
+    if (opts.toast) showToast(opts.toast);
+    return;
+  }
+  if (state.mode !== 'station') {
+    syncBodyMode('station');
+    state.currentT = clamp(nextT, 0.26, 1);
+  }
+  state.targetT = clamp(nextT, 0.26, 1);
   state.autoPlay = false;
   syncAutoPlayButton();
   if (opts.poemPlace) {
@@ -2089,13 +2125,8 @@ function renderStationDeck(force = false) {
   const body = document.getElementById('station-deck-body');
   if (!eyebrow || !title || !body) return;
 
-  if (portal && (portal.id === 'skylight' || portal.id === 'window' || portal.id === 'cascade')) {
-    eyebrow.textContent = `${station.eyebrow} · PORTAL TRANSIT`;
-    title.textContent = portal.label;
-  } else {
-    eyebrow.textContent = station.eyebrow;
-    title.textContent = station.title;
-  }
+  eyebrow.textContent = station.eyebrow;
+  title.textContent = portal ? portal.label : station.title;
 
   if (station.id === 'works') {
     const works = archive().works || [];
@@ -2786,26 +2817,272 @@ function syncHudAndTimeline() {
   renderStationDeck(false);
 }
 
+const _roamForward = new THREE.Vector3();
+const _roamEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+const _roamOffset = new THREE.Vector3();
+
+function isOverlayBlockingScene() {
+  const dr = document.getElementById('darkroom-modal');
+  const ds = document.getElementById('dossier-modal');
+  const atlas = document.getElementById('ink-atlas');
+  return Boolean((dr && !dr.hidden) || (ds && !ds.hidden) || (atlas && !atlas.hidden));
+}
+
+function openInkAtlas() {
+  const atlas = document.getElementById('ink-atlas');
+  if (!atlas) return;
+  const dockPanel = document.getElementById('dock-panel');
+  const dockToggle = document.getElementById('dock-toggle');
+  if (dockPanel && !dockPanel.hidden) {
+    dockPanel.hidden = true;
+    dockToggle?.setAttribute('aria-expanded', 'false');
+  }
+  atlas.hidden = false;
+  atlas.setAttribute('aria-hidden', 'false');
+  document.getElementById('btn-menu-open')?.setAttribute('aria-expanded', 'true');
+  document.getElementById('btn-atlas-open')?.setAttribute('aria-expanded', 'true');
+  openModalFocus(atlas);
+}
+
+function closeInkAtlas() {
+  const atlas = document.getElementById('ink-atlas');
+  if (!atlas || atlas.hidden) return;
+  atlas.hidden = true;
+  atlas.setAttribute('aria-hidden', 'true');
+  document.getElementById('btn-menu-open')?.setAttribute('aria-expanded', 'false');
+  document.getElementById('btn-atlas-open')?.setAttribute('aria-expanded', 'false');
+  closeModalFocus();
+}
+
+function syncBodyMode(mode) {
+  state.mode = mode;
+  document.body.dataset.mode = mode;
+  if (cosmosGroup) cosmosGroup.visible = (mode === 'roam');
+  if (worldGroup) worldGroup.visible = (mode === 'station');
+  applyLightingMode(mode);
+}
+
+function startRoamFlight(endPos, endYaw, endPitch, duration = 1.45) {
+  const startPos = roamState.position.clone();
+  const dist = startPos.distanceTo(endPos);
+  if (prefersReducedMotion || dist < 0.25) {
+    roamState.position.copy(endPos);
+    roamState.yaw = roamState.targetYaw = endYaw;
+    roamState.pitch = roamState.targetPitch = clamp(endPitch, -1.25, 1.25);
+    roamState.velocity.set(0, 0, 0);
+    roamState.flight = null;
+    return;
+  }
+  const mid = startPos.clone().lerp(endPos, 0.5);
+  const lateral = new THREE.Vector3().subVectors(endPos, startPos).cross(new THREE.Vector3(0, 1, 0));
+  if (lateral.lengthSq() > 0.001) {
+    lateral.normalize();
+    mid.addScaledVector(lateral, Math.min(3.5, dist * 0.14));
+  }
+  mid.y += Math.min(2.2, dist * 0.08);
+  const curve = new THREE.CatmullRomCurve3([startPos, mid, endPos.clone()]);
+  roamState.velocity.set(0, 0, 0);
+  roamState.flight = {
+    curve,
+    startYaw: roamState.yaw,
+    endYaw,
+    startPitch: roamState.pitch,
+    endPitch: clamp(endPitch, -1.25, 1.25),
+    startMs: performance.now(),
+    durationMs: clamp(duration, 0.7, 2.0) * 1000
+  };
+}
+
+function getB612LandingPose() {
+  const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+  const pos = (aspect < 0.85 ? B612_LANDING_POS_PORTRAIT : B612_LANDING_POS_DESKTOP).clone();
+  const aim = computeAimYawPitch(pos, B612_AIM_POINT);
+  return { pos, yaw: aim.yaw, pitch: aim.pitch };
+}
+
+function enterRoamMode({ target = 'home', instant = false } = {}) {
+  const wasStation = state.mode !== 'roam';
+  const snapInstant = instant || wasStation;
+  matchCutState = null;
+  roamState.flight = null;
+  roamState.velocity.set(0, 0, 0);
+  roamState.keys.clear();
+  roamState.glidePadActive = false;
+  document.getElementById('mobile-glide-pad')?.classList.remove('is-active');
+
+  const veil = document.getElementById('matchcut-veil');
+  if (veil) veil.style.setProperty('--mc-flash', '0');
+  if (bloomPass) bloomPass.strength = BASE_BLOOM_STRENGTH;
+  if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE;
+
+  state.autoPlay = false;
+  syncAutoPlayButton();
+  state.currentT = state.targetT = 0.0;
+  state.activePortal = 'none';
+  state.activeStationId = 'works';
+  document.body.dataset.zone = 'works';
+  document.body.dataset.portal = 'none';
+
+  syncBodyMode('roam');
+  setHoveredInteractiveTarget(null);
+
+  if (target === 'b612') {
+    const landing = getB612LandingPose();
+    if (snapInstant) {
+      roamState.position.copy(landing.pos);
+      roamState.yaw = roamState.targetYaw = landing.yaw;
+      roamState.pitch = roamState.targetPitch = landing.pitch;
+    } else {
+      startRoamFlight(landing.pos, landing.yaw, landing.pitch, 1.45);
+    }
+  } else {
+    if (snapInstant) {
+      roamState.position.copy(ROAM_HOME_POS);
+      roamState.yaw = roamState.targetYaw = ROAM_HOME_YAW;
+      roamState.pitch = roamState.targetPitch = ROAM_HOME_PITCH;
+    } else {
+      startRoamFlight(ROAM_HOME_POS, ROAM_HOME_YAW, ROAM_HOME_PITCH, 1.1);
+    }
+  }
+
+  renderOnceAndSync(performance.now() * 0.001, true);
+}
+
+function enterStationAtT(t, opts = {}) {
+  const clampedT = clamp(Number(t) || 0.32, 0.26, 1.0);
+  matchCutState = null;
+  roamState.flight = null;
+  roamState.velocity.set(0, 0, 0);
+  roamState.keys.clear();
+  roamState.glidePadActive = false;
+
+  const veil = document.getElementById('matchcut-veil');
+  if (veil) veil.style.setProperty('--mc-flash', '0');
+  if (bloomPass) {
+    bloomPass.strength = STATION_BLOOM_STRENGTH;
+    bloomPass.threshold = STATION_BLOOM_THRESHOLD;
+  }
+  if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE;
+
+  syncBodyMode('station');
+  state.autoPlay = false;
+  syncAutoPlayButton();
+  state.targetT = clampedT;
+  if (opts.instant !== false) state.currentT = clampedT;
+  if (opts.poemSlug) state.selectedPoemSlug = opts.poemSlug;
+  if (opts.cityName) state.selectedCityName = opts.cityName;
+  if (opts.labSlug) state.selectedLabSlug = opts.labSlug;
+  updateBookMoyanTexture();
+  renderOnceAndSync(performance.now() * 0.001);
+  if (opts.toast) showToast(opts.toast);
+}
+
+function enterStudyMatchCut() {
+  closeInkAtlas();
+  if (matchCutState) return window.__qzGetState();
+  if (state.mode === 'station') {
+    flyTo(0.32, { toast: '回到二层《墨盐》书房' });
+    return window.__qzGetState();
+  }
+  playChimeSound();
+  roamState.flight = null;
+  roamState.velocity.set(0, 0, 0);
+  roamState.keys.clear();
+  roamState.glidePadActive = false;
+  setHoveredInteractiveTarget(null);
+
+  const startPos = camera.position.clone();
+  const targetOutsideWin = new THREE.Vector3(-1.38, 30.72, 31.35);
+  const d = startPos.distanceTo(targetOutsideWin);
+  const approachPos = startPos.clone().lerp(targetOutsideWin, d > 12 ? 0.45 : 0.65);
+  const aimWin = computeAimYawPitch(approachPos, B612_WINDOW_WORLD);
+
+  matchCutState = {
+    phase: 'in',
+    phaseStartMs: performance.now(),
+    durInMs: prefersReducedMotion ? 70 : 400,
+    durOutMs: prefersReducedMotion ? 70 : 460,
+    startPos,
+    approachPos,
+    startYaw: roamState.yaw,
+    startPitch: roamState.pitch,
+    endYaw: aimWin.yaw,
+    endPitch: aimWin.pitch
+  };
+  return window.__qzGetState();
+}
+
+function updateRoamCamera(dt, nowMs = performance.now()) {
+  if (!camera) return;
+  if (roamState.flight) {
+    const fl = roamState.flight;
+    const p = clamp((nowMs - fl.startMs) / fl.durationMs, 0, 1);
+    const u = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+    fl.curve.getPoint(u, roamState.position);
+    roamState.yaw = roamState.targetYaw = fl.startYaw + shortestAngleDelta(fl.startYaw, fl.endYaw) * u;
+    roamState.pitch = roamState.targetPitch = clamp(fl.startPitch + (fl.endPitch - fl.startPitch) * u, -1.25, 1.25);
+    if (p >= 1) {
+      roamState.flight = null;
+      roamState.velocity.set(0, 0, 0);
+    }
+  } else {
+    const rotDamp = prefersReducedMotion ? 1 : Math.min(1, dt * 11);
+    roamState.targetPitch = clamp(roamState.targetPitch, -1.25, 1.25);
+    roamState.yaw += (roamState.targetYaw - roamState.yaw) * rotDamp;
+    roamState.pitch = clamp(roamState.pitch + (roamState.targetPitch - roamState.pitch) * rotDamp, -1.25, 1.25);
+
+    if (roamState.keys.has('KeyA') || roamState.keys.has('ArrowLeft')) roamState.targetYaw += 1.25 * dt;
+    if (roamState.keys.has('KeyD') || roamState.keys.has('ArrowRight')) roamState.targetYaw -= 1.25 * dt;
+
+    _roamEuler.set(roamState.pitch, roamState.yaw, 0, 'YXZ');
+    _roamForward.set(0, 0, -1).applyEuler(_roamEuler);
+
+    let thrust = 0;
+    if (roamState.keys.has('KeyW') || roamState.keys.has('ArrowUp') || roamState.glidePadActive) thrust += 1;
+    if (roamState.keys.has('KeyS') || roamState.keys.has('ArrowDown')) thrust -= 1;
+    if (thrust !== 0) {
+      roamState.velocity.addScaledVector(_roamForward, thrust * 18.0 * dt);
+    }
+
+    roamState.velocity.multiplyScalar(Math.exp(-3.5 * dt));
+    if (roamState.velocity.lengthSq() > 256) {
+      roamState.velocity.setLength(16);
+    }
+    roamState.position.addScaledVector(roamState.velocity, dt);
+
+    _roamOffset.subVectors(roamState.position, COSMOS_CENTER);
+    const distCenter = _roamOffset.length();
+    if (distCenter > COSMOS_R_MAX && distCenter > 0.001) {
+      const dirOut = _roamOffset.divideScalar(distCenter);
+      const excess = distCenter - COSMOS_R_MAX;
+      const radialVel = roamState.velocity.dot(dirOut);
+      if (radialVel > 0) {
+        roamState.velocity.addScaledVector(dirOut, -radialVel * clamp(excess * 0.25, 0, 1));
+      }
+      roamState.velocity.addScaledVector(dirOut, -excess * 2.4 * dt);
+      if (distCenter > COSMOS_R_HARD) {
+        roamState.position.copy(COSMOS_CENTER).addScaledVector(dirOut, COSMOS_R_HARD);
+      }
+    }
+  }
+
+  camera.position.copy(roamState.position);
+  camera.rotation.order = 'YXZ';
+  camera.rotation.set(roamState.pitch, roamState.yaw, 0, 'YXZ');
+  camera.fov = camera.aspect < 0.85 ? 58 : 50;
+  camera.updateProjectionMatrix();
+}
+
 function updateSceneStageIsolations(t) {
   if (!cosmosGroup || !worldGroup) return;
-  // Stage Isolation: ZERO floating roof/floor appears behind B-612 for t <= 0.13!
-  const inPureCosmos = t <= 0.135;
-  const inDeepInterior = t >= 0.255;
-
-  cosmosGroup.visible = !inDeepInterior;
-  worldGroup.visible = !inPureCosmos;
-
-  if (inPureCosmos) {
-    cosmosGroup.scale.setScalar(1);
-    cosmosGroup.position.set(0, 0, 0);
-  } else if (!inDeepInterior) {
-    const u = clamp((t - 0.135) / 0.12, 0, 1);
-    if (b612MistMat) b612MistMat.uniforms.opacity.value = (1 - u) * 0.88;
-    if (b612HaloMat) b612HaloMat.uniforms.opacity.value = (1 - u) * 0.78;
-  } else {
-    if (b612MistMat) b612MistMat.uniforms.opacity.value = 0.88;
-    if (b612HaloMat) b612HaloMat.uniforms.opacity.value = 0.78;
+  if (state.mode === 'roam') {
+    cosmosGroup.visible = true;
+    worldGroup.visible = false;
+    return;
   }
+
+  cosmosGroup.visible = false;
+  worldGroup.visible = true;
 
   // Dynamic Window Sash Swing as camera approaches portal-2 (t: 0.50 -> 0.62)
   const winFactor = THREE.MathUtils.smoothstep(t, 0.50, 0.62);
@@ -2816,53 +3093,107 @@ function updateSceneStageIsolations(t) {
   if (sashR) sashR.rotation.y = -swingAngle;
 }
 
+function pickInteractiveHits(ndcX, ndcY) {
+  if (!camera || !clickableRoots.length) return [];
+  const rc = new THREE.Raycaster();
+  rc.setFromCamera({ x: ndcX, y: ndcY }, camera);
+  return rc.intersectObjects(clickableRoots, true).filter((h) => {
+    if (h.object.userData?.__qzIsPhotoFrame) {
+      const f = photoFrames[h.object.userData.__qzFrameIdx];
+      if (!f || f.reveal < 0.35) return false;
+    }
+    let p = h.object;
+    while (p) {
+      if (p.visible === false) return false;
+      p = p.parent;
+    }
+    return true;
+  });
+}
+
 function bindEvents(canvas) {
   window.addEventListener('resize', () => {
     if (!renderer || !camera) return;
+    const pr = Math.min(window.devicePixelRatio || 1, 2);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
+    renderer.setPixelRatio(pr);
     renderer.setSize(window.innerWidth, window.innerHeight);
+    if (composer) {
+      composer.setPixelRatio(pr);
+      composer.setSize(window.innerWidth, window.innerHeight);
+    }
   });
 
   window.addEventListener('wheel', (e) => {
-    const dr = document.getElementById('darkroom-modal');
-    if (dr && !dr.hidden) return;
+    if (isOverlayBlockingScene()) return;
     const scrollable = e.target.closest('.station-deck-body, .dossier-body, .poem-preview-lines, .wish-list');
     if (scrollable && scrollable.scrollHeight > scrollable.clientHeight + 4) {
       const atTop = scrollable.scrollTop <= 0 && e.deltaY < 0;
       const atBot = scrollable.scrollTop + scrollable.clientHeight >= scrollable.scrollHeight - 1 && e.deltaY > 0;
       if (!atTop && !atBot) return;
     }
-    const modal = document.getElementById('dossier-modal');
-    if (modal && !modal.hidden) return;
     e.preventDefault();
+    if (state.mode === 'roam') {
+      if (matchCutState) return;
+      roamState.flight = null;
+      _roamEuler.set(roamState.pitch, roamState.yaw, 0, 'YXZ');
+      _roamForward.set(0, 0, -1).applyEuler(_roamEuler);
+      const impulse = clamp(e.deltaY * 0.016, -6.5, 6.5);
+      roamState.velocity.addScaledVector(_roamForward, impulse);
+      return;
+    }
     state.autoPlay = false;
     syncAutoPlayButton();
     state.lastWheelAt = performance.now();
-    state.targetT = clamp(state.targetT + e.deltaY * 0.00028, 0, 1);
+    state.targetT = clamp(state.targetT + e.deltaY * 0.00028, 0.26, 1);
   }, { passive: false });
 
-  let touchY = null;
+  let stationTouchY = null;
   window.addEventListener('touchstart', (e) => {
-    if (e.target.closest('#timeline-rail, #station-deck, #dossier-modal, #darkroom-modal, #hud-topbar')) return;
-    touchY = e.touches[0].clientY;
+    if (state.mode !== 'station') return;
+    if (e.target.closest('#timeline-rail, #station-deck, #dossier-modal, #darkroom-modal, #ink-atlas, #hud-topbar')) return;
+    stationTouchY = e.touches[0].clientY;
   }, { passive: true });
   window.addEventListener('touchmove', (e) => {
-    if (touchY === null) return;
-    const dy = touchY - e.touches[0].clientY;
-    touchY = e.touches[0].clientY;
+    if (state.mode !== 'station' || stationTouchY === null) return;
+    const dy = stationTouchY - e.touches[0].clientY;
+    stationTouchY = e.touches[0].clientY;
     state.autoPlay = false;
     syncAutoPlayButton();
     state.lastWheelAt = performance.now();
-    state.targetT = clamp(state.targetT + dy * 0.0008, 0, 1);
+    state.targetT = clamp(state.targetT + dy * 0.0008, 0.26, 1);
   }, { passive: true });
-  window.addEventListener('touchend', () => { touchY = null; });
+  window.addEventListener('touchend', () => { stationTouchY = null; });
 
+  let dragPointerId = null;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragLastX = 0;
+  let dragLastY = 0;
+  let dragMoved = false;
   let lastRaycastAt = 0;
+
   window.addEventListener('pointermove', (e) => {
     state.pointerX = (e.clientX / window.innerWidth) * 2 - 1;
     state.pointerY = -(e.clientY / window.innerHeight) * 2 + 1;
-    if (activeModalEl && !activeModalEl.hidden) {
+
+    if (dragPointerId === e.pointerId && state.mode === 'roam' && !matchCutState) {
+      const dx = e.clientX - dragLastX;
+      const dy = e.clientY - dragLastY;
+      dragLastX = e.clientX;
+      dragLastY = e.clientY;
+      if (Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY) > 5) {
+        dragMoved = true;
+        roamState.flight = null;
+      }
+      roamState.targetYaw += dx * 0.0036;
+      roamState.targetPitch = clamp(roamState.targetPitch + dy * 0.0032, -1.25, 1.25);
+      if (canvas) canvas.style.cursor = 'grabbing';
+      return;
+    }
+
+    if (isOverlayBlockingScene() || (activeModalEl && !activeModalEl.hidden)) {
       setHoveredInteractiveTarget(null);
       if (canvas) canvas.style.cursor = 'default';
       return;
@@ -2871,13 +3202,7 @@ function bindEvents(canvas) {
     if (now - lastRaycastAt < 40) return;
     lastRaycastAt = now;
     if (canvas && clickableRoots.length) {
-      const rc = new THREE.Raycaster();
-      rc.setFromCamera({ x: state.pointerX, y: state.pointerY }, camera);
-      const hits = rc.intersectObjects(clickableRoots, true).filter((h) => {
-        let p = h.object;
-        while (p) { if (p.visible === false) return false; p = p.parent; }
-        return true;
-      });
+      const hits = pickInteractiveHits(state.pointerX, state.pointerY);
       const hitName = hits.length ? resolveClickTargetName(hits[0].object) : null;
       canvas.style.cursor = hitName ? 'pointer' : 'default';
       setHoveredInteractiveTarget(hitName);
@@ -2890,34 +3215,104 @@ function bindEvents(canvas) {
       canvas.style.cursor = 'default';
       setHoveredInteractiveTarget(null);
     });
-    let downX = 0, downY = 0;
-    canvas.addEventListener('pointerdown', (e) => { downX = e.clientX; downY = e.clientY; });
-    canvas.addEventListener('pointerup', (e) => {
-      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) return;
-      const rc = new THREE.Raycaster();
-      rc.setFromCamera({ x: (e.clientX / window.innerWidth) * 2 - 1, y: -(e.clientY / window.innerHeight) * 2 + 1 }, camera);
-      const hits = rc.intersectObjects(clickableRoots, true).filter((h) => {
-        let p = h.object;
-        while (p) { if (p.visible === false) return false; p = p.parent; }
-        return true;
-      });
-      if (hits.length) {
-        const hitName = resolveClickTargetName(hits[0].object);
-        if (hitName) handleInteractiveHit(hitName);
+    canvas.addEventListener('pointerdown', (e) => {
+      if (isOverlayBlockingScene() || matchCutState) return;
+      if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
+      dragPointerId = e.pointerId;
+      dragStartX = dragLastX = e.clientX;
+      dragStartY = dragLastY = e.clientY;
+      dragMoved = false;
+      if (state.mode === 'roam') {
+        canvas.setPointerCapture?.(e.pointerId);
       }
     });
+    const endPointerDrag = (e) => {
+      if (dragPointerId !== e.pointerId) return;
+      const wasDrag = dragMoved;
+      dragPointerId = null;
+      dragMoved = false;
+      canvas.style.cursor = 'default';
+      if (e.type === 'pointerup' && !wasDrag && !matchCutState && !isOverlayBlockingScene()) {
+        const ndcX = (e.clientX / window.innerWidth) * 2 - 1;
+        const ndcY = -(e.clientY / window.innerHeight) * 2 + 1;
+        const hits = pickInteractiveHits(ndcX, ndcY);
+        if (hits.length) {
+          const hitName = resolveClickTargetName(hits[0].object);
+          if (hitName) handleInteractiveHit(hitName);
+        }
+      }
+    };
+    canvas.addEventListener('pointerup', endPointerDrag);
+    canvas.addEventListener('pointercancel', endPointerDrag);
   }
+
+  // Mobile Glide Pad (<=900px roam forward drift)
+  const glidePad = document.getElementById('mobile-glide-pad');
+  if (glidePad) {
+    const startGlide = (e) => {
+      if (state.mode !== 'roam' || matchCutState) return;
+      e.preventDefault();
+      e.stopPropagation();
+      roamState.flight = null;
+      roamState.glidePadActive = true;
+      glidePad.classList.add('is-active');
+      if (e.pointerId !== undefined) glidePad.setPointerCapture?.(e.pointerId);
+    };
+    const stopGlide = () => {
+      roamState.glidePadActive = false;
+      glidePad.classList.remove('is-active');
+    };
+    glidePad.addEventListener('pointerdown', startGlide);
+    glidePad.addEventListener('pointerup', stopGlide);
+    glidePad.addEventListener('pointercancel', stopGlide);
+    glidePad.addEventListener('lostpointercapture', stopGlide);
+    glidePad.addEventListener('touchstart', startGlide, { passive: false });
+    glidePad.addEventListener('touchend', stopGlide);
+    glidePad.addEventListener('touchcancel', stopGlide);
+    window.addEventListener('blur', stopGlide);
+  }
+
+  // Edge Star-Guide Pip -> smooth damped arc flight to B-612 silhouette
+  document.getElementById('star-guide-btn')?.addEventListener('click', () => {
+    if (state.mode !== 'roam' || matchCutState) return;
+    playChimeSound();
+    const landing = getB612LandingPose();
+    startRoamFlight(landing.pos, landing.yaw, landing.pitch, 1.5);
+  });
+
+  // Ink Atlas Overlay & Top HUD Navigation
+  document.getElementById('btn-menu-open')?.addEventListener('click', openInkAtlas);
+  document.getElementById('btn-atlas-open')?.addEventListener('click', openInkAtlas);
+  document.getElementById('atlas-close')?.addEventListener('click', closeInkAtlas);
+  document.getElementById('atlas-backdrop')?.addEventListener('click', closeInkAtlas);
+  document.getElementById('btn-roam-return')?.addEventListener('click', () => {
+    enterRoamMode({ target: 'home', instant: false });
+  });
+
+  document.querySelectorAll('#ink-atlas [data-atlas-action="roam"]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      closeInkAtlas();
+      enterRoamMode({ target: 'home', instant: true });
+    });
+  });
+  document.querySelectorAll('#ink-atlas [data-atlas-t]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const t = Number(btn.dataset.atlasT);
+      closeInkAtlas();
+      enterStationAtT(t, { instant: true });
+    });
+  });
 
   document.querySelectorAll('.station-pill, .rail-tick').forEach((btn) => {
     btn.addEventListener('click', () => flyTo(Number(btn.dataset.t)));
   });
 
-  document.getElementById('btn-home-reset')?.addEventListener('click', () => flyTo(0));
   document.getElementById('btn-deck-about')?.addEventListener('click', openAboutDossier);
   document.getElementById('btn-deck-toggle')?.addEventListener('click', () => toggleDeckCollapse());
   document.getElementById('btn-autoplay')?.addEventListener('click', () => {
+    if (state.mode !== 'station') return;
     state.autoPlay = !state.autoPlay;
-    if (state.autoPlay && state.currentT >= 0.99) state.targetT = state.currentT = 0;
+    if (state.autoPlay && state.currentT >= 0.99) state.targetT = state.currentT = 0.26;
     syncAutoPlayButton();
   });
 
@@ -2926,7 +3321,7 @@ function bindEvents(canvas) {
     let dragging = false;
     const scrub = (clientX) => {
       const rect = rail.getBoundingClientRect();
-      const next = clamp((clientX - rect.left) / rect.width, 0, 1);
+      const next = clamp((clientX - rect.left) / rect.width, 0.26, 1);
       state.autoPlay = false;
       syncAutoPlayButton();
       state.targetT = next;
@@ -2942,12 +3337,12 @@ function bindEvents(canvas) {
     rail.addEventListener('keydown', (e) => {
       const k = e.key;
       let next = null;
-      if (k === 'Home') next = 0;
+      if (k === 'Home') next = 0.26;
       else if (k === 'End') next = 1;
-      else if (k === 'PageUp') next = clamp(state.targetT + 0.1, 0, 1);
-      else if (k === 'PageDown') next = clamp(state.targetT - 0.1, 0, 1);
-      else if (k === 'ArrowRight' || k === 'ArrowUp') next = clamp(state.targetT + 0.02, 0, 1);
-      else if (k === 'ArrowLeft' || k === 'ArrowDown') next = clamp(state.targetT - 0.02, 0, 1);
+      else if (k === 'PageUp') next = clamp(state.targetT + 0.1, 0.26, 1);
+      else if (k === 'PageDown') next = clamp(state.targetT - 0.1, 0.26, 1);
+      else if (k === 'ArrowRight' || k === 'ArrowUp') next = clamp(state.targetT + 0.02, 0.26, 1);
+      else if (k === 'ArrowLeft' || k === 'ArrowDown') next = clamp(state.targetT - 0.02, 0.26, 1);
       if (next !== null) {
         e.preventDefault();
         e.stopPropagation();
@@ -3033,9 +3428,15 @@ function bindEvents(canvas) {
   });
   document.getElementById('dr-fly-study-btn')?.addEventListener('click', () => {
     closeDarkroomViewer();
-    flyTo(0.32, { toast: '穿过星屋天窗，步入二层《墨盐》阁楼' });
+    if (state.mode === 'roam') {
+      enterStudyMatchCut();
+    } else {
+      flyTo(0.32, { toast: '步入二层《墨盐》阁楼书房' });
+    }
   });
 
+  window.addEventListener('blur', () => { roamState.keys.clear(); });
+  window.addEventListener('keyup', (e) => { roamState.keys.delete(e.code); });
   window.addEventListener('keydown', (e) => {
     handleModalTabTrap(e);
     const dr = document.getElementById('darkroom-modal');
@@ -3045,19 +3446,37 @@ function bindEvents(canvas) {
       if (e.key === 'ArrowRight') return stepDarkroomPhoto(1);
       return;
     }
+    const atlas = document.getElementById('ink-atlas');
+    if (atlas && !atlas.hidden) {
+      if (e.key === 'Escape') return closeInkAtlas();
+      return;
+    }
     if (e.key === 'Escape') {
       const dm = document.getElementById('dossier-modal');
       if (dm && !dm.hidden) return closeDossier();
-    } else if (e.key === ' ' && !['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(document.activeElement?.tagName)) {
+      return;
+    }
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+
+    if (state.mode === 'roam') {
+      if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+        roamState.flight = null;
+        roamState.keys.add(e.code);
+      }
+      return;
+    }
+
+    if (e.key === ' ' && document.activeElement?.tagName !== 'BUTTON') {
       e.preventDefault();
       state.autoPlay = !state.autoPlay;
       syncAutoPlayButton();
     } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
       state.autoPlay = false;
-      state.targetT = clamp(state.targetT + 0.04, 0, 1);
+      state.targetT = clamp(state.targetT + 0.04, 0.26, 1);
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
       state.autoPlay = false;
-      state.targetT = clamp(state.targetT - 0.04, 0, 1);
+      state.targetT = clamp(state.targetT - 0.04, 0.26, 1);
     }
   });
 }
@@ -3081,14 +3500,7 @@ function applyCameraAtT(t, elapsedSec = 0) {
   if (portrait) {
     const narrow = clamp((0.85 - camera.aspect) / 0.39, 0, 1.35);
     extraFov = (0.85 - camera.aspect) * 38;
-    if (t < 0.24) {
-      const b612W = 1 - THREE.MathUtils.smoothstep(t, 0.12, 0.24);
-      tmpPos.x -= 1.45 * b612W * narrow;
-      tmpPos.y += 1.05 * b612W * narrow;
-      tmpPos.z += 12.2 * b612W * narrow;
-      tmpTarget.x -= 1.45 * b612W * narrow;
-      tmpTarget.y -= 0.12 * b612W * narrow;
-    } else if (t >= 0.42 && t <= 0.62) {
+    if (t >= 0.42 && t <= 0.62) {
       const labW = Math.sin(THREE.MathUtils.smoothstep(t, 0.42, 0.62) * Math.PI);
       tmpPos.x -= 1.25 * labW * narrow;
       tmpPos.y += 1.65 * labW * narrow;
@@ -3105,6 +3517,7 @@ function applyCameraAtT(t, elapsedSec = 0) {
       extraFov += 10 * riverW * narrow;
     }
   }
+  camera.rotation.order = 'XYZ';
   camera.position.copy(tmpPos);
   camera.fov = Math.min(68, sampleFov(t) + extraFov);
   camera.updateProjectionMatrix();
@@ -3121,12 +3534,26 @@ function applyCameraAtT(t, elapsedSec = 0) {
   }
 }
 
-function renderOnceAndSync(nowSec = 0) {
+function renderFrame() {
+  if (composer) composer.render();
+  else if (renderer && scene && camera) renderer.render(scene, camera);
+}
+
+function renderOnceAndSync(nowSec = 0, instantPhotoSnap = false) {
   updateSceneStageIsolations(state.currentT);
-  applyCameraAtT(state.currentT, nowSec);
-  syncHudAndTimeline();
-  updateSpatialMarkers();
-  if (renderer && scene && camera) renderer.render(scene, camera);
+  const starGuideBtn = document.getElementById('star-guide-btn');
+  if (state.mode === 'roam') {
+    updateRoamCamera(0);
+    updatePhotoFrames(photoFrames, camera, nowSec, 0.016, prefersReducedMotion, instantPhotoSnap);
+    updateStarGuidePip(starGuideBtn, camera, 'roam');
+    updateSpatialMarkers();
+  } else {
+    if (starGuideBtn) starGuideBtn.hidden = true;
+    applyCameraAtT(state.currentT, nowSec);
+    syncHudAndTimeline();
+    updateSpatialMarkers();
+  }
+  renderFrame();
 }
 
 async function bootCinema() {
@@ -3139,24 +3566,43 @@ async function bootCinema() {
 
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x040812);
-  scene.fog = new THREE.FogExp2(0x040812, 0.0072);
+  scene.fog = new THREE.FogExp2(0x040812, 0.0085);
 
-  camera = new THREE.PerspectiveCamera(47, window.innerWidth / window.innerHeight, 0.1, 240);
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 480);
+  camera.rotation.order = 'YXZ';
+
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.22;
+  renderer.toneMappingExposure = BASE_EXPOSURE;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
+  const rt = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, { type: THREE.HalfFloatType });
+  composer = new EffectComposer(renderer, rt);
+  composer.setPixelRatio(renderer.getPixelRatio());
+  composer.setSize(window.innerWidth, window.innerHeight);
+  renderPass = new RenderPass(scene, camera);
+  bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    BASE_BLOOM_STRENGTH,
+    BASE_BLOOM_RADIUS,
+    BASE_BLOOM_THRESHOLD
+  );
+  outputPass = new OutputPass();
+  composer.addPass(renderPass);
+  composer.addPass(bloomPass);
+  composer.addPass(outputPass);
+
+  buildRefinedCosmosEffects();
   setupLighting();
   buildProceduralEnvMap();
-  buildRefinedCosmosEffects();
+  syncBodyMode('roam');
   bindEvents(canvas);
 
   let loadedOk = false;
   try {
-    if (statusEl) statusEl.textContent = '载入 B-612 长镜头轨线…';
+    if (statusEl) statusEl.textContent = '载入星海与五境轨线…';
     const camRes = await fetch('./assets/qingzhou-world-camera.json');
     if (!camRes.ok) throw new Error(`HTTP ${camRes.status} camera.json`);
     const camJson = await camRes.json();
@@ -3196,11 +3642,14 @@ async function bootCinema() {
       }
       if (!obj.name) return;
       if (!namedObjects.has(obj.name)) namedObjects.set(obj.name, obj);
-      if (obj.userData && obj.userData.isHitProxy && obj.userData.hitTarget) {
+      if (obj.userData && obj.userData.isHitProxy && obj.userData.hitTarget && !/^HitProxy_Orrery_/.test(obj.name)) {
         obj.userData.__qzInteractiveName = obj.userData.hitTarget;
         clickableRoots.push(obj);
       } else if (INTERACTIVE_NAME_RE.test(obj.name)) {
         obj.userData.__qzInteractiveName = obj.name;
+        clickableRoots.push(obj);
+      } else if (obj.name === 'B612_Asteroid_Body') {
+        // Occludes clicks through the planet sphere without triggering landing
         clickableRoots.push(obj);
       }
       const beaconMatch = obj.name.match(/^City_Beacon_(\d+)$/);
@@ -3212,9 +3661,14 @@ async function bootCinema() {
       }
     });
 
-    attachOrreryPlanetShaders();
-    attachB612PlanetShader();
+    hideOrreryNodes(namedObjects);
     applyProceduralPBRTextures();
+    sculptB612TwilightLook({ namedObjects, b612HaloMat, b612MistMat, cosmosGroup });
+    photoFrames = createScatteredPhotoFrames(cosmosGroup, archive());
+    for (const f of photoFrames) {
+      clickableRoots.push(f.photoMesh);
+    }
+
     for (const objName of namedObjects.keys()) {
       if (INTERACTIVE_NAME_RE.test(objName)) {
         registerInteractiveHoverMeshes(objName, namedObjects.get(objName));
@@ -3255,17 +3709,16 @@ async function bootCinema() {
 
   toggleDeckCollapse(state.deckCollapsed);
   renderStationDeck(true);
-  renderOnceAndSync(0);
+  renderOnceAndSync(0, true);
   window.__onetakeReady = loadedOk;
   if (loadedOk && loaderEl) loaderEl.classList.add('is-ready');
 
   window.__qzSetT = (t, instant = true) => {
-    state.autoPlay = false;
-    syncAutoPlayButton();
-    state.targetT = clamp(Number(t) || 0, 0, 1);
-    if (instant) {
-      state.currentT = state.targetT;
-      renderOnceAndSync(performance.now() * 0.001);
+    const numT = clamp(Number(t) || 0, 0, 1);
+    if (numT < 0.24) {
+      enterRoamMode({ target: numT <= 0.05 ? 'home' : 'b612', instant });
+    } else {
+      enterStationAtT(numT, { instant });
     }
     return window.__qzGetState();
   };
@@ -3276,20 +3729,84 @@ async function bootCinema() {
     updateBookMoyanTexture();
     renderStationDeck(true);
   };
-  window.__qzGetState = () => ({
-    ready: Boolean(window.__onetakeReady),
-    glbLoaded: Boolean(window.__glbLoaded),
-    currentT: Number(state.currentT.toFixed(4)),
-    targetT: Number(state.targetT.toFixed(4)),
-    zone: state.activeStationId,
-    portal: state.activePortal,
-    selectedCity: state.selectedCityName,
-    selectedPoem: state.selectedPoemSlug,
-    selectedLab: state.selectedLabSlug,
-    cosmosVisible: Boolean(cosmosGroup?.visible),
-    worldVisible: Boolean(worldGroup?.visible),
-    glObjects: namedObjects.size
-  });
+  window.__qzFocusTarget = (id, opts = {}) => {
+    const instant = typeof opts === 'boolean' ? opts : (opts?.instant !== false);
+    closeInkAtlas();
+    matchCutState = null;
+    const veil = document.getElementById('matchcut-veil');
+    if (veil) veil.style.setProperty('--mc-flash', '0');
+    if (bloomPass) bloomPass.strength = BASE_BLOOM_STRENGTH;
+    if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE;
+
+    if (id === 'b612') {
+      enterRoamMode({ target: 'b612', instant });
+      return window.__qzGetState();
+    }
+    const m = String(id || '').match(/^frame-(\d+)$/);
+    if (m) {
+      const idx = Number(m[1]);
+      const f = photoFrames[idx];
+      if (f) {
+        syncBodyMode('roam');
+        const dir = new THREE.Vector3().subVectors(ROAM_HOME_POS, f.basePos);
+        if (dir.lengthSq() < 0.01) dir.set(0, 0, 1);
+        dir.normalize();
+        const camPos = f.basePos.clone().addScaledVector(dir, 8.2);
+        const aim = computeAimYawPitch(camPos, f.basePos);
+        if (instant) {
+          roamState.flight = null;
+          roamState.velocity.set(0, 0, 0);
+          roamState.position.copy(camPos);
+          roamState.yaw = roamState.targetYaw = aim.yaw;
+          roamState.pitch = roamState.targetPitch = aim.pitch;
+          renderOnceAndSync(performance.now() * 0.001, true);
+        } else {
+          startRoamFlight(camPos, aim.yaw, aim.pitch, 1.35);
+        }
+      }
+    }
+    return window.__qzGetState();
+  };
+  window.__qzEnterStudyMatchCut = () => enterStudyMatchCut();
+  window.__qzGetState = () => {
+    const sgBtn = document.getElementById('star-guide-btn');
+    const orreryVisible = ['Orrery_0', 'Orrery_1', 'Orrery_2', 'B612_Star_Ring']
+      .some((n) => Boolean(namedObjects.get(n)?.visible));
+    return {
+      ready: Boolean(window.__onetakeReady),
+      glbLoaded: Boolean(window.__glbLoaded),
+      mode: state.mode,
+      currentT: Number(state.currentT.toFixed(4)),
+      targetT: Number(state.targetT.toFixed(4)),
+      zone: state.mode === 'roam' ? 'works' : state.activeStationId,
+      portal: state.activePortal,
+      selectedCity: state.selectedCityName,
+      selectedPoem: state.selectedPoemSlug,
+      selectedLab: state.selectedLabSlug,
+      cosmosVisible: Boolean(cosmosGroup?.visible),
+      worldVisible: Boolean(worldGroup?.visible),
+      orreryVisible,
+      bloomStrength: Number((bloomPass?.strength ?? 0).toFixed(3)),
+      bloomThreshold: Number((bloomPass?.threshold ?? 0).toFixed(3)),
+      matchCutActive: Boolean(matchCutState),
+      cameraPos: [
+        Number(camera.position.x.toFixed(3)),
+        Number(camera.position.y.toFixed(3)),
+        Number(camera.position.z.toFixed(3))
+      ],
+      pitch: Number(roamState.pitch.toFixed(4)),
+      yaw: Number(roamState.yaw.toFixed(4)),
+      starGuideVisible: Boolean(sgBtn && !sgBtn.hidden),
+      photoFrames: photoFrames.map((f, i) => ({
+        id: `frame-${i}`,
+        workSlug: f.workSlug,
+        photoIdx: f.photoIdx,
+        reveal: Number(f.reveal.toFixed(3)),
+        distance: Number(camera.position.distanceTo(f.group.position).toFixed(2))
+      })),
+      glObjects: namedObjects.size
+    };
+  };
 
   let prevMs = performance.now();
   function animate(nowMs) {
@@ -3298,11 +3815,81 @@ async function bootCinema() {
     prevMs = nowMs;
     const elapsed = prefersReducedMotion ? 0 : nowMs * 0.001;
 
-    const drModal = document.getElementById('darkroom-modal');
-    const dsModal = document.getElementById('dossier-modal');
-    const modalOpen = Boolean((drModal && !drModal.hidden) || (dsModal && !dsModal.hidden));
-    if (modalOpen) return;
+    if (deepStarMat) deepStarMat.uniforms.time.value = elapsed;
+    if (midDustMat) midDustMat.uniforms.time.value = elapsed;
+    if (b612MistMat) b612MistMat.uniforms.time.value = elapsed;
 
+    if (isOverlayBlockingScene()) return;
+
+    if (matchCutState) {
+      const veil = document.getElementById('matchcut-veil');
+      if (matchCutState.phase === 'in') {
+        const p = clamp((nowMs - matchCutState.phaseStartMs) / matchCutState.durInMs, 0, 1);
+        const ease = p * p;
+        roamState.position.lerpVectors(matchCutState.startPos, matchCutState.approachPos, ease);
+        roamState.yaw = matchCutState.startYaw + shortestAngleDelta(matchCutState.startYaw, matchCutState.endYaw) * ease;
+        roamState.pitch = clamp(matchCutState.startPitch + (matchCutState.endPitch - matchCutState.startPitch) * ease, -1.25, 1.25);
+        camera.position.copy(roamState.position);
+        camera.rotation.order = 'YXZ';
+        camera.rotation.set(roamState.pitch, roamState.yaw, 0, 'YXZ');
+        if (bloomPass) bloomPass.strength = BASE_BLOOM_STRENGTH + 2.35 * ease;
+        if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE + 0.42 * ease;
+        if (veil) veil.style.setProperty('--mc-flash', Math.pow(p, 1.15).toFixed(4));
+        updatePhotoFrames(photoFrames, camera, elapsed, dt, prefersReducedMotion, false);
+        const sgBtn = document.getElementById('star-guide-btn');
+        if (sgBtn) sgBtn.hidden = true;
+        renderFrame();
+
+        if (p >= 1) {
+          syncBodyMode('station');
+          state.currentT = state.targetT = 0.32;
+          state.activePortal = 'none';
+          document.body.dataset.portal = 'none';
+          applyCameraAtT(0.32, elapsed);
+          syncHudAndTimeline();
+          renderStationDeck(true);
+          updateSpatialMarkers();
+          if (veil) veil.style.setProperty('--mc-flash', '1');
+          renderFrame();
+          matchCutState.phase = 'out';
+          matchCutState.phaseStartMs = nowMs;
+        }
+        return;
+      }
+
+      const q = clamp((nowMs - matchCutState.phaseStartMs) / matchCutState.durOutMs, 0, 1);
+      const decay = Math.pow(1 - q, 3);
+      if (bloomPass) bloomPass.strength = STATION_BLOOM_STRENGTH + (BASE_BLOOM_STRENGTH + 2.35 - STATION_BLOOM_STRENGTH) * decay;
+      if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE + 0.42 * decay;
+      if (veil) veil.style.setProperty('--mc-flash', decay.toFixed(4));
+      applyCameraAtT(0.32, elapsed);
+      syncHudAndTimeline();
+      updateSpatialMarkers();
+      renderFrame();
+
+      if (q >= 1) {
+        if (bloomPass) {
+          bloomPass.strength = STATION_BLOOM_STRENGTH;
+          bloomPass.threshold = STATION_BLOOM_THRESHOLD;
+        }
+        if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE;
+        if (veil) veil.style.setProperty('--mc-flash', '0');
+        matchCutState = null;
+        showToast('窗灯余晖渐散 · 步入二层《墨盐》书房 ✨');
+      }
+      return;
+    }
+
+    if (state.mode === 'roam') {
+      updateSceneStageIsolations(0);
+      updateRoamCamera(dt, nowMs);
+      updatePhotoFrames(photoFrames, camera, elapsed, dt, prefersReducedMotion, false);
+      updateStarGuidePip(document.getElementById('star-guide-btn'), camera, 'roam');
+      renderFrame();
+      return;
+    }
+
+    // Station mode (02~05)
     if (state.autoPlay) {
       state.targetT = Math.min(1, state.targetT + dt * 0.028);
       if (state.targetT >= 0.999) {
@@ -3311,28 +3898,13 @@ async function bootCinema() {
       }
     } else if (nowMs - state.lastWheelAt > 200) {
       for (const st of STATIONS) {
-        if (Math.abs(state.targetT - st.t) < 0.012) {
+        if (st.t >= 0.26 && Math.abs(state.targetT - st.t) < 0.012) {
           state.targetT += (st.t - state.targetT) * Math.min(1, dt * 4);
         }
       }
     }
 
     state.currentT += (state.targetT - state.currentT) * Math.min(1, dt * 6.5);
-
-    if (deepStarMat) deepStarMat.uniforms.time.value = elapsed;
-    if (b612MistMat) b612MistMat.uniforms.time.value = elapsed;
-
-    if (cosmosGroup?.visible && !prefersReducedMotion) {
-      const starRing = namedObjects.get('B612_Star_Ring');
-      if (starRing) starRing.rotation.y = elapsed * 0.20;
-      for (let i = 0; i < 3; i++) {
-        const orr = namedObjects.get(`Orrery_${i}`);
-        if (orr) {
-          orr.rotation.y = elapsed * (0.28 + i * 0.06);
-          orr.rotation.x = Math.sin(elapsed * 0.4 + i) * 0.12;
-        }
-      }
-    }
 
     const chime = namedObjects.get('Roof_Windchime');
     if (chime && worldGroup?.visible && !prefersReducedMotion && state.currentT < 0.35) {

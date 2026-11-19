@@ -46,33 +46,38 @@
 
 #station-deck *,
 .dossier-modal *,
-.darkroom-modal * {
+.darkroom-modal *,
+.ink-atlas * {
   scrollbar-width: thin;
   scrollbar-color: rgba(232, 184, 109, 0.36) transparent;
 }
 
 #station-deck *::-webkit-scrollbar,
 .dossier-modal *::-webkit-scrollbar,
-.darkroom-modal *::-webkit-scrollbar {
+.darkroom-modal *::-webkit-scrollbar,
+.ink-atlas *::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
 #station-deck *::-webkit-scrollbar-thumb,
 .dossier-modal *::-webkit-scrollbar-thumb,
-.darkroom-modal *::-webkit-scrollbar-thumb {
+.darkroom-modal *::-webkit-scrollbar-thumb,
+.ink-atlas *::-webkit-scrollbar-thumb {
   background: rgba(232, 184, 109, 0.36);
   border-radius: 99px;
 }
 
 #station-deck *::-webkit-scrollbar-track,
 .dossier-modal *::-webkit-scrollbar-track,
-.darkroom-modal *::-webkit-scrollbar-track {
+.darkroom-modal *::-webkit-scrollbar-track,
+.ink-atlas *::-webkit-scrollbar-track {
   background: transparent;
 }
 
 html, body {
   width: 100%;
+  max-width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
@@ -110,6 +115,7 @@ button {
   height: 100%;
   display: block;
   z-index: 1;
+  touch-action: none;
 }
 
 #aperture-vignette {
@@ -128,6 +134,133 @@ button {
 
 body[data-portal="skylight"] #aperture-vignette.is-portal {
   background: radial-gradient(circle at 50% 48%, rgba(255, 238, 198, calc(0.18 + var(--portal-strength, 0.2) * 0.36)) 10%, rgba(232, 184, 109, calc(0.16 + var(--portal-strength, 0.2) * 0.24)) 46%, rgba(5, 10, 20, 0.88) 100%);
+}
+
+/* Warm Amber/Ivory Match Cut Radial Exposure Veil */
+#matchcut-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  pointer-events: none;
+  opacity: var(--mc-flash, 0);
+  background: radial-gradient(
+    circle at 50% 48%,
+    #fff9e8 0%,
+    #fce2ae 36%,
+    #e2ac62 72%,
+    #c4863c 100%
+  );
+  will-change: opacity;
+}
+
+/* Edge Star-Guide Pip (Roam Mode) */
+#star-guide-btn {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 11;
+  width: 48px;
+  height: 48px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  transform: translate3d(var(--gx, 50vw), var(--gy, 50vh), 0) translate(-50%, -50%);
+  transition: opacity 0.25s ease;
+}
+
+#star-guide-btn[hidden],
+body[data-mode="station"] #star-guide-btn {
+  display: none !important;
+}
+
+.star-guide-dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffd992;
+  box-shadow: 0 0 10px rgba(232, 184, 109, 0.92), 0 0 22px rgba(232, 184, 109, 0.45);
+  animation: starGuidePulse 2.8s ease-in-out infinite;
+}
+
+.star-guide-dot::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+  border: 1px solid rgba(232, 184, 109, 0.34);
+  animation: starGuideRing 2.8s ease-out infinite;
+}
+
+.star-guide-label {
+  position: absolute;
+  top: calc(50% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: rgba(243, 230, 207, 0.68);
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 1px 8px rgba(4, 8, 18, 0.95);
+  transition: color 0.2s ease;
+}
+
+#star-guide-btn:hover .star-guide-label,
+#star-guide-btn:focus-visible .star-guide-label {
+  color: #fff3da;
+}
+
+@keyframes starGuidePulse {
+  0%, 100% {
+    transform: scale(0.92);
+    opacity: 0.78;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+}
+
+@keyframes starGuideRing {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.85);
+    opacity: 0;
+  }
+}
+
+/* Mobile Touch Forward Glide Strip (shown <=900px in Roam Mode) */
+.mobile-glide-pad {
+  display: none;
+}
+
+.glide-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold-brass);
+  box-shadow: 0 0 8px rgba(232, 184, 109, 0.8);
+  flex-shrink: 0;
+}
+
+@keyframes glideBreathe {
+  0%, 100% {
+    border-color: rgba(232, 184, 109, 0.24);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.44);
+  }
+  50% {
+    border-color: rgba(232, 184, 109, 0.46);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.44), 0 0 18px rgba(232, 184, 109, 0.14);
+  }
 }
 
 /* 3D Projected Spatial Callout Markers */
@@ -221,6 +354,45 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Minimalist Roam Mode: corner floating anchors only, >=90% pure starry cinema */
+body[data-mode="roam"] #hud-topbar {
+  top: 14px;
+  left: 18px;
+  right: 18px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: none;
+  pointer-events: none;
+  flex-wrap: nowrap;
+}
+
+body[data-mode="roam"] #hud-topbar .hud-brand,
+body[data-mode="roam"] #hud-topbar .hud-actions {
+  pointer-events: auto;
+}
+
+body[data-mode="roam"] #hud-topbar .hud-stations,
+body[data-mode="roam"] #btn-autoplay,
+body[data-mode="roam"] #hud-telemetry,
+body[data-mode="roam"] #hud-portal-pill,
+body[data-mode="roam"] #btn-roam-return,
+body[data-mode="roam"] #hud-archive-link,
+body[data-mode="roam"] .brand-badge,
+body[data-mode="roam"] #hud-solar-term,
+body[data-mode="roam"] #timeline-rail,
+body[data-mode="roam"] #station-deck,
+body[data-mode="roam"] #spatial-markers {
+  display: none !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .hud-brand {
@@ -231,25 +403,31 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
 }
 
 .brand-seal {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  border: 1px solid rgba(212, 77, 56, 0.72);
-  background: rgba(164, 42, 26, 0.34);
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(212, 77, 56, 0.78);
+  background: linear-gradient(145deg, rgba(182, 46, 30, 0.44), rgba(128, 28, 18, 0.34));
+  box-shadow: inset 0 0 0 1px rgba(249, 216, 207, 0.14), 0 6px 20px rgba(0, 0, 0, 0.35);
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 .brand-seal:hover {
-  transform: scale(1.05);
-  background: rgba(212, 77, 56, 0.52);
+  transform: scale(1.04);
+  border-color: rgba(235, 98, 74, 0.95);
+  background: linear-gradient(145deg, rgba(212, 77, 56, 0.62), rgba(154, 38, 24, 0.48));
 }
 
 .seal-mark {
   font-weight: 700;
-  font-size: 16px;
+  font-size: 18px;
+  line-height: 1;
   color: #f9d8cf;
 }
 
@@ -265,6 +443,14 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+}
+
+body[data-mode="roam"] .brand-name {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: rgba(243, 230, 207, 0.76);
+  text-shadow: 0 2px 12px rgba(3, 6, 12, 0.92);
 }
 
 .brand-badge {
@@ -329,7 +515,7 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
 .hud-actions {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -363,6 +549,7 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
 .hud-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   padding: 5px 10px;
   border-radius: 8px;
@@ -372,10 +559,41 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
   font-size: 12px;
   text-decoration: none;
   white-space: nowrap;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
 .hud-btn:hover {
+  border-color: var(--gold-brass);
+  background: rgba(232, 184, 109, 0.14);
+}
+
+.hud-btn-light {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1px solid rgba(243, 230, 207, 0.16);
+  background: rgba(6, 11, 20, 0.42);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: rgba(243, 230, 207, 0.9);
+  letter-spacing: 0.08em;
+}
+
+.hud-btn-light:hover {
+  border-color: rgba(232, 184, 109, 0.58);
+  background: rgba(14, 22, 36, 0.7);
+  color: #fff6e5;
+}
+
+body[data-mode="station"] .hud-btn-light {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-soft);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body[data-mode="station"] .hud-btn-light:hover {
   border-color: var(--gold-brass);
   background: rgba(232, 184, 109, 0.14);
 }
@@ -404,12 +622,13 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  width: 260px;
+  width: 264px;
   padding: 12px;
   border-radius: 12px;
   background: var(--hud-glass-strong);
   border: 1px solid var(--border-gold);
   backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
   z-index: 25;
 }
@@ -424,6 +643,8 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
 }
 
 .dock-head button {
+  min-width: 32px;
+  min-height: 32px;
   border: none;
   background: transparent;
   font-size: 16px;
@@ -437,8 +658,8 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
 }
 
 #dock-play {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   border: 1px solid var(--gold-brass);
   background: rgba(232, 184, 109, 0.16);
@@ -899,6 +1120,147 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
   color: var(--gold-brass);
   min-width: 36px;
   text-align: right;
+}
+
+/* Full-Screen Translucent Ink Atlas Overlay */
+.ink-atlas {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overscroll-behavior: contain;
+}
+
+.ink-atlas[hidden] {
+  display: none !important;
+}
+
+.atlas-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(36, 48, 66, 0.56) 0%, rgba(5, 10, 18, 0.88) 54%, rgba(3, 6, 12, 0.96) 100%),
+    radial-gradient(circle at 80% 82%, rgba(232, 184, 109, 0.08) 0%, transparent 52%);
+  backdrop-filter: blur(22px) saturate(1.1);
+  -webkit-backdrop-filter: blur(22px) saturate(1.1);
+}
+
+.atlas-panel {
+  position: relative;
+  z-index: 1;
+  width: min(640px, 92vw);
+  max-height: calc(100dvh - 48px);
+  display: flex;
+  flex-direction: column;
+  padding: 28px 32px 26px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, rgba(10, 17, 29, 0.86) 0%, rgba(5, 10, 19, 0.92) 100%);
+  border: 1px solid rgba(232, 184, 109, 0.28);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.72), inset 0 0 0 1px rgba(243, 230, 207, 0.05);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.atlas-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(243, 230, 207, 0.12);
+}
+
+.atlas-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--gold-brass);
+  margin-bottom: 6px;
+}
+
+.atlas-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink-ivory);
+}
+
+.atlas-close {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(243, 230, 207, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink-ivory);
+  font-size: 16px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.atlas-close:hover {
+  border-color: var(--gold-brass);
+  background: rgba(232, 184, 109, 0.16);
+  transform: rotate(90deg);
+}
+
+.atlas-nav {
+  display: grid;
+  gap: 10px;
+}
+
+.atlas-link {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  min-height: 54px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(243, 230, 207, 0.11);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--ink-ivory);
+  text-align: left;
+  text-decoration: none;
+  transition: border-color 0.22s ease, background 0.22s ease, transform 0.18s ease;
+}
+
+.atlas-link:hover {
+  border-color: rgba(232, 184, 109, 0.56);
+  background: rgba(232, 184, 109, 0.1);
+  transform: translateX(3px);
+}
+
+.atlas-link-main {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #fbf0db;
+}
+
+.atlas-link-sub {
+  font-size: 12px;
+  color: var(--ink-muted);
+  letter-spacing: 0.03em;
+}
+
+.atlas-link-archive {
+  margin-top: 6px;
+  border-style: dashed;
+  border-color: rgba(232, 184, 109, 0.3);
+  background: rgba(232, 184, 109, 0.04);
+}
+
+.atlas-link-archive .atlas-link-main {
+  color: var(--gold-brass);
 }
 
 /* Full Reading Dossier Modal */
@@ -1456,13 +1818,22 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
 }
 
+@media (max-width: 1260px) {
+  body[data-mode="station"] .brand-badge,
+  body[data-mode="station"] #hud-solar-term,
+  body[data-mode="station"] #hud-telemetry,
+  body[data-mode="station"] #hud-archive-link {
+    display: none;
+  }
+}
+
 @media (max-width: 1180px) {
   .rail-hint {
     display: none;
   }
 }
 
-/* Mobile Responsive Layout & 40px+ Touch Targets (390x844 verified) */
+/* Mobile Responsive Layout & 44px+ Touch Targets (390x844 verified) */
 @media (max-width: 900px) {
   #hud-topbar {
     top: 8px;
@@ -1473,15 +1844,137 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
     gap: 6px;
   }
 
+  body[data-mode="roam"] #hud-topbar {
+    top: 10px;
+    left: 12px;
+    right: 12px;
+    padding: 0;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  body[data-mode="roam"] .brand-name {
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+  }
+
+  body[data-mode="station"] #btn-autoplay,
+  body[data-mode="station"] #hud-solar-term,
+  body[data-mode="station"] .brand-badge,
+  body[data-mode="station"] #hud-archive-link {
+    display: none;
+  }
+
+  body[data-mode="station"] .brand-name {
+    font-size: 12px;
+    letter-spacing: 0.02em;
+  }
+
+  body[data-mode="station"] #hud-topbar .hud-actions {
+    gap: 5px;
+  }
+
   .brand-seal {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .hud-btn,
   .icon-btn {
     min-height: 38px;
     padding: 6px 10px;
+  }
+
+  .hud-btn-light {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 8px 12px;
+  }
+
+  body[data-mode="station"] .hud-btn-light {
+    padding: 6px 9px;
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+  }
+
+  .cinema-toast {
+    top: 68px;
+    max-width: calc(100vw - 24px);
+    white-space: normal;
+    text-align: center;
+  }
+
+  body[data-mode="station"] .cinema-toast {
+    top: 158px;
+  }
+
+  .dock-panel {
+    right: -56px;
+    width: min(276px, calc(100vw - 20px));
+  }
+
+  body[data-mode="roam"] #mobile-glide-pad {
+    position: fixed;
+    left: 50%;
+    bottom: max(18px, env(safe-area-inset-bottom, 18px));
+    transform: translateX(-50%);
+    z-index: 12;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    max-width: calc(100vw - 28px);
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: 1px solid rgba(232, 184, 109, 0.28);
+    background: rgba(7, 13, 24, 0.56);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: rgba(243, 230, 207, 0.84);
+    font-size: 12.5px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.44);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    animation: glideBreathe 3.2s ease-in-out infinite;
+    transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+  }
+
+  body[data-mode="roam"] #mobile-glide-pad:active,
+  body[data-mode="roam"] #mobile-glide-pad.is-active {
+    border-color: rgba(232, 184, 109, 0.78);
+    background: rgba(28, 22, 16, 0.72);
+    color: #fff4df;
+  }
+
+  .ink-atlas {
+    padding: 12px;
+  }
+
+  .atlas-panel {
+    width: 100%;
+    max-height: calc(100dvh - 24px);
+    padding: 20px 18px 18px;
+    border-radius: 16px;
+  }
+
+  .atlas-title {
+    font-size: 19px;
+  }
+
+  .atlas-link {
+    min-height: 52px;
+    padding: 10px 14px;
+  }
+
+  .atlas-link-main {
+    font-size: 14px;
   }
 
   .hud-stations {
@@ -1604,5 +2097,11 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+
+  .brand-seal:hover,
+  .atlas-close:hover,
+  .atlas-link:hover {
+    transform: none;
   }
 }
