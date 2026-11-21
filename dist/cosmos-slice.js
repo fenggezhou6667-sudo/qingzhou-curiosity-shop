@@ -1,10 +1,13 @@
 import * as THREE from './vendor/three/three.module.js';
 
 export const B612_CENTER = new THREE.Vector3(-1.35, 28.0, 29.0);
-export const B612_AIM_POINT = new THREE.Vector3(-1.35, 28.92, 29.0);
+export const B612_AIM_POINT = new THREE.Vector3(-1.35, 29.05, 29.0);
 export const B612_WINDOW_WORLD = new THREE.Vector3(-1.07, 30.84, 29.61);
-export const B612_LANDING_POS_DESKTOP = new THREE.Vector3(2.90, 32.15, 37.95);
-export const B612_LANDING_POS_PORTRAIT = new THREE.Vector3(3.12, 32.7, 41.85);
+export const B612_LANDING_POS_DESKTOP = new THREE.Vector3(2.90, 32.25, 38.15);
+export const B612_LANDING_POS_PORTRAIT = new THREE.Vector3(3.12, 32.85, 42.10);
+export const B612_PATH_POS_DESKTOP = new THREE.Vector3(0.86, 31.36, 33.48);
+export const B612_PATH_POS_PORTRAIT = new THREE.Vector3(0.95, 31.52, 34.48);
+export const B612_PATH_AIM = new THREE.Vector3(-0.76, 30.72, 29.15);
 
 export const COSMOS_CENTER = new THREE.Vector3(-4.0, 27.5, 34.0);
 export const COSMOS_R_MAX = 64.0;
@@ -62,14 +65,119 @@ export function hideOrreryNodes(namedObjects) {
 }
 
 /**
- * Sculpt twilight-navy atmosphere, backlit rim silhouette, and HDR warm window/rose
- * bloom accents around B-612 without disturbing worldGroup (02~05) shared materials.
+ * Procedural Deep-Space Astronomical Nebula Sky Dome (32-deg tilted Milky Way dust band).
+ * Restrained nocturnal Prussian indigo, mineral teal haze, and faint warm galactic dust rifts.
+ */
+export function createCosmosNebulaDome(cosmosGroup) {
+  if (!cosmosGroup) return null;
+  const domeGeo = new THREE.SphereGeometry(260, 48, 32);
+  const domeMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    depthWrite: false,
+    fog: false,
+    uniforms: {
+      uTime: { value: 0 }
+    },
+    vertexShader: `
+      varying vec3 vDir;
+      void main() {
+        vDir = normalize(position);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      varying vec3 vDir;
+
+      float hash31(vec3 p) {
+        p = fract(p * 0.1031);
+        p += dot(p, p.yzx + 33.33);
+        return fract((p.x + p.y) * p.z);
+      }
+
+      float noise3(vec3 p) {
+        vec3 i = floor(p);
+        vec3 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        float n000 = hash31(i + vec3(0,0,0));
+        float n100 = hash31(i + vec3(1,0,0));
+        float n010 = hash31(i + vec3(0,1,0));
+        float n110 = hash31(i + vec3(1,1,0));
+        float n001 = hash31(i + vec3(0,0,1));
+        float n101 = hash31(i + vec3(1,0,1));
+        float n011 = hash31(i + vec3(0,1,1));
+        float n111 = hash31(i + vec3(1,1,1));
+        float nx00 = mix(n000, n100, f.x);
+        float nx10 = mix(n010, n110, f.x);
+        float nx01 = mix(n001, n101, f.x);
+        float nx11 = mix(n011, n111, f.x);
+        float nxy0 = mix(nx00, nx10, f.y);
+        float nxy1 = mix(nx01, nx11, f.y);
+        return mix(nxy0, nxy1, f.z);
+      }
+
+      float fbm(vec3 p) {
+        float v = 0.0;
+        float a = 0.52;
+        for (int i = 0; i < 4; i++) {
+          v += a * noise3(p);
+          p = p * 2.04 + vec3(1.7, 9.2, 4.3);
+          a *= 0.5;
+        }
+        return v;
+      }
+
+      void main() {
+        vec3 d = normalize(vDir);
+        // Tilt galactic plane ~32 deg so Milky Way arches poetically across the opening viewport
+        float c = cos(0.56);
+        float s = sin(0.56);
+        vec3 g = vec3(d.x * c - d.y * s, d.x * s + d.y * c, d.z);
+
+        float plane = exp(-pow(g.y * 3.15, 2.0));
+        float broad = exp(-pow(g.y * 1.45, 2.0));
+
+        float n1 = fbm(g * 2.6 + vec3(0.0, 0.0, uTime * 0.002));
+        float n2 = fbm(g * 5.8 + vec3(3.1, -1.4, 2.2));
+        float dustRift = smoothstep(0.40, 0.72, fbm(g * 4.4 + vec3(-2.3, 1.9, 0.8)));
+
+        vec3 voidCol = vec3(0.003, 0.006, 0.015);
+        vec3 deepIndigo = vec3(0.011, 0.024, 0.056);
+        vec3 tealNebula = vec3(0.010, 0.036, 0.052);
+        vec3 warmCore = vec3(0.058, 0.044, 0.036);
+
+        // Galactic core density toward B-612 direction (-z, +x)
+        float coreDir = pow(max(0.0, dot(d, normalize(vec3(0.32, 0.14, -0.93)))), 2.8);
+
+        vec3 col = voidCol;
+        col += deepIndigo * broad * (0.30 + 0.70 * n1) * 0.56;
+        col += tealNebula * plane * smoothstep(0.38, 0.84, n2) * 0.34;
+        col += warmCore * plane * coreDir * (0.40 + 0.60 * n1) * 0.52;
+        // Dark cosmic dust lanes carved organically through the Milky Way band
+        col *= (1.0 - plane * dustRift * 0.55);
+
+        gl_FragColor = vec4(col, 1.0);
+        #include <colorspace_fragment>
+      }
+    `
+  });
+  const dome = new THREE.Mesh(domeGeo, domeMat);
+  dome.name = 'Cosmos_Nebula_Dome';
+  dome.position.copy(COSMOS_CENTER);
+  dome.renderOrder = -10;
+  cosmosGroup.add(dome);
+  return domeMat;
+}
+
+/**
+ * Sculpt twilight-navy atmosphere, crisp rim silhouette for roof cat & cottage,
+ * and balanced storybook-in-nightlight illumination around B-612.
  */
 export function sculptB612TwilightLook({ b612HaloMat, b612MistMat, cosmosGroup }) {
   // 1. Twilight-navy atmospheric Fresnel halo hugging the planet limb
   if (b612HaloMat) {
-    b612HaloMat.uniforms.glowColor.value.setHex(0x21407a);
-    b612HaloMat.uniforms.opacity.value = 0.23;
+    b612HaloMat.uniforms.glowColor.value.setHex(0x285094);
+    b612HaloMat.uniforms.opacity.value = 0.28;
     b612HaloMat.fragmentShader = `
       varying vec3 vNormalView;
       varying vec3 vViewPos;
@@ -77,9 +185,9 @@ export function sculptB612TwilightLook({ b612HaloMat, b612MistMat, cosmosGroup }
       uniform vec3 glowColor;
       void main() {
         float ndv = abs(dot(normalize(vNormalView), normalize(vViewPos)));
-        float limb = pow(smoothstep(0.02, 0.50, ndv), 1.6) * pow(1.0 - smoothstep(0.50, 0.94, ndv), 1.5);
-        float distFade = exp(-pow(0.0085 * length(vViewPos), 2.0));
-        gl_FragColor = vec4(glowColor, limb * opacity * 0.52 * distFade);
+        float limb = pow(smoothstep(0.02, 0.48, ndv), 1.55) * pow(1.0 - smoothstep(0.48, 0.93, ndv), 1.45);
+        float distFade = exp(-pow(0.008 * length(vViewPos), 2.0));
+        gl_FragColor = vec4(glowColor, limb * opacity * 0.58 * distFade);
         #include <colorspace_fragment>
       }
     `;
@@ -88,25 +196,25 @@ export function sculptB612TwilightLook({ b612HaloMat, b612MistMat, cosmosGroup }
 
   // 2. Delicate misty orbiting stardust
   if (b612MistMat) {
-    b612MistMat.uniforms.opacity.value = 0.28;
+    b612MistMat.uniforms.opacity.value = 0.24;
   }
 
-  // The editable GLB now owns the surface pigments, windows and rose.
   if (cosmosGroup) {
-    const backRim = new THREE.DirectionalLight(0x5b82d6, 0.58);
-    backRim.position.set(3.5, 32.5, 10.0);
-    backRim.target.position.copy(B612_CENTER);
+    // Crisp cool twilight-indigo rim light to sculpt the roof black cat, rafters & tree silhouette
+    const backRim = new THREE.DirectionalLight(0x74a4f5, 1.25);
+    backRim.position.set(2.8, 34.5, 11.0);
+    backRim.target.position.copy(B612_CENTER).add(new THREE.Vector3(0, 1.6, 0));
     cosmosGroup.add(backRim);
     cosmosGroup.add(backRim.target);
 
-    // Subtle twilight-navy sky halo behind cottage ridge & B612_Cat for clear silhouette contrast
+    // Subtle twilight-navy sky aura behind cottage ridge & B612_Cat for effortless silhouette legibility
     const ridgeHaloMat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
       uniforms: {
-        uColor: { value: new THREE.Color(0x2a4f94) }
+        uColor: { value: new THREE.Color(0x3664b5) }
       },
       vertexShader: `
         varying vec2 vUv;
@@ -121,36 +229,39 @@ export function sculptB612TwilightLook({ b612HaloMat, b612MistMat, cosmosGroup }
         void main() {
           float d = length(vUv - vec2(0.5));
           if (d > 0.5) discard;
-          float a = exp(-d * d * 14.0) * smoothstep(0.5, 0.12, d) * 0.34;
+          float a = exp(-d * d * 12.5) * smoothstep(0.5, 0.12, d) * 0.36;
           gl_FragColor = vec4(uColor, a);
           #include <colorspace_fragment>
         }
       `
     });
-    const ridgeHalo = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 4.2), ridgeHaloMat);
-    ridgeHalo.position.set(-1.30, 31.35, 27.6);
+    const ridgeHalo = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 4.6), ridgeHaloMat);
+    ridgeHalo.position.set(-1.30, 31.55, 27.4);
     cosmosGroup.add(ridgeHalo);
 
-    const gardenKey = new THREE.PointLight(0xffe4bb, 41, 17, 1.8);
-    gardenKey.position.copy(B612_CENTER).add(new THREE.Vector3(-3.5, 6.5, 5.0));
+    // Balanced nocturnal diorama lighting (retains rich pigments while preserving starlit mood)
+    const gardenKey = new THREE.PointLight(0xffdfb0, 29, 17, 1.8);
+    gardenKey.position.copy(B612_CENTER).add(new THREE.Vector3(-3.4, 6.4, 5.2));
     cosmosGroup.add(gardenKey);
-    const gardenFill = new THREE.PointLight(0xa2c7df, 23, 16, 1.8);
-    gardenFill.position.copy(B612_CENTER).add(new THREE.Vector3(4, 2, 5));
+
+    const gardenFill = new THREE.PointLight(0x8bb8de, 16, 16, 1.8);
+    gardenFill.position.copy(B612_CENTER).add(new THREE.Vector3(4.2, 2.2, 5.0));
     cosmosGroup.add(gardenFill);
-    const cottageWarm = new THREE.PointLight(0xffa248, 0.17, 8.2, 1.7);
-    cottageWarm.position.set(-1.35, 30.75, 29.95);
+
+    const cottageWarm = new THREE.PointLight(0xffa445, 0.55, 7.8, 1.7);
+    cottageWarm.position.set(-1.35, 30.78, 30.05);
     cosmosGroup.add(cottageWarm);
 
-    const roseWarm = new THREE.PointLight(0xff8171, 0.13, 4.0, 1.8);
-    roseWarm.position.set(0.35, 30.18, 29.85);
+    const roseWarm = new THREE.PointLight(0xff7d6d, 0.38, 4.2, 1.8);
+    roseWarm.position.set(0.32, 30.22, 29.90);
     cosmosGroup.add(roseWarm);
   }
 }
 
 /**
  * Create the 6 scattered Photo Light-Frames (P—001 ~ P—006) in 3D cosmos space.
- * Distant (>20u): soft breathing star halo (reveal = 0).
- * Approaching (~20 -> 10u): smoothly condenses into clear 640px frame + gold border.
+ * Distant (>20u): razor-sharp astronomical jewel + ultra-fine gilded astrolabe ring (ZERO giant blurry blobs!).
+ * Approaching (~20 -> 10u): ring unfolds gracefully into clear 640px frame + hairline gold border.
  */
 export function createScatteredPhotoFrames(cosmosGroup, archiveData) {
   if (!cosmosGroup) return [];
@@ -171,8 +282,8 @@ export function createScatteredPhotoFrames(cosmosGroup, archiveData) {
     group.position.set(...spec.pos);
     cosmosGroup.add(group);
 
-    // 1. Breathing Star-Halo Billboard (visible when distant / uncondensed)
-    const haloGeo = new THREE.PlaneGeometry(1.55, 1.55);
+    // 1. Refined Crystalline Astronomical Star-Beacon (compact 0.78u quad, sharp pinpoint + hairline brass reticle)
+    const haloGeo = new THREE.PlaneGeometry(0.78, 0.78);
     const haloMat = new THREE.ShaderMaterial({
       transparent: true,
       depthWrite: false,
@@ -198,18 +309,33 @@ export function createScatteredPhotoFrames(cosmosGroup, archiveData) {
           vec2 p = vUv - vec2(0.5);
           float d = length(p);
           if (d > 0.49) discard;
-          float edgeMask = smoothstep(0.49, 0.10, d);
-          float breathe = 0.62 + 0.38 * sin(uTime * 1.45 + uPhase);
-          float core = exp(-d * d * 110.0);
-          float halo = exp(-d * d * 26.0) * 0.34;
-          float crossRay = max(
-            exp(-abs(p.x) * 44.0) * exp(-abs(p.y) * 11.0),
-            exp(-abs(p.y) * 44.0) * exp(-abs(p.x) * 11.0)
-          ) * 0.42;
-          float alpha = (core + halo + crossRay) * edgeMask * breathe * (1.0 - smoothstep(0.05, 0.85, uReveal));
-          if (alpha <= 0.004) discard;
-          vec3 col = mix(vec3(0.95, 0.68, 0.34), vec3(1.0, 0.94, 0.82), core);
-          gl_FragColor = vec4(col, clamp(alpha, 0.0, 0.88));
+
+          float breathe = 0.72 + 0.28 * sin(uTime * 1.25 + uPhase);
+          // Razor-sharp astronomical diamond star core
+          float core = exp(-d * d * 480.0);
+          float innerGlow = exp(-d * d * 78.0) * 0.22;
+
+          // Ultra-crisp 4-point optical diffraction needles
+          float spikeH = exp(-abs(p.y) * 105.0) * exp(-abs(p.x) * 9.5);
+          float spikeV = exp(-abs(p.x) * 105.0) * exp(-abs(p.y) * 9.5);
+          float spikes = (spikeH + spikeV) * 0.52;
+
+          // Subtle rotating hairline gilded astrolabe ring (r = 0.27)
+          float ang = atan(p.y, p.x) + uTime * 0.22 + uPhase;
+          float ringMask = exp(-pow((d - 0.27) * 110.0, 2.0));
+          float ringArc = 0.28 + 0.72 * smoothstep(-0.15, 0.75, sin(ang * 2.0));
+          float ring = ringMask * ringArc * 0.15;
+
+          float edgeFade = smoothstep(0.49, 0.34, d);
+          float vis = (1.0 - smoothstep(0.04, 0.78, uReveal));
+          float intensity = (core + innerGlow + spikes + ring) * edgeFade * breathe * vis;
+          if (intensity <= 0.004) discard;
+
+          vec3 starCol = mix(vec3(0.86, 0.72, 0.48), vec3(0.98, 0.96, 0.90), clamp(core * 1.4 + spikes * 0.4, 0.0, 1.0));
+          // Subtle pale cyan-silver tint on the diffraction tips for authentic optical refraction
+          starCol = mix(starCol, vec3(0.76, 0.88, 1.0), smoothstep(0.14, 0.38, d) * 0.35);
+
+          gl_FragColor = vec4(starCol, clamp(intensity, 0.0, 0.92));
           #include <colorspace_fragment>
         }
       `
@@ -261,10 +387,9 @@ export function createScatteredPhotoFrames(cosmosGroup, archiveData) {
           if (uReveal <= 0.005) discard;
 
           vec2 centered = vUv - vec2(0.5);
-          float rNorm = length(centered * vec2(1.0, 1.0));
+          float rNorm = length(centered);
           float grain = hash21(floor(vUv * vec2(68.0 * uAspect, 68.0)));
 
-          // Stardust condensation from center outward as uReveal rises 0 -> 1
           float iris = smoothstep(uReveal * 1.35 + 0.04, uReveal * 1.35 - 0.36, rNorm + (grain - 0.5) * 0.22 * (1.0 - uReveal));
           float padX = 0.022 / max(uAspect, 0.55);
           float padY = 0.022;
@@ -283,8 +408,7 @@ export function createScatteredPhotoFrames(cosmosGroup, archiveData) {
 
           vec2 innerUv = (vUv - vec2(padX, padY)) / vec2(1.0 - 2.0 * padX, 1.0 - 2.0 * padY);
           vec3 texCol = texture2D(uMap, clamp(innerUv, 0.0, 1.0)).rgb;
-          // Keep photographic highlights delicately below Bloom threshold 0.78
-          vec3 photoRgb = mix(vec3(0.95, 0.76, 0.45) * 0.55, texCol * 0.74, smoothstep(0.15, 0.92, uReveal));
+          vec3 photoRgb = mix(vec3(0.95, 0.76, 0.45) * 0.55, texCol * 0.76, smoothstep(0.15, 0.92, uReveal));
           float photoAlpha = iris * smoothstep(0.05, 0.88, uReveal);
           if (photoAlpha <= 0.004) discard;
           gl_FragColor = vec4(photoRgb, photoAlpha);
@@ -369,7 +493,6 @@ export function updateStarGuidePip(btn, camera, mode) {
   const cx = w * 0.5;
   const cy = h * 0.5;
 
-  // Inner viewport ellipse with >=68px center margin (>=44px outer hitbox margin for 48x48 btn)
   const rx = Math.max(40, cx - Math.min(72, w * 0.18));
   const ry = Math.max(40, cy - Math.min(86, h * 0.16));
 
@@ -401,7 +524,6 @@ export function updateStarGuidePip(btn, camera, mode) {
     return;
   }
 
-  // Clamp onto inner ellipse when off-center or far (>20u) so center 90%+ stays pure
   if (ellip > 1.0 || dist > 20.0 || inBehind) {
     const scale = 1.0 / Math.max(ellip, 0.0001);
     ox *= scale;

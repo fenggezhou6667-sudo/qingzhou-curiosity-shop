@@ -10,6 +10,9 @@ import {
   B612_WINDOW_WORLD,
   B612_LANDING_POS_DESKTOP,
   B612_LANDING_POS_PORTRAIT,
+  B612_PATH_POS_DESKTOP,
+  B612_PATH_POS_PORTRAIT,
+  B612_PATH_AIM,
   COSMOS_CENTER,
   COSMOS_R_MAX,
   COSMOS_R_HARD,
@@ -19,6 +22,7 @@ import {
   shortestAngleDelta,
   computeAimYawPitch,
   hideOrreryNodes,
+  createCosmosNebulaDome,
   sculptB612TwilightLook,
   createScatteredPhotoFrames,
   updatePhotoFrames,
@@ -355,7 +359,17 @@ let rimDirLight = null;
 let glbRoot = null;
 let cosmosGroup = null;
 let worldGroup = null;
+let loftGroup = null;
+let atlasGroup = null;
+let riverGroup = null;
 let pointerLight = null;
+let gltfLoader = null;
+const realmLoaded = { loft: false, atlas: false, river: false };
+const realmPromises = {};
+let activeRealmId = 'roam';
+let stationTransition = null;
+let lastRealmCrossMs = 0;
+
 const namedObjects = new Map();
 const materialsByName = new Map();
 const clickableRoots = [];
@@ -363,10 +377,16 @@ const cityBeaconMeshes = new Map();
 const riverBoats = [];
 const rippleRings = [];
 
+let nebulaDomeMat = null;
 let deepStarMat = null;
 let midDustMat = null;
 let b612MistMat = null;
 let b612HaloMat = null;
+let studyDustMat = null;
+let atlasCloudMat = null;
+let atlasOrbitalRing = null;
+const atlasRiverMats = [];
+let riverFirefliesMat = null;
 let waterShaderMat = null;
 let cascadePoints = null;
 let cascadeVelocities = [];
@@ -439,7 +459,7 @@ function makeStarTexture() {
   return new THREE.CanvasTexture(cvs);
 }
 
-/* ---------- Refined Multi-Scale Starfield & Planetary Shaders ---------- */
+/* ---------- Refined Multi-Scale Astronomical Starfield & Realm Atmospheres ---------- */
 function buildRefinedCosmosEffects() {
   cosmosGroup = new THREE.Group();
   cosmosGroup.name = 'QZ_Cosmos_Group';
@@ -449,20 +469,36 @@ function buildRefinedCosmosEffects() {
   worldGroup.name = 'QZ_Interior_World_Group';
   scene.add(worldGroup);
 
+  loftGroup = new THREE.Group();
+  loftGroup.name = 'QZ_Realm_Loft';
+  worldGroup.add(loftGroup);
+
+  atlasGroup = new THREE.Group();
+  atlasGroup.name = 'QZ_Realm_Atlas';
+  worldGroup.add(atlasGroup);
+
+  riverGroup = new THREE.Group();
+  riverGroup.name = 'QZ_Realm_River';
+  worldGroup.add(riverGroup);
+
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-  // 1. Deep 360-deg Crystal Starfield (fine 1.0px–2.2px dust + sparse twinkling cross-glint jewels)
-  const starCount = 5200;
+  // 0. Procedural Milky Way & Deep-Space Prussian-Indigo Nebula Sky Dome
+  nebulaDomeMat = createCosmosNebulaDome(cosmosGroup);
+
+  // 1. Astronomical Multi-Tier Starfield (6,200 power-law magnitude stars clustered along 32-deg Milky Way)
+  const starCount = 6200;
   const sPos = new Float32Array(starCount * 3);
   const sCol = new Float32Array(starCount * 3);
   const sSize = new Float32Array(starCount);
   const sPhase = new Float32Array(starCount);
+  const sHero = new Float32Array(starCount);
   const sPalette = [
-    new THREE.Color(0xdbe8ff),
-    new THREE.Color(0xfff1d6),
-    new THREE.Color(0xffd7a4),
-    new THREE.Color(0xb6d8ff),
-    new THREE.Color(0xa6f2e8)
+    new THREE.Color(0xc2dcff), // O/B sapphire-white
+    new THREE.Color(0xeaf2ff), // A crisp pearl
+    new THREE.Color(0xfff5e2), // F/G warm ivory
+    new THREE.Color(0xffdba8), // K soft amber
+    new THREE.Color(0xb8f0eb)  // faint mineral cyan-white
   ];
 
   let seed = 314159;
@@ -471,21 +507,40 @@ function buildRefinedCosmosEffects() {
     return seed / 4294967296;
   };
 
-  for (let i = 0; i < starCount; i++) {
-    const u = rand() * 2 - 1;
-    const phi = rand() * Math.PI * 2;
-    const s = Math.sqrt(Math.max(0, 1 - u * u));
-    const r = 95 + Math.pow(rand(), 0.75) * 125;
-    sPos[i * 3] = COSMOS_CENTER.x + r * s * Math.cos(phi);
-    sPos[i * 3 + 1] = COSMOS_CENTER.y + r * u;
-    sPos[i * 3 + 2] = COSMOS_CENTER.z + r * s * Math.sin(phi);
+  const cosTilt = Math.cos(-0.56);
+  const sinTilt = Math.sin(-0.56);
 
-    const isBright = i % 22 === 0;
-    sSize[i] = isBright ? (1.85 + rand() * 1.35) : (0.72 + Math.pow(rand(), 1.9) * 1.05);
+  for (let i = 0; i < starCount; i++) {
+    const inBand = i < starCount * 0.48;
+    const phi = rand() * Math.PI * 2;
+    let u;
+    if (inBand) {
+      // Gaussian-like concentration near galactic equator
+      u = ((rand() + rand() + rand()) / 3 - 0.5) * 0.62;
+    } else {
+      u = rand() * 2 - 1;
+    }
+    const s = Math.sqrt(Math.max(0, 1 - u * u));
+    const r = 110 + Math.pow(rand(), 0.72) * 125;
+    let lx = r * s * Math.cos(phi);
+    let ly = r * u;
+    const lz = r * s * Math.sin(phi);
+    // Tilt star band to align with CosmosNebulaDome Milky Way
+    const rx = lx * cosTilt - ly * sinTilt;
+    const ry = lx * sinTilt + ly * cosTilt;
+
+    sPos[i * 3] = COSMOS_CENTER.x + rx;
+    sPos[i * 3 + 1] = COSMOS_CENTER.y + ry;
+    sPos[i * 3 + 2] = COSMOS_CENTER.z + lz;
+
+    const mag = Math.pow(rand(), 2.8);
+    const isHero = i % 36 === 0 && mag > 0.18;
+    sHero[i] = isHero ? 1.0 : 0.0;
+    sSize[i] = isHero ? (2.45 + rand() * 1.65) : (0.76 + mag * 1.55);
     sPhase[i] = rand() * Math.PI * 2;
 
-    const c = sPalette[i % sPalette.length];
-    const lum = isBright ? (0.82 + rand() * 0.18) : (0.24 + rand() * 0.42);
+    const c = sPalette[Math.floor(rand() * sPalette.length)];
+    const lum = isHero ? (0.94 + rand() * 0.06) : (0.28 + mag * 0.72);
     sCol[i * 3] = c.r * lum;
     sCol[i * 3 + 1] = c.g * lum;
     sCol[i * 3 + 2] = c.b * lum;
@@ -496,6 +551,7 @@ function buildRefinedCosmosEffects() {
   deepGeo.setAttribute('color', new THREE.BufferAttribute(sCol, 3));
   deepGeo.setAttribute('aSize', new THREE.BufferAttribute(sSize, 1));
   deepGeo.setAttribute('aPhase', new THREE.BufferAttribute(sPhase, 1));
+  deepGeo.setAttribute('aHero', new THREE.BufferAttribute(sHero, 1));
 
   deepStarMat = new THREE.ShaderMaterial({
     fog: false,
@@ -507,29 +563,40 @@ function buildRefinedCosmosEffects() {
     vertexShader: `
       attribute float aSize;
       attribute float aPhase;
+      attribute float aHero;
       varying vec3 vColor;
       varying float vTw;
+      varying float vHero;
       uniform float scale;
       uniform float time;
       void main() {
         vColor = color;
-        vTw = 0.72 + 0.28 * sin(time * 2.1 + aPhase);
+        vHero = aHero;
+        vTw = 0.76 + 0.24 * sin(time * (1.4 + aHero * 0.9) + aPhase);
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = clamp(140.0 * aSize * scale / max(32.0, -mv.z), 1.0, 4.4);
+        float maxPt = aHero > 0.5 ? 6.5 : 2.6;
+        gl_PointSize = clamp(150.0 * aSize * scale / max(36.0, -mv.z), 0.9, maxPt);
         gl_Position = projectionMatrix * mv;
       }
     `,
     fragmentShader: `
       varying vec3 vColor;
       varying float vTw;
+      varying float vHero;
       uniform float opacity;
       void main() {
         vec2 p = gl_PointCoord - vec2(0.5);
         float d = length(p);
         if (d > 0.5) discard;
-        float core = exp(-d * d * 24.0);
-        float glint = max(exp(-abs(p.x) * 16.0) * exp(-abs(p.y) * 5.0), exp(-abs(p.y) * 16.0) * exp(-abs(p.x) * 5.0));
-        float a = clamp(core * 0.92 + glint * 0.35, 0.0, 1.0) * vTw * opacity;
+        float core = exp(-d * d * (vHero > 0.5 ? 58.0 : 32.0));
+        float glint = 0.0;
+        if (vHero > 0.5) {
+          glint = max(
+            exp(-abs(p.x) * 34.0) * exp(-abs(p.y) * 5.2),
+            exp(-abs(p.y) * 34.0) * exp(-abs(p.x) * 5.2)
+          ) * 0.52;
+        }
+        float a = clamp(core * 0.95 + glint, 0.0, 1.0) * vTw * opacity;
         gl_FragColor = vec4(vColor, a);
         #include <colorspace_fragment>
       }
@@ -537,8 +604,8 @@ function buildRefinedCosmosEffects() {
   });
   scene.add(new THREE.Points(deepGeo, deepStarMat));
 
-  // 1b. Mid-Space Drifting Parallax Embers inside cosmosGroup
-  const dustCount = 720;
+  // 1b. Mid-Space Drifting Parallax Micro-Stardust inside cosmosGroup
+  const dustCount = 580;
   const dPos = new Float32Array(dustCount * 3);
   const dCol = new Float32Array(dustCount * 3);
   const dSize = new Float32Array(dustCount);
@@ -547,14 +614,14 @@ function buildRefinedCosmosEffects() {
     const u = rand() * 2 - 1;
     const phi = rand() * Math.PI * 2;
     const s = Math.sqrt(Math.max(0, 1 - u * u));
-    const r = 10 + Math.pow(rand(), 0.7) * 44;
+    const r = 12 + Math.pow(rand(), 0.72) * 44;
     dPos[i * 3] = COSMOS_CENTER.x + r * s * Math.cos(phi);
-    dPos[i * 3 + 1] = COSMOS_CENTER.y + r * u * 0.78;
+    dPos[i * 3 + 1] = COSMOS_CENTER.y + r * u * 0.76;
     dPos[i * 3 + 2] = COSMOS_CENTER.z + r * s * Math.sin(phi);
-    dSize[i] = 0.75 + rand() * 1.15;
+    dSize[i] = 0.55 + rand() * 0.85;
     dPhase[i] = rand() * Math.PI * 2;
-    const c = i % 3 === 0 ? new THREE.Color(0x9bc8ff) : new THREE.Color(0xffd79c);
-    const l = 0.25 + rand() * 0.42;
+    const c = i % 3 === 0 ? new THREE.Color(0x9bc8ff) : new THREE.Color(0xffdfa6);
+    const l = 0.18 + rand() * 0.34;
     dCol[i * 3] = c.r * l;
     dCol[i * 3 + 1] = c.g * l;
     dCol[i * 3 + 2] = c.b * l;
@@ -569,7 +636,7 @@ function buildRefinedCosmosEffects() {
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     vertexColors: true,
-    uniforms: { scale: { value: dpr }, time: { value: 0 }, opacity: { value: 0.45 } },
+    uniforms: { scale: { value: dpr }, time: { value: 0 }, opacity: { value: 0.38 } },
     vertexShader: `
       attribute float aSize;
       attribute float aPhase;
@@ -579,10 +646,10 @@ function buildRefinedCosmosEffects() {
       uniform float time;
       void main() {
         vColor = color;
-        vTw = 0.6 + 0.4 * sin(time * 1.2 + aPhase);
-        vec3 p = position + vec3(sin(time * 0.18 + aPhase), cos(time * 0.14 + aPhase * 1.3), sin(time * 0.16 - aPhase)) * 0.28;
+        vTw = 0.62 + 0.38 * sin(time * 1.1 + aPhase);
+        vec3 p = position + vec3(sin(time * 0.16 + aPhase), cos(time * 0.13 + aPhase * 1.3), sin(time * 0.15 - aPhase)) * 0.24;
         vec4 mv = modelViewMatrix * vec4(p, 1.0);
-        gl_PointSize = clamp(24.0 * aSize * scale / max(5.0, -mv.z), 0.9, 3.8);
+        gl_PointSize = clamp(20.0 * aSize * scale / max(5.0, -mv.z), 0.8, 2.8);
         gl_Position = projectionMatrix * mv;
       }
     `,
@@ -593,7 +660,7 @@ function buildRefinedCosmosEffects() {
       void main() {
         float d = length(gl_PointCoord - vec2(0.5));
         if (d > 0.5) discard;
-        float a = exp(-d * d * 20.0) * vTw * opacity;
+        float a = exp(-d * d * 24.0) * vTw * opacity;
         gl_FragColor = vec4(vColor, a);
         #include <colorspace_fragment>
       }
@@ -601,22 +668,22 @@ function buildRefinedCosmosEffects() {
   });
   cosmosGroup.add(new THREE.Points(dustGeo, midDustMat));
 
-  // 2. B-612 Orbiting Golden Stardust Halo (2,200 fine warm motes)
-  const mCount = 2200;
+  // 2. B-612 Orbiting Golden Stardust Halo
+  const mCount = 1800;
   const mPos = new Float32Array(mCount * 3);
   const mCol = new Float32Array(mCount * 3);
   const mSize = new Float32Array(mCount);
   for (let i = 0; i < mCount; i++) {
-    const r = 3.2 + Math.pow(rand(), 0.7) * 12.5;
+    const r = 3.2 + Math.pow(rand(), 0.72) * 11.5;
     const th = rand() * Math.PI * 2;
-    const y = (rand() - 0.5) * (1.2 + r * 0.26);
+    const y = (rand() - 0.5) * (1.1 + r * 0.24);
     mPos[i * 3] = Math.cos(th) * r;
     mPos[i * 3 + 1] = y;
     mPos[i * 3 + 2] = Math.sin(th) * r;
-    mSize[i] = 0.65 + rand() * 1.1;
+    mSize[i] = 0.55 + rand() * 0.95;
     const warm = i % 3 !== 0;
     const col = warm ? new THREE.Color(0xffdfa2) : new THREE.Color(0x9bd4ff);
-    const l = 0.35 + rand() * 0.55;
+    const l = 0.28 + rand() * 0.48;
     mCol[i * 3] = col.r * l;
     mCol[i * 3 + 1] = col.g * l;
     mCol[i * 3 + 2] = col.b * l;
@@ -630,7 +697,7 @@ function buildRefinedCosmosEffects() {
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     vertexColors: true,
-    uniforms: { scale: { value: dpr }, time: { value: 0 }, opacity: { value: 0.88 } },
+    uniforms: { scale: { value: dpr }, time: { value: 0 }, opacity: { value: 0.78 } },
     vertexShader: `
       attribute float aSize;
       varying vec3 vColor;
@@ -640,8 +707,8 @@ function buildRefinedCosmosEffects() {
       void main() {
         vColor = color;
         vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        vTw = 0.78 + 0.22 * sin(time * 1.7 + position.x * 2.1 + position.z * 1.9);
-        gl_PointSize = clamp(18.0 * aSize * scale / max(4.0, -mv.z), 1.0, 3.4);
+        vTw = 0.78 + 0.22 * sin(time * 1.5 + position.x * 2.1 + position.z * 1.9);
+        gl_PointSize = clamp(16.0 * aSize * scale / max(4.0, -mv.z), 0.9, 2.8);
         gl_Position = projectionMatrix * mv;
       }
     `,
@@ -652,7 +719,7 @@ function buildRefinedCosmosEffects() {
       void main() {
         float d = length(gl_PointCoord - vec2(0.5));
         if (d > 0.5) discard;
-        float a = exp(-d * d * 20.0) * opacity * vTw;
+        float a = exp(-d * d * 22.0) * opacity * vTw;
         gl_FragColor = vec4(vColor, a);
         #include <colorspace_fragment>
       }
@@ -665,13 +732,13 @@ function buildRefinedCosmosEffects() {
   mistPts.name = 'B612_Stardust_Mist';
   cosmosGroup.add(mistPts);
 
-  // 3. Soft Fairytale Golden Fresnel Atmosphere Sphere around B-612
+  // 3. Twilight-Navy Atmospheric Fresnel Sphere around B-612
   b612HaloMat = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
     side: THREE.BackSide,
     blending: THREE.AdditiveBlending,
-    uniforms: { opacity: { value: 0.78 }, glowColor: { value: new THREE.Color(0xffcb78) } },
+    uniforms: { opacity: { value: 0.28 }, glowColor: { value: new THREE.Color(0x285094) } },
     vertexShader: `
       varying vec3 vNormalView;
       varying vec3 vViewPos;
@@ -699,70 +766,199 @@ function buildRefinedCosmosEffects() {
   haloMesh.position.copy(b612Center);
   cosmosGroup.add(haloMesh);
 
-  // 4. Waterfall Cascade Sparks & Night River Fireflies in worldGroup
-  const wCount = 720;
-  const wPos = new Float32Array(wCount * 3);
-  const wCol = new Float32Array(wCount * 3);
-  cascadeVelocities = [];
-  for (let i = 0; i < wCount; i++) {
-    const isCascade = i < 360;
-    let x, y, z;
-    if (isCascade) {
-      const east = i % 2 === 1;
-      const p0x = east ? 8.1 : 5.4, p1x = east ? 2.2 : -1.8;
-      const p0z = east ? -42.2 : -44.2, p1z = -62.5;
-      const prog = rand();
-      x = p0x + (p1x - p0x) * prog + (rand() - 0.5) * 0.8;
-      y = 1.58 - 8.06 * Math.pow(prog, 1.45);
-      z = p0z + (p1z - p0z) * (0.75 * prog + 0.25 * prog * prog);
-      cascadeVelocities.push({ isCascade: true, prog, p0x, p1x, p0z, p1z, speed: 0.22 + rand() * 0.25, xOff: (rand() - 0.5) * 0.7 });
-    } else {
-      x = (rand() - 0.5) * 17;
-      y = -6.1 + rand() * 7.8;
-      z = -62 - rand() * 34;
-      cascadeVelocities.push({ isCascade: false, phase: rand() * Math.PI * 2, baseX: x, baseY: y, baseZ: z });
-    }
-    wPos[i * 3] = x;
-    wPos[i * 3 + 1] = y;
-    wPos[i * 3 + 2] = z;
-    const c = isCascade ? new THREE.Color(0x6df6e4) : new THREE.Color(0xffd280);
-    wCol[i * 3] = c.r;
-    wCol[i * 3 + 1] = c.g;
-    wCol[i * 3 + 2] = c.b;
+  // 4. Loft Realm Atmosphere: Floating Warm Golden Dust Motes + Serene Moonlit Cloud Window Backdrop
+  const dustLoftCount = 260;
+  const ldPos = new Float32Array(dustLoftCount * 3);
+  const ldPhase = new Float32Array(dustLoftCount);
+  for (let i = 0; i < dustLoftCount; i++) {
+    ldPos[i * 3] = -8.2 + rand() * 16.4;
+    ldPos[i * 3 + 1] = 8.4 + rand() * 4.8;
+    ldPos[i * 3 + 2] = -12.8 + rand() * 10.6;
+    ldPhase[i] = rand() * Math.PI * 2;
   }
-  const wGeo = new THREE.BufferGeometry();
-  wGeo.setAttribute('position', new THREE.BufferAttribute(wPos, 3));
-  wGeo.setAttribute('color', new THREE.BufferAttribute(wCol, 3));
-  const wMat = new THREE.ShaderMaterial({
+  const ldGeo = new THREE.BufferGeometry();
+  ldGeo.setAttribute('position', new THREE.BufferAttribute(ldPos, 3));
+  ldGeo.setAttribute('aPhase', new THREE.BufferAttribute(ldPhase, 1));
+  studyDustMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: { time: { value: 0 }, scale: { value: dpr } },
+    vertexShader: `
+      attribute float aPhase;
+      varying float vAlpha;
+      uniform float time;
+      uniform float scale;
+      void main() {
+        vec3 p = position;
+        p.x += sin(time * 0.28 + aPhase) * 0.22;
+        p.y += sin(time * 0.22 + aPhase * 1.4) * 0.18;
+        p.z += cos(time * 0.24 - aPhase) * 0.18;
+        vAlpha = 0.25 + 0.35 * (0.5 + 0.5 * sin(time * 1.2 + aPhase * 2.0));
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_PointSize = clamp(16.0 * scale / max(2.2, -mv.z), 1.0, 3.2);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      varying float vAlpha;
+      void main() {
+        float d = length(gl_PointCoord - vec2(0.5));
+        if (d > 0.5) discard;
+        float a = exp(-d * d * 20.0) * vAlpha;
+        gl_FragColor = vec4(vec3(1.0, 0.85, 0.56), a);
+        #include <colorspace_fragment>
+      }
+    `
+  });
+  loftGroup.add(new THREE.Points(ldGeo, studyDustMat));
+
+  // Moonlit nocturnal indigo-cloud window vista behind Window_Sash_L/R (so ZERO China map leaks through!)
+  const winBgMat = new THREE.ShaderMaterial({
+    depthWrite: false,
+    fog: false,
+    uniforms: { uTime: { value: 0 } },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec2 vUv;
+      void main() {
+        vec3 top = vec3(0.015, 0.035, 0.075);
+        vec3 mid = vec3(0.042, 0.095, 0.155);
+        vec3 mist = vec3(0.11, 0.22, 0.28);
+        vec3 col = mix(mist, mix(mid, top, smoothstep(0.35, 0.95, vUv.y)), smoothstep(0.0, 0.55, vUv.y));
+        // Soft crescent moon halo in upper-left window sky
+        float md = length(vUv - vec2(0.38, 0.68));
+        col += vec3(0.65, 0.82, 0.96) * exp(-md * md * 28.0) * 0.32;
+        col += vec3(0.95, 0.96, 0.92) * smoothstep(0.042, 0.028, md) * 0.72;
+        gl_FragColor = vec4(col, 1.0);
+        #include <colorspace_fragment>
+      }
+    `
+  });
+  const winBg = new THREE.Mesh(new THREE.PlaneGeometry(34, 22), winBgMat);
+  winBg.position.set(0, 10.8, -28.0);
+  loftGroup.add(winBg);
+
+  // 5. Atlas Realm Atmosphere: Layered Drifting Song-Dynasty Mountain Cloud Mist (山岚云雾)
+  atlasCloudMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    uniforms: { uTime: { value: 0 } },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      varying vec2 vUv;
+      float hash21(vec2 p) {
+        p = fract(p * vec2(123.34, 456.21));
+        p += dot(p, p + 45.32);
+        return fract(p.x * p.y);
+      }
+      float n2(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(
+          mix(hash21(i), hash21(i + vec2(1.0, 0.0)), f.x),
+          mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), f.x),
+          f.y
+        );
+      }
+      void main() {
+        vec2 c = vUv - vec2(0.5);
+        float r = length(c * vec2(1.0, 1.25));
+        float radial = smoothstep(0.52, 0.14, r);
+        vec2 uv1 = vUv * vec2(5.2, 3.8) + vec2(uTime * 0.014, -uTime * 0.006);
+        vec2 uv2 = vUv * vec2(9.5, 7.2) + vec2(-uTime * 0.010, uTime * 0.008);
+        float cloud = n2(uv1) * 0.65 + n2(uv2) * 0.35;
+        float wisps = smoothstep(0.50, 0.84, cloud) * radial;
+        // Keep central eastern corridor clean for city labels while draping ridges softly
+        float a = wisps * 0.22;
+        if (a < 0.005) discard;
+        vec3 col = mix(vec3(0.54, 0.82, 0.80), vec3(0.92, 0.90, 0.84), smoothstep(0.55, 0.88, cloud));
+        gl_FragColor = vec4(col, a);
+        #include <colorspace_fragment>
+      }
+    `
+  });
+  const cloudPlane = new THREE.Mesh(new THREE.PlaneGeometry(31, 24), atlasCloudMat);
+  cloudPlane.rotation.x = -Math.PI / 2;
+  cloudPlane.position.set(0.0, 2.38, -41.5);
+  atlasGroup.add(cloudPlane);
+
+  // 6. River Realm Atmosphere: Warm Drifting Night-Canal Fireflies
+  const fCount = 340;
+  const fPos = new Float32Array(fCount * 3);
+  const fCol = new Float32Array(fCount * 3);
+  const fPhase = new Float32Array(fCount);
+  cascadeVelocities = [];
+  for (let i = 0; i < fCount; i++) {
+    const x = (rand() - 0.5) * 16.5;
+    const y = -6.0 + rand() * 7.2;
+    const z = -62 - rand() * 44;
+    fPos[i * 3] = x;
+    fPos[i * 3 + 1] = y;
+    fPos[i * 3 + 2] = z;
+    fPhase[i] = rand() * Math.PI * 2;
+    const c = i % 5 === 0 ? new THREE.Color(0x7ef2dc) : new THREE.Color(0xffd280);
+    fCol[i * 3] = c.r;
+    fCol[i * 3 + 1] = c.g;
+    fCol[i * 3 + 2] = c.b;
+  }
+  const fGeo = new THREE.BufferGeometry();
+  fGeo.setAttribute('position', new THREE.BufferAttribute(fPos, 3));
+  fGeo.setAttribute('color', new THREE.BufferAttribute(fCol, 3));
+  fGeo.setAttribute('aPhase', new THREE.BufferAttribute(fPhase, 1));
+  riverFirefliesMat = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     vertexColors: true,
-    uniforms: { scale: { value: dpr }, opacity: { value: 0.86 } },
+    uniforms: { scale: { value: dpr }, time: { value: 0 }, opacity: { value: 0.82 } },
     vertexShader: `
+      attribute float aPhase;
       varying vec3 vColor;
+      varying float vTw;
       uniform float scale;
+      uniform float time;
       void main() {
         vColor = color;
-        vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = clamp(24.0 * scale / max(4.0, -mv.z), 1.2, 4.4);
+        vec3 p = position;
+        p.x += sin(time * 0.45 + aPhase) * 0.32;
+        p.y += sin(time * 0.65 + aPhase * 1.4) * 0.28;
+        vTw = 0.42 + 0.58 * (0.5 + 0.5 * sin(time * 2.1 + aPhase * 3.0));
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_PointSize = clamp(24.0 * scale / max(4.0, -mv.z), 1.1, 4.2);
         gl_Position = projectionMatrix * mv;
       }
     `,
     fragmentShader: `
       varying vec3 vColor;
+      varying float vTw;
       uniform float opacity;
       void main() {
         float d = length(gl_PointCoord - vec2(0.5));
         if (d > 0.5) discard;
-        float a = exp(-d * d * 18.0) * opacity;
+        float a = exp(-d * d * 20.0) * vTw * opacity;
         gl_FragColor = vec4(vColor, a);
         #include <colorspace_fragment>
       }
     `
   });
-  cascadePoints = new THREE.Points(wGeo, wMat);
-  worldGroup.add(cascadePoints);
+  cascadePoints = new THREE.Points(fGeo, riverFirefliesMat);
+  riverGroup.add(cascadePoints);
 }
 
 /* ---------- High-Res Procedural CanvasTexture Generators ---------- */
@@ -1489,14 +1685,14 @@ function buildProceduralEnvMap() {
 }
 
 function addContactShadowDecals() {
-  if (!worldGroup) return;
+  if (!loftGroup) return;
   const cvs = document.createElement('canvas');
   cvs.width = 256;
   cvs.height = 256;
   const ctx = cvs.getContext('2d');
   const grad = ctx.createRadialGradient(128, 128, 16, 128, 128, 124);
-  grad.addColorStop(0.0, 'rgba(6, 10, 15, 0.56)');
-  grad.addColorStop(0.45, 'rgba(8, 12, 18, 0.30)');
+  grad.addColorStop(0.0, 'rgba(6, 10, 15, 0.54)');
+  grad.addColorStop(0.45, 'rgba(8, 12, 18, 0.28)');
   grad.addColorStop(0.80, 'rgba(10, 14, 20, 0.08)');
   grad.addColorStop(1.0, 'rgba(10, 14, 20, 0.0)');
   ctx.fillStyle = grad;
@@ -1514,37 +1710,99 @@ function addContactShadowDecals() {
 
   // Desk props contact shadows on Long_Desk_Table top (y = 8.404)
   const deskShadows = [
-    [-3.65, 8.404, -5.85, 2.55, 1.85],   // Book_Moyan
+    [-3.65, 8.404, -5.85, 2.75, 1.98],   // Book_Moyan
     [-5.35, 8.404, -6.25, 1.18, 0.90],   // Study_Inkstone
-    [-4.80, 8.404, -5.53, 0.45, 0.80],   // Brush rest
+    [-4.80, 8.404, -5.53, 0.48, 0.82],   // Brush rest
     [-2.05, 8.404, -5.25, 0.52, 0.52],   // ZhuSha_Seal_Block
     [-1.53, 8.404, -5.47, 0.62, 0.62],   // Seal paste box
-    [-2.37, 8.404, -6.50, 0.64, 0.64],   // Celadon teacup
+    [-2.37, 8.404, -6.50, 0.66, 0.66],   // Celadon teacup
+    [-6.25, 8.404, -6.85, 0.92, 0.92],   // Study Reading Lamp
     [0.15,  8.404, -5.90, 1.32, 1.22],   // Loft_Compass_Tray
-    [5.85,  8.404, -6.65, 1.05, 1.05],   // Lab_Desk_Lamp
-    [4.05,  8.404, -6.20, 2.25, 1.52],   // Herbarium_Specimen_Box
-    [2.25,  8.404, -5.05, 1.24, 0.92],   // Lab_Plate_0
-    [4.05,  8.404, -4.90, 1.24, 0.92],   // Lab_Plate_1
-    [5.80,  8.404, -5.12, 1.24, 0.92]    // Lab_Plate_2
+    [5.85,  8.404, -6.65, 1.12, 1.12],   // Lab_Desk_Lamp
+    [4.05,  8.404, -6.20, 2.35, 1.56],   // Herbarium_Specimen_Box
+    [2.25,  8.404, -5.05, 1.28, 0.96],   // Lab_Plate_0
+    [4.05,  8.404, -4.90, 1.28, 0.96],   // Lab_Plate_1
+    [5.80,  8.404, -5.12, 1.28, 0.96]    // Lab_Plate_2
   ];
   for (const [sx, sy, sz, w, d] of deskShadows) {
     const geo = new THREE.PlaneGeometry(w, d);
     geo.rotateX(-Math.PI / 2);
     const m = new THREE.Mesh(geo, shadowMat);
     m.position.set(sx, sy, sz);
-    worldGroup.add(m);
+    loftGroup.add(m);
   }
-
-
 }
 
-/* ---------- GLSL Night River Reflection & Ripple Shader ---------- */
+/* ---------- GLSL Flowing Liquid-Gold & Jade Rivers for China Atlas ---------- */
+function upgradeAtlasRiverShaders() {
+  atlasRiverMats.length = 0;
+  const riverNames = [
+    ['River_Spline_Yangtze', true, 0.0],
+    ['River_Spline_Yellow', true, 1.6],
+    ['River_Spline_Xijiang', true, 3.1],
+    ['River_Spline_3', false, 0.8],
+    ['River_Spline_4', false, 2.2],
+    ['River_Spline_5', false, 3.8],
+    ['River_Spline_6', false, 4.7]
+  ];
+  for (const [rName, isMain, phase] of riverNames) {
+    const obj = namedObjects.get(rName);
+    if (!obj) continue;
+    const mat = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      uniforms: {
+        uTime: { value: 0 },
+        uPhase: { value: phase },
+        uIsMain: { value: isMain ? 1.0 : 0.0 }
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        uniform float uPhase;
+        uniform float uIsMain;
+        varying vec2 vUv;
+        void main() {
+          float edge = 1.0 - abs(vUv.y * 2.0 - 1.0);
+          float bankMask = smoothstep(0.0, 0.42, edge);
+          // Flowing luminous pulses moving source (u=0) -> estuary (u=1)
+          float flow1 = 0.5 + 0.5 * sin(vUv.x * 26.0 - uTime * 2.4 + uPhase);
+          float flow2 = 0.5 + 0.5 * sin(vUv.x * 11.0 - uTime * 1.15 - uPhase * 0.7);
+          float pulse = pow(flow1, 2.4) * 0.65 + flow2 * 0.35;
+          vec3 jade = vec3(0.30, 0.90, 0.80);
+          vec3 gold = vec3(1.0, 0.84, 0.48);
+          vec3 col = mix(jade, gold, pulse * (0.42 + 0.30 * uIsMain));
+          float lum = (0.72 + 0.62 * pulse) * (uIsMain > 0.5 ? 1.05 : 0.78);
+          float alpha = bankMask * (0.72 + 0.25 * uIsMain);
+          gl_FragColor = vec4(col * lum, alpha);
+          #include <colorspace_fragment>
+        }
+      `
+    });
+    obj.traverse((child) => {
+      if (child.isMesh) {
+        child.material = mat;
+        child.renderOrder = 2;
+      }
+    });
+    atlasRiverMats.push(mat);
+  }
+}
+
+/* ---------- GLSL Night River Mirror Reflection & Ripple Shader ---------- */
 function upgradeRiverBedShader() {
   const riverObj = namedObjects.get('River_Bed');
   if (!riverObj) return;
   const boatUniforms = Array.from({ length: 6 }, (_, i) => {
     const b = riverBoats[i];
-    return b ? new THREE.Vector3(b.obj.position.x, b.obj.position.y, b.obj.position.z - 1.1) : new THREE.Vector3(0, -6.5, -75);
+    return b ? new THREE.Vector3(b.obj.position.x, b.obj.position.y, b.obj.position.z + 1.35) : new THREE.Vector3(0, -6.5, -75);
   });
 
   waterShaderMat = new THREE.ShaderMaterial({
@@ -1566,39 +1824,63 @@ function upgradeRiverBedShader() {
       varying vec3 vWorldPos;
       void main() {
         vec2 p = vWorldPos.xz;
-        float w1 = sin(p.x * 2.1 + uTime * 1.45) * cos(p.y * 1.7 - uTime * 1.25);
-        float w2 = sin((p.x * 0.8 + p.y * 1.3) * 3.4 - uTime * 2.1) * 0.5;
-        float wave = (w1 + w2) * 0.5;
+        float w1 = sin(p.x * 2.2 + uTime * 1.35) * cos(p.y * 1.8 - uTime * 1.15);
+        float w2 = sin((p.x * 0.85 + p.y * 1.45) * 3.6 - uTime * 2.05) * 0.5;
+        float w3 = cos((p.x * 1.9 - p.y * 1.1) * 5.2 + uTime * 2.6) * 0.25;
+        float wave = (w1 + w2 + w3) * 0.45;
 
-        float bankDark = 1.0 - smoothstep(4.5, 11.5, abs(p.x)) * 0.45;
-        vec3 baseCol = mix(vec3(0.015, 0.042, 0.068), vec3(0.036, 0.095, 0.128), 0.5 + 0.5 * wave) * bankDark;
+        float bankDark = 1.0 - smoothstep(4.2, 8.6, abs(p.x)) * 0.55;
+        float distFog = smoothstep(-62.0, -118.0, p.y);
+        vec3 nearWater = mix(vec3(0.012, 0.032, 0.056), vec3(0.028, 0.072, 0.104), 0.5 + 0.5 * wave);
+        vec3 baseCol = nearWater * bankDark;
 
-        // Jade waterfall inflow glow around z = -62.5
-        float cascadeDist = length((p - vec2(0.2, -62.5)) * vec2(0.42, 0.35));
-        baseCol += vec3(0.14, 0.56, 0.52) * exp(-cascadeDist * cascadeDist * 0.45) * 0.55;
+        // Soft silver moonlight reflection trail down center of canal
+        float moonX = abs(p.x - 0.6 + wave * 0.42);
+        float moonTrail = exp(-moonX * moonX * 0.16) * smoothstep(-62.0, -98.0, p.y) * (0.72 + 0.28 * sin(p.y * 3.8 + uTime * 2.2));
+        baseCol += vec3(0.24, 0.42, 0.54) * moonTrail * 0.34;
 
-        // Golden swaying lantern reflection columns from 6 boats
         vec3 refl = vec3(0.0);
+
+        // Foreground eave palace lantern warm reflection at (-3.05, -70.7)
+        {
+          float edx = abs(p.x + 3.05 + wave * 0.22);
+          float edz = p.y + 70.7;
+          float eCore = exp(-(edx * edx) / 0.36) * exp(-(edz * edz) / 14.0);
+          float eShim = 0.68 + 0.32 * sin(p.y * 5.8 + uTime * 3.2 + wave * 2.0);
+          refl += vec3(1.0, 0.66, 0.24) * eCore * eShim * 0.72;
+        }
+
+        // Stone arch bridge twin lanterns reflection around z = -91.5, x = +-2.4
+        for (int bIdx = -1; bIdx <= 1; bIdx += 2) {
+          float bdx = abs(p.x - float(bIdx) * 2.4 + wave * 0.26);
+          float bdz = p.y + 91.5;
+          float bCore = exp(-(bdx * bdx) / 0.42) * exp(-(bdz * bdz) / 18.0);
+          refl += vec3(1.0, 0.72, 0.30) * bCore * 0.48;
+        }
+
+        // Golden swaying lantern reflection columns from 6 Wupeng boats
         for (int i = 0; i < 6; i++) {
           vec2 b = uBoats[i].xz;
           float dx = abs(p.x - b.x + wave * 0.24);
           float dz = p.y - b.y;
-          float spread = 0.26 + 0.08 * abs(dz);
-          float core = exp(-(dx * dx) / (spread * spread)) * exp(-(dz * dz) / 7.5);
-          float shimmer = 0.62 + 0.38 * sin(p.y * 6.5 + uTime * 3.8 + float(i) * 1.7 + wave * 2.5);
-          refl += vec3(1.0, 0.68, 0.24) * core * shimmer * 0.92;
+          float spread = 0.24 + 0.075 * abs(dz);
+          float core = exp(-(dx * dx) / (spread * spread)) * exp(-(dz * dz) / 8.2);
+          float shimmer = 0.62 + 0.38 * sin(p.y * 6.8 + uTime * 3.6 + float(i) * 1.7 + wave * 2.6);
+          refl += vec3(1.0, 0.68, 0.25) * core * shimmer * 0.96;
         }
 
-        // Quayside canal house warm window shimmer near x = +-7.6
-        for (int k = 0; k < 4; k++) {
-          float wz = -67.0 - float(k) * 9.5;
+        // Quayside Huizhou house warm lattice window shimmer along both banks (x = +-7.3)
+        for (int k = 0; k < 6; k++) {
+          float wz = -66.5 - float(k) * 7.2;
           float dzl = abs(p.y - wz);
-          float dxl = abs(abs(p.x) - 7.6 + wave * 0.16);
-          float wRef = exp(-dxl * dxl * 0.85) * exp(-dzl * dzl * 0.22);
-          refl += vec3(0.95, 0.58, 0.20) * wRef * 0.38;
+          float dxl = abs(abs(p.x) - 7.1 + wave * 0.18);
+          float wRef = exp(-dxl * dxl * 0.65) * exp(-dzl * dzl * 0.24);
+          float wShim = 0.70 + 0.30 * sin(p.y * 5.2 + uTime * 2.8 + float(k));
+          refl += vec3(0.96, 0.56, 0.18) * wRef * wShim * 0.42;
         }
 
-        vec3 finalCol = baseCol + refl;
+        vec3 fogCol = vec3(0.022, 0.052, 0.082);
+        vec3 finalCol = mix(baseCol + refl, fogCol, distFog * 0.78);
         gl_FragColor = vec4(finalCol, 1.0);
         #include <colorspace_fragment>
       }
@@ -1613,7 +1895,6 @@ function upgradeRiverBedShader() {
 }
 
 function setupLighting() {
-  // Chiaroscuro balance: sculpted twilight in roam mode, warm pools in station interior
   hemiLight = new THREE.HemisphereLight(0xcfe0ff, 0x16221e, 0.52);
   scene.add(hemiLight);
 
@@ -1628,50 +1909,121 @@ function setupLighting() {
   rimDirLight.position.set(16, 18, -56);
   scene.add(rimDirLight);
 
-  const addBeaconLight = (color, intensity, distance, x, y, z) => {
-    const pt = new THREE.PointLight(color, intensity, distance, 1.35);
+  const addRealmLight = (group, color, intensity, distance, x, y, z, decay = 1.45) => {
+    const pt = new THREE.PointLight(color, intensity, distance, decay);
     pt.position.set(x, y, z);
-    worldGroup.add(pt);
+    group.add(pt);
     return pt;
   };
-  addBeaconLight(0xffca82, 1.45, 18, -3.65, 10.6, -5.85); // Zone 2 Study Book_Moyan
-  addBeaconLight(0xffb662, 1.85, 18, 5.2, 10.2, -6.2);    // Zone 3 Lab Desk Lamp
-  addBeaconLight(0x80f2dc, 2.2, 42, 0.0, 12.2, -42.0);   // Zone 4 China Topo
-  addBeaconLight(0xffb45a, 2.5, 36, -3.5, -2.2, -74.0);  // Zone 5 River Eave Lantern
-  addBeaconLight(0xffcb78, 2.1, 36, 0.0, -2.5, -86.0);   // Zone 5 Arched Bridge & Canal
 
-  pointerLight = new THREE.PointLight(0xffecc2, 0.75, 16, 1.6);
-  worldGroup.add(pointerLight);
+  // Loft Sanctuary Lights (warm amber reading pools + cool moonlight window wash, balanced for crisp calligraphy)
+  addRealmLight(loftGroup, 0xffc678, 4.4, 15, -4.7, 10.4, -6.2, 1.6);    // Study Book & Silk Lamp
+  addRealmLight(loftGroup, 0xffd28e, 2.4, 12, -2.0, 10.7, -5.2, 1.6);    // Seal & Teacup rim
+  addRealmLight(loftGroup, 0x7ef0cf, 3.2, 14, 5.4, 10.4, -6.2, 1.55);    // Lab Emerald Banker's Lamp
+  addRealmLight(loftGroup, 0xffcc84, 3.8, 14, 3.8, 10.5, -5.2, 1.6);     // Herbarium & Blueprints
+  addRealmLight(loftGroup, 0x6ea4de, 4.6, 22, 0.0, 11.5, -15.2, 1.4);    // Moonlight through lattice window
+
+  // Song-Dynasty China Atlas Lights (sculpting ridged jade topography & gold rims)
+  addRealmLight(atlasGroup, 0xffdfa8, 18.0, 42, -9.5, 14.5, -31.0, 1.35);  // Warm mineral key light
+  addRealmLight(atlasGroup, 0x5eead4, 15.0, 44, 10.5, 12.0, -48.0, 1.35);  // Cool celadon rim light
+  addRealmLight(atlasGroup, 0xffca7a, 8.5, 28, 6.5, 6.2, -39.5, 1.5);      // Yangtze estuary glow
+
+  // Jiangnan Night River Lights (warm palace lantern + bridge lanterns + moonlit canal haze)
+  addRealmLight(riverGroup, 0xffb352, 22.0, 26, -3.05, -3.5, -70.7, 1.55); // Foreground Eave Palace Lantern
+  addRealmLight(riverGroup, 0xffc46b, 14.0, 32, 0.0, -1.8, -88.5, 1.45);   // Stone Arch Bridge glow
+  addRealmLight(riverGroup, 0xffbe68, 9.5, 22, 4.5, -3.2, -74.0, 1.5);     // Right bank warm windows
+  addRealmLight(riverGroup, 0x6ba8d8, 10.0, 46, 0.0, 8.0, -96.0, 1.35);    // Distant river moonlight mist
+
+  pointerLight = new THREE.PointLight(0xffecc2, 1.1, 16, 1.6);
+  loftGroup.add(pointerLight);
 }
 
-function applyLightingMode(mode) {
-  if (!hemiLight || !ambientLight || !moonDirLight || !rimDirLight) return;
-  if (mode === 'roam') {
+function getRealmIdByT(t) {
+  if (state.mode === 'roam' || t < 0.23) return 'roam';
+  if (t < 0.64) return 'loft';
+  if (t < 0.87) return 'atlas';
+  return 'river';
+}
+
+function applyRealmAtmosphere(realmId) {
+  if (!hemiLight || !ambientLight || !moonDirLight || !rimDirLight || !scene) return;
+  activeRealmId = realmId;
+  if (realmId === 'roam') {
+    scene.background.setHex(0x030712);
+    if (scene.fog) { scene.fog.color.setHex(0x030712); scene.fog.density = 0.0052; }
     hemiLight.color.setHex(0x3a568e);
     hemiLight.groundColor.setHex(0x060912);
     hemiLight.intensity = 0.22;
     ambientLight.intensity = 0.08;
+    moonDirLight.color.setHex(0xfff0d2);
     moonDirLight.intensity = 0.14;
+    rimDirLight.color.setHex(0x76e8d6);
     rimDirLight.intensity = 0.08;
-    if (scene) scene.environmentIntensity = 0.26;
-    if (scene?.fog) scene.fog.density = 0.0085;
-    if (bloomPass) {
+    scene.environmentIntensity = 0.26;
+    if (bloomPass && !matchCutState && !stationTransition) {
       bloomPass.strength = BASE_BLOOM_STRENGTH;
       bloomPass.threshold = BASE_BLOOM_THRESHOLD;
     }
+  } else if (realmId === 'loft') {
+    scene.background.setHex(0x080e18);
+    if (scene.fog) { scene.fog.color.setHex(0x0a121d); scene.fog.density = 0.015; }
+    hemiLight.color.setHex(0xd8c9b0);
+    hemiLight.groundColor.setHex(0x1f140d);
+    hemiLight.intensity = 0.56;
+    ambientLight.intensity = 0.22;
+    moonDirLight.color.setHex(0xffe5bd);
+    moonDirLight.position.set(-10, 26, 14);
+    moonDirLight.intensity = 0.92;
+    rimDirLight.color.setHex(0x7bb4e8);
+    rimDirLight.position.set(4, 16, -24);
+    rimDirLight.intensity = 0.42;
+    scene.environmentIntensity = 0.72;
+    if (bloomPass && !matchCutState && !stationTransition) {
+      bloomPass.strength = 0.26;
+      bloomPass.threshold = 0.84;
+    }
+  } else if (realmId === 'atlas') {
+    scene.background.setHex(0x040f17);
+    if (scene.fog) { scene.fog.color.setHex(0x05131c); scene.fog.density = 0.011; }
+    hemiLight.color.setHex(0x9ce2d8);
+    hemiLight.groundColor.setHex(0x0b1d24);
+    hemiLight.intensity = 0.62;
+    ambientLight.intensity = 0.24;
+    moonDirLight.color.setHex(0xfff1d4);
+    moonDirLight.position.set(-16, 28, -22);
+    moonDirLight.intensity = 1.38;
+    rimDirLight.color.setHex(0x52d6c4);
+    rimDirLight.position.set(18, 14, -62);
+    rimDirLight.intensity = 0.82;
+    scene.environmentIntensity = 0.88;
+    if (bloomPass && !matchCutState && !stationTransition) {
+      bloomPass.strength = 0.34;
+      bloomPass.threshold = 0.82;
+    }
   } else {
-    hemiLight.color.setHex(0xcfe0ff);
-    hemiLight.groundColor.setHex(0x16221e);
-    hemiLight.intensity = 0.46;
-    ambientLight.intensity = 0.20;
-    moonDirLight.intensity = 0.88;
-    rimDirLight.intensity = 0.50;
-    if (scene) scene.environmentIntensity = 0.76;
-    if (bloomPass) {
-      bloomPass.strength = STATION_BLOOM_STRENGTH;
-      bloomPass.threshold = STATION_BLOOM_THRESHOLD;
+    // river
+    scene.background.setHex(0x050e17);
+    if (scene.fog) { scene.fog.color.setHex(0x06131f); scene.fog.density = 0.0165; }
+    hemiLight.color.setHex(0x88b0d8);
+    hemiLight.groundColor.setHex(0x161410);
+    hemiLight.intensity = 0.48;
+    ambientLight.intensity = 0.18;
+    moonDirLight.color.setHex(0xdbe8ff);
+    moonDirLight.position.set(12, 26, -54);
+    moonDirLight.intensity = 0.68;
+    rimDirLight.color.setHex(0xffc978);
+    rimDirLight.position.set(-14, 12, -88);
+    rimDirLight.intensity = 0.44;
+    scene.environmentIntensity = 0.56;
+    if (bloomPass && !matchCutState && !stationTransition) {
+      bloomPass.strength = 0.36;
+      bloomPass.threshold = 0.80;
     }
   }
+}
+
+function applyLightingMode(mode) {
+  applyRealmAtmosphere(mode === 'roam' ? 'roam' : getRealmIdByT(state.currentT));
 }
 
 function makeRippleTexture() {
@@ -1695,9 +2047,9 @@ function makeRippleTexture() {
         a = Math.min(1, (ring1 + ring2) * fade) * 0.62;
       }
       const idx = (y * 128 + x) * 4;
-      d[idx] = 140;
-      d[idx + 1] = 242;
-      d[idx + 2] = 224;
+      d[idx] = 152;
+      d[idx + 1] = 236;
+      d[idx + 2] = 220;
       d[idx + 3] = Math.round(a * 255);
     }
   }
@@ -1708,22 +2060,24 @@ function makeRippleTexture() {
 }
 
 function createWaterRipples() {
+  if (!riverGroup) return;
+  rippleRings.length = 0;
   const rippleTex = makeRippleTexture();
   for (let i = 0; i < riverBoats.length; i++) {
     const boat = riverBoats[i].obj;
-    const geo = new THREE.PlaneGeometry(2.65, 2.65);
+    const geo = new THREE.PlaneGeometry(3.2, 3.2);
     geo.rotateX(-Math.PI / 2);
     const mat = new THREE.MeshBasicMaterial({
       map: rippleTex,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.48,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false
     });
     const ring = new THREE.Mesh(geo, mat);
     ring.position.set(boat.position.x, -6.47, boat.position.z);
-    worldGroup.add(ring);
+    riverGroup.add(ring);
     rippleRings.push({ ring, boat, phase: i * 1.1 });
   }
 }
@@ -2061,18 +2415,6 @@ function selectCity(cityName, withToast = false) {
 
 function flyTo(targetT, opts = {}) {
   const nextT = clamp(Number(targetT) || 0, 0, 1);
-  if (nextT < 0.24) {
-    enterRoamMode({ target: nextT <= 0.05 ? 'home' : 'b612', instant: Boolean(opts.instant) });
-    if (opts.toast) showToast(opts.toast);
-    return;
-  }
-  if (state.mode !== 'station') {
-    syncBodyMode('station');
-    state.currentT = clamp(nextT, 0.26, 1);
-  }
-  state.targetT = clamp(nextT, 0.26, 1);
-  state.autoPlay = false;
-  syncAutoPlayButton();
   if (opts.poemPlace) {
     const found = archive().notes.find((n) => n.place === opts.poemPlace);
     if (found) state.selectedPoemSlug = found.slug;
@@ -2082,6 +2424,35 @@ function flyTo(targetT, opts = {}) {
   if (opts.labSlug) state.selectedLabSlug = opts.labSlug;
   if (opts.workSlug) state.selectedWorkSlug = opts.workSlug;
   updateBookMoyanTexture();
+
+  if (nextT < 0.24) {
+    if (state.mode === 'station' && !opts.instant && !prefersReducedMotion) {
+      startRealmTransition(nextT, { ...opts, targetRoam: nextT <= 0.05 ? 'home' : 'b612' });
+    } else {
+      enterRoamMode({ target: nextT <= 0.05 ? 'home' : 'b612', instant: Boolean(opts.instant) });
+      if (opts.toast) showToast(opts.toast);
+    }
+    return;
+  }
+
+  const destT = clamp(nextT, 0.26, 1);
+  const fromRealm = state.mode === 'roam' ? 'roam' : getRealmIdByT(state.currentT);
+  const destRealm = getRealmIdByT(destT);
+
+  if (fromRealm !== destRealm && !opts.instant && !prefersReducedMotion) {
+    startRealmTransition(destT, opts);
+    return;
+  }
+
+  if (state.mode !== 'station') {
+    syncBodyMode('station');
+    state.currentT = destT;
+  }
+  state.targetT = destT;
+  state.autoPlay = false;
+  syncAutoPlayButton();
+  ensureRealmLoaded(destRealm);
+  updateSceneStageIsolations(state.currentT);
   if (opts.toast) showToast(opts.toast);
   renderStationDeck(true);
 }
@@ -2847,6 +3218,95 @@ function syncBodyMode(mode) {
   applyLightingMode(mode);
 }
 
+function setMatchCutVeil(kind, alpha) {
+  const veil = document.getElementById('matchcut-veil');
+  if (!veil) return;
+  if (kind) veil.dataset.veil = kind;
+  else delete veil.dataset.veil;
+  veil.style.setProperty('--mc-flash', Number(alpha || 0).toFixed(4));
+}
+
+function getTransitionVeilKind(fromRealm, destRealm) {
+  if (destRealm === 'roam') return 'cosmos';
+  if (fromRealm === 'roam' && destRealm === 'loft') return 'amber';
+  if ((fromRealm === 'loft' && destRealm === 'atlas') || (fromRealm === 'atlas' && destRealm === 'loft')) return 'mist';
+  if ((fromRealm === 'atlas' && destRealm === 'river') || (fromRealm === 'river' && destRealm === 'atlas')) return 'jade';
+  return 'mist';
+}
+
+function startRealmTransition(destT, opts = {}) {
+  closeInkAtlas();
+  if (matchCutState || stationTransition) return;
+  const fromRealm = state.mode === 'roam' ? 'roam' : getRealmIdByT(state.currentT);
+  const destRealm = destT < 0.24 ? 'roam' : getRealmIdByT(destT);
+  if (destRealm !== 'roam') ensureRealmLoaded(destRealm);
+
+  if (prefersReducedMotion || opts.instant) {
+    if (destRealm === 'roam') {
+      enterRoamMode({ target: opts.targetRoam || 'home', instant: true });
+    } else {
+      enterStationAtT(destT, { ...opts, instant: true });
+    }
+    return;
+  }
+
+  state.autoPlay = false;
+  syncAutoPlayButton();
+  setHoveredInteractiveTarget(null);
+  playChimeSound();
+
+  const veilKind = getTransitionVeilKind(fromRealm, destRealm);
+  const startPos = camera.position.clone();
+  const startQuat = camera.quaternion.clone();
+  const pushPos = startPos.clone();
+  const pushLook = new THREE.Vector3();
+  camera.getWorldDirection(pushLook);
+  pushLook.multiplyScalar(12).add(startPos);
+
+  // Tailored cinematic exit motion per source realm
+  if (fromRealm === 'loft' && destRealm === 'atlas') {
+    // Glide toward carved lattice window while sashes swing wide open
+    pushPos.set(0.0, 10.65, -9.8);
+    pushLook.set(0.0, 10.4, -24.0);
+  } else if (fromRealm === 'atlas' && destRealm === 'river') {
+    // Swoop down toward luminous Yangtze estuary & Jiangnan water network
+    pushPos.set(5.4, 7.2, -33.6);
+    pushLook.set(6.9, 1.5, -39.5);
+  } else if (fromRealm === 'river' && destRealm === 'roam') {
+    // Tilt gracefully upward from river reflections toward the starry night sky
+    pushPos.set(startPos.x, startPos.y + 1.4, startPos.z - 2.2);
+    pushLook.set(startPos.x, startPos.y + 10.0, startPos.z - 18.0);
+  } else if (fromRealm === 'river' && destRealm === 'atlas') {
+    pushPos.set(startPos.x, startPos.y + 3.2, startPos.z + 3.0);
+    pushLook.set(0.0, -3.5, -80.0);
+  } else {
+    pushPos.addScaledVector(camera.getWorldDirection(new THREE.Vector3()), 2.4);
+  }
+
+  stationTransition = {
+    phase: 'in',
+    phaseStartMs: performance.now(),
+    durInMs: 420,
+    durOutMs: 520,
+    fromRealm,
+    destRealm,
+    destT,
+    targetRoam: opts.targetRoam || (destT <= 0.05 ? 'home' : 'b612'),
+    veilKind,
+    toast: opts.toast || '',
+    startPos,
+    startQuat,
+    pushPos,
+    pushLook,
+    swingWindow: fromRealm === 'loft' && destRealm === 'atlas',
+    settleOffset: destRealm === 'atlas'
+      ? new THREE.Vector3(0, 3.6, 5.2)
+      : destRealm === 'river'
+        ? new THREE.Vector3(0, 2.2, 4.6)
+        : new THREE.Vector3(0, 0.65, 1.4)
+  };
+}
+
 function startRoamFlight(endPos, endYaw, endPitch, duration = 1.45) {
   const startPos = roamState.position.clone();
   const dist = startPos.distanceTo(endPos);
@@ -2889,14 +3349,14 @@ function enterRoamMode({ target = 'home', instant = false } = {}) {
   const wasStation = state.mode !== 'roam';
   const snapInstant = instant || wasStation;
   matchCutState = null;
+  stationTransition = null;
   roamState.flight = null;
   roamState.velocity.set(0, 0, 0);
   roamState.keys.clear();
   roamState.glidePadActive = false;
   document.getElementById('mobile-glide-pad')?.classList.remove('is-active');
 
-  const veil = document.getElementById('matchcut-veil');
-  if (veil) veil.style.setProperty('--mc-flash', '0');
+  setMatchCutVeil(null, 0);
   if (bloomPass) bloomPass.strength = BASE_BLOOM_STRENGTH;
   if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE;
 
@@ -2935,21 +3395,18 @@ function enterRoamMode({ target = 'home', instant = false } = {}) {
 
 function enterStationAtT(t, opts = {}) {
   const clampedT = clamp(Number(t) || 0.32, 0.26, 1.0);
+  const destRealm = getRealmIdByT(clampedT);
+  ensureRealmLoaded(destRealm);
   matchCutState = null;
+  stationTransition = null;
   roamState.flight = null;
   roamState.velocity.set(0, 0, 0);
   roamState.keys.clear();
   roamState.glidePadActive = false;
 
-  const veil = document.getElementById('matchcut-veil');
-  if (veil) veil.style.setProperty('--mc-flash', '0');
-  if (bloomPass) {
-    bloomPass.strength = STATION_BLOOM_STRENGTH;
-    bloomPass.threshold = STATION_BLOOM_THRESHOLD;
-  }
+  setMatchCutVeil(null, 0);
   if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE;
 
-  syncBodyMode('station');
   state.autoPlay = false;
   syncAutoPlayButton();
   state.targetT = clampedT;
@@ -2957,6 +3414,8 @@ function enterStationAtT(t, opts = {}) {
   if (opts.poemSlug) state.selectedPoemSlug = opts.poemSlug;
   if (opts.cityName) state.selectedCityName = opts.cityName;
   if (opts.labSlug) state.selectedLabSlug = opts.labSlug;
+  syncBodyMode('station');
+  updateSceneStageIsolations(state.currentT);
   updateBookMoyanTexture();
   renderOnceAndSync(performance.now() * 0.001);
   if (opts.toast) showToast(opts.toast);
@@ -2964,7 +3423,8 @@ function enterStationAtT(t, opts = {}) {
 
 function enterStudyMatchCut() {
   closeInkAtlas();
-  if (matchCutState) return window.__qzGetState();
+  if (matchCutState || stationTransition) return window.__qzGetState();
+  ensureRealmLoaded('loft');
   if (state.mode === 'station') {
     flyTo(0.32, { toast: '回到二层《墨盐》书房' });
     return window.__qzGetState();
@@ -2985,8 +3445,8 @@ function enterStudyMatchCut() {
   matchCutState = {
     phase: 'in',
     phaseStartMs: performance.now(),
-    durInMs: prefersReducedMotion ? 70 : 400,
-    durOutMs: prefersReducedMotion ? 70 : 460,
+    durInMs: prefersReducedMotion ? 70 : 420,
+    durOutMs: prefersReducedMotion ? 70 : 520,
     startPos,
     approachPos,
     startYaw: roamState.yaw,
@@ -3063,19 +3523,27 @@ function updateSceneStageIsolations(t) {
   if (state.mode === 'roam') {
     cosmosGroup.visible = true;
     worldGroup.visible = false;
+    if (activeRealmId !== 'roam') applyRealmAtmosphere('roam');
     return;
   }
 
   cosmosGroup.visible = false;
   worldGroup.visible = true;
 
-  // Dynamic Window Sash Swing as camera approaches portal-2 (t: 0.50 -> 0.62)
-  const winFactor = THREE.MathUtils.smoothstep(t, 0.50, 0.62);
-  const swingAngle = 0.04 + winFactor * 1.22;
+  // Strict Physical Diorama Isolation: zero cross-scene collisions!
+  const realmId = getRealmIdByT(t);
+  if (loftGroup) loftGroup.visible = (realmId === 'loft');
+  if (atlasGroup) atlasGroup.visible = (realmId === 'atlas');
+  if (riverGroup) riverGroup.visible = (realmId === 'river');
+  if (activeRealmId !== realmId) applyRealmAtmosphere(realmId);
+
+  // Carved Lattice Window Sashes gently swing open as viewer approaches portal-2
+  const winFactor = THREE.MathUtils.smoothstep(t, 0.52, 0.62);
+  const swingAngle = 0.06 + winFactor * 1.18;
   const sashL = namedObjects.get('Window_Sash_L');
   const sashR = namedObjects.get('Window_Sash_R');
-  if (sashL) sashL.rotation.y = swingAngle;
-  if (sashR) sashR.rotation.y = -swingAngle;
+  if (sashL && (!stationTransition || !stationTransition.swingWindow)) sashL.rotation.y = swingAngle;
+  if (sashR && (!stationTransition || !stationTransition.swingWindow)) sashR.rotation.y = -swingAngle;
 }
 
 function pickInteractiveHits(ndcX, ndcY) {
@@ -3110,6 +3578,45 @@ function bindEvents(canvas) {
     }
   });
 
+  function handleStationScrollDelta(deltaT) {
+    if (matchCutState || stationTransition) return;
+    state.autoPlay = false;
+    syncAutoPlayButton();
+    const now = performance.now();
+    state.lastWheelAt = now;
+    const prevRealm = getRealmIdByT(state.targetT);
+    const nextT = clamp(state.targetT + deltaT, 0.26, 1);
+
+    // Smooth optical dissolve when scrolling across realm boundaries (zero hard-cuts!)
+    if (!prefersReducedMotion && now - lastRealmCrossMs > 750) {
+      if (prevRealm === 'loft' && nextT > 0.59 && deltaT > 0) {
+        lastRealmCrossMs = now;
+        startRealmTransition(0.75, { toast: '推窗入画 · 俯瞰宋元青绿山河舆图' });
+        return;
+      }
+      if (prevRealm === 'atlas' && nextT < 0.65 && deltaT < 0) {
+        lastRealmCrossMs = now;
+        startRealmTransition(0.50, { toast: '折返窗畔 · 回到月下实验桌' });
+        return;
+      }
+      if (prevRealm === 'atlas' && nextT > 0.84 && deltaT > 0) {
+        lastRealmCrossMs = now;
+        startRealmTransition(0.96, { toast: '顺江入夜 · 停泊江南檐下归舟' });
+        return;
+      }
+      if (prevRealm === 'river' && nextT < 0.88 && deltaT < 0) {
+        lastRealmCrossMs = now;
+        startRealmTransition(0.75, { toast: '溯流而上 · 重览华夏山河舆图' });
+        return;
+      }
+    }
+
+    // Clamp smoothly within active realm bounds during regular gliding
+    if (prevRealm === 'loft') state.targetT = clamp(nextT, 0.28, 0.60);
+    else if (prevRealm === 'atlas') state.targetT = clamp(nextT, 0.66, 0.84);
+    else state.targetT = clamp(nextT, 0.89, 1.0);
+  }
+
   window.addEventListener('wheel', (e) => {
     if (isOverlayBlockingScene()) return;
     const scrollable = e.target.closest('.station-deck-body, .dossier-body, .poem-preview-lines, .wish-list');
@@ -3120,7 +3627,7 @@ function bindEvents(canvas) {
     }
     e.preventDefault();
     if (state.mode === 'roam') {
-      if (matchCutState) return;
+      if (matchCutState || stationTransition) return;
       roamState.flight = null;
       _roamEuler.set(roamState.pitch, roamState.yaw, 0, 'YXZ');
       _roamForward.set(0, 0, -1).applyEuler(_roamEuler);
@@ -3128,10 +3635,7 @@ function bindEvents(canvas) {
       roamState.velocity.addScaledVector(_roamForward, impulse);
       return;
     }
-    state.autoPlay = false;
-    syncAutoPlayButton();
-    state.lastWheelAt = performance.now();
-    state.targetT = clamp(state.targetT + e.deltaY * 0.00028, 0.26, 1);
+    handleStationScrollDelta(e.deltaY * 0.00028);
   }, { passive: false });
 
   let stationTouchY = null;
@@ -3144,10 +3648,7 @@ function bindEvents(canvas) {
     if (state.mode !== 'station' || stationTouchY === null) return;
     const dy = stationTouchY - e.touches[0].clientY;
     stationTouchY = e.touches[0].clientY;
-    state.autoPlay = false;
-    syncAutoPlayButton();
-    state.lastWheelAt = performance.now();
-    state.targetT = clamp(state.targetT + dy * 0.0008, 0.26, 1);
+    handleStationScrollDelta(dy * 0.0008);
   }, { passive: true });
   window.addEventListener('touchend', () => { stationTouchY = null; });
 
@@ -3272,9 +3773,9 @@ function bindEvents(canvas) {
   });
   document.getElementById('garden-land').addEventListener('click', () => {
     const portrait = camera.aspect < 0.85;
-    const position = B612_CENTER.clone().add(portrait
-      ? new THREE.Vector3(2.15, 3.05, 4.65) : new THREE.Vector3(1.88, 3.05, 3.90));
-    const focus = B612_CENTER.clone().add(new THREE.Vector3(portrait ? .78 : .49, 2.59, .32));
+    const position = (portrait ? B612_PATH_POS_PORTRAIT : B612_PATH_POS_DESKTOP).clone();
+    const focus = B612_PATH_AIM.clone();
+    if (portrait) focus.x += 0.22;
     const { yaw, pitch } = computeAimYawPitch(position, focus);
     startRoamFlight(position, yaw, pitch, 1.45);
   });
@@ -3288,20 +3789,20 @@ function bindEvents(canvas) {
   document.getElementById('atlas-close')?.addEventListener('click', closeInkAtlas);
   document.getElementById('atlas-backdrop')?.addEventListener('click', closeInkAtlas);
   document.getElementById('btn-roam-return')?.addEventListener('click', () => {
-    enterRoamMode({ target: 'home', instant: false });
+    flyTo(0.0, { toast: '重返深空星海' });
   });
 
   document.querySelectorAll('#ink-atlas [data-atlas-action="roam"]').forEach((btn) => {
     btn.addEventListener('click', () => {
       closeInkAtlas();
-      enterRoamMode({ target: 'home', instant: true });
+      flyTo(0.0);
     });
   });
   document.querySelectorAll('#ink-atlas [data-atlas-t]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const t = Number(btn.dataset.atlasT);
       closeInkAtlas();
-      enterStationAtT(t, { instant: true });
+      flyTo(t);
     });
   });
 
@@ -3541,13 +4042,13 @@ const gardenGuide = document.getElementById('star-guide-btn');
 const gardenView = new THREE.Vector3();
 function renderFrame() {
   gardenView.copy(B612_AIM_POINT).project(camera);
-  const nearGarden = state.mode === 'roam' && !matchCutState && !roamState.flight &&
+  const nearGarden = state.mode === 'roam' && !matchCutState && !stationTransition && !roamState.flight &&
     camera.position.distanceTo(B612_AIM_POINT) < 15.5 && gardenView.z > -1 && gardenView.z < 1 &&
     Math.abs(gardenView.x) < 1.35 && window.__glbLoaded;
   gardenActions.hidden = !nearGarden;
   if (nearGarden) {
     gardenGuide.hidden = true;
-    gardenActions.classList.toggle('on-path', camera.position.distanceTo(B612_AIM_POINT) < 6);
+    gardenActions.classList.toggle('on-path', camera.position.distanceTo(B612_AIM_POINT) < 6.8);
   }
   if (composer) composer.render();
   else if (renderer && scene && camera) renderer.render(scene, camera);
@@ -3570,6 +4071,101 @@ function renderOnceAndSync(nowSec = 0, instantPhotoSnap = false) {
   renderFrame();
 }
 
+const REALM_ASSETS = {
+  loft: './assets/loft-sanctuary.glb',
+  atlas: './assets/china-atlas.glb',
+  river: './assets/jiangnan-river.glb'
+};
+
+function indexSceneGraph(root, { deferHover = false } = {}) {
+  const newInteractive = [];
+  root.traverse((obj) => {
+    if (obj.material) {
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      for (const m of mats) {
+        if (m.name === 'HitProxyMat') {
+          m.transparent = true;
+          m.opacity = 0;
+          m.colorWrite = false;
+          m.depthWrite = false;
+        }
+        if (m.name && !materialsByName.has(m.name)) {
+          materialsByName.set(m.name, m);
+        }
+      }
+    }
+    if (!obj.name) return;
+    namedObjects.set(obj.name, obj);
+    if (obj.name === 'Atlas_Orbital_Ring') {
+      atlasOrbitalRing = obj;
+    }
+    if (obj.userData && obj.userData.isHitProxy && obj.userData.hitTarget && !/^HitProxy_Orrery_/.test(obj.name)) {
+      obj.userData.__qzInteractiveName = obj.userData.hitTarget;
+      clickableRoots.push(obj);
+    } else if (INTERACTIVE_NAME_RE.test(obj.name)) {
+      obj.userData.__qzInteractiveName = obj.name;
+      clickableRoots.push(obj);
+      newInteractive.push([obj.name, obj]);
+    } else if (obj.name === 'B612_Asteroid_Body') {
+      clickableRoots.push(obj);
+    }
+    const beaconMatch = obj.name.match(/^City_Beacon_(\d+)$/);
+    if (beaconMatch) {
+      cityBeaconMeshes.set(Number(beaconMatch[1]), { obj, baseScaleY: obj.scale.y || 1 });
+    }
+    if (/^River_Boat_Lantern_(\d+)$/.test(obj.name)) {
+      riverBoats.push({ obj, baseY: obj.position.y, phase: riverBoats.length * 1.15 });
+    }
+  });
+  if (!deferHover) {
+    for (const [objName, obj] of newInteractive) {
+      registerInteractiveHoverMeshes(objName, obj);
+    }
+  }
+  return newInteractive;
+}
+
+function ensureRealmLoaded(realmId) {
+  if (!REALM_ASSETS[realmId] || !gltfLoader) return Promise.resolve();
+  if (realmLoaded[realmId]) return Promise.resolve();
+  if (realmPromises[realmId]) return realmPromises[realmId];
+
+  realmPromises[realmId] = gltfLoader.loadAsync(REALM_ASSETS[realmId]).then((gltf) => {
+    const targetGroup = realmId === 'loft' ? loftGroup : realmId === 'atlas' ? atlasGroup : riverGroup;
+    if (!targetGroup) return;
+    targetGroup.add(gltf.scene);
+    // Defer hover material cloning until dynamic CanvasTextures & PBR maps are bound!
+    const newInteractive = indexSceneGraph(gltf.scene, { deferHover: true });
+    if (realmId === 'loft') {
+      applyProceduralPBRTextures();
+      addContactShadowDecals();
+      updateBookMoyanTexture();
+    } else if (realmId === 'atlas') {
+      upgradeAtlasRiverShaders();
+    } else if (realmId === 'river') {
+      upgradeRiverBedShader();
+      createWaterRipples();
+    }
+    for (const [objName, obj] of newInteractive) {
+      registerInteractiveHoverMeshes(objName, obj);
+    }
+    // Re-point materialsByName['BookSpreadMat'] to the live cloned material on Book_Moyan_Spread so poem switches update live!
+    const spreadObj = namedObjects.get('Book_Moyan_Spread');
+    if (spreadObj?.material) {
+      materialsByName.set('BookSpreadMat', spreadObj.material);
+    }
+    realmLoaded[realmId] = true;
+    if (state.mode === 'station' && getRealmIdByT(state.currentT) === realmId) {
+      updateSceneStageIsolations(state.currentT);
+      renderOnceAndSync(performance.now() * 0.001);
+    }
+  }).catch((err) => {
+    console.warn(`Realm GLB load failed (${realmId}):`, err);
+    delete realmPromises[realmId];
+  });
+  return realmPromises[realmId];
+}
+
 async function bootCinema() {
   updateSolarTermHUD();
   initSoundDock();
@@ -3579,8 +4175,8 @@ async function bootCinema() {
   const loaderEl = document.getElementById('cinema-loader');
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x040812);
-  scene.fog = new THREE.FogExp2(0x040812, 0.0085);
+  scene.background = new THREE.Color(0x030712);
+  scene.fog = new THREE.FogExp2(0x030712, 0.0052);
 
   camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 480);
   camera.rotation.order = 'YXZ';
@@ -3624,82 +4220,21 @@ async function bootCinema() {
     posCurve = new THREE.CatmullRomCurve3(cameraTrack.map((k) => new THREE.Vector3(...k.pos)), false, 'catmullrom', 0.35);
     lookCurve = new THREE.CatmullRomCurve3(cameraTrack.map((k) => new THREE.Vector3(...k.target)), false, 'catmullrom', 0.35);
 
-    if (statusEl) statusEl.textContent = '载入 Blender 实体空间建筑 (GLB)…';
-    const loader = new GLTFLoader();
-    const [gltf, garden] = await Promise.all([
-      loader.loadAsync('./assets/qingzhou-world.glb'),
-      loader.loadAsync('./assets/rose-garden.glb')
-    ]);
+    if (statusEl) statusEl.textContent = '载入 B-612 玫瑰星实体剧场 (GLB)…';
+    gltfLoader = new GLTFLoader();
+    const garden = await gltfLoader.loadAsync('./assets/rose-garden.glb');
     garden.scene.position.copy(B612_CENTER);
     cosmosGroup.add(garden.scene);
-    glbRoot = gltf.scene;
-
-    // Partition top-level GLB nodes (including Anchor_* & HitProxy_*) into cosmosGroup vs worldGroup
-    const topNodes = [...glbRoot.children];
-    for (const node of topNodes) {
-      // The legacy world still serves all five stations. The standalone garden
-      // owns the outdoor planet geometry and its two raycast targets.
-      if (/^B612_(Asteroid_Body|Cottage|Cat|Tree|Rose_Cloche|Creek)$/.test(node.name) ||
-          /^HitProxy_B612_(Cottage|Rose_Cloche)$/.test(node.name)) continue;
-      if (/^(B612_|Orrery_|Anchor_(?:B612|Orrery)|HitProxy_(?:B612|Orrery))/.test(node.name || '')) {
-        cosmosGroup.add(node);
-      } else {
-        worldGroup.add(node);
-      }
-    }
-
-    scene.traverse((obj) => {
-      if (obj.material) {
-        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-        for (const m of mats) {
-          if (m.name === 'HitProxyMat') {
-            m.transparent = true;
-            m.opacity = 0;
-            m.colorWrite = false;
-            m.depthWrite = false;
-          }
-          if (m.name && !materialsByName.has(m.name)) {
-            materialsByName.set(m.name, m);
-          }
-        }
-      }
-      if (!obj.name) return;
-      if (!namedObjects.has(obj.name)) namedObjects.set(obj.name, obj);
-      if (obj.userData && obj.userData.isHitProxy && obj.userData.hitTarget && !/^HitProxy_Orrery_/.test(obj.name)) {
-        obj.userData.__qzInteractiveName = obj.userData.hitTarget;
-        clickableRoots.push(obj);
-      } else if (INTERACTIVE_NAME_RE.test(obj.name)) {
-        obj.userData.__qzInteractiveName = obj.name;
-        clickableRoots.push(obj);
-      } else if (obj.name === 'B612_Asteroid_Body') {
-        // Occludes clicks through the planet sphere without triggering landing
-        clickableRoots.push(obj);
-      }
-      const beaconMatch = obj.name.match(/^City_Beacon_(\d+)$/);
-      if (beaconMatch) {
-        cityBeaconMeshes.set(Number(beaconMatch[1]), { obj, baseScaleY: obj.scale.y || 1 });
-      }
-      if (/^River_Boat_Lantern_(\d+)$/.test(obj.name)) {
-        riverBoats.push({ obj, baseY: obj.position.y, phase: riverBoats.length * 1.15 });
-      }
-    });
+    glbRoot = worldGroup;
+    indexSceneGraph(garden.scene);
 
     hideOrreryNodes(namedObjects);
-    applyProceduralPBRTextures();
     sculptB612TwilightLook({ b612HaloMat, b612MistMat, cosmosGroup });
     photoFrames = createScatteredPhotoFrames(cosmosGroup, archive());
     for (const f of photoFrames) {
       clickableRoots.push(f.photoMesh);
     }
 
-    for (const objName of namedObjects.keys()) {
-      if (INTERACTIVE_NAME_RE.test(objName)) {
-        registerInteractiveHoverMeshes(objName, namedObjects.get(objName));
-      }
-    }
-    addContactShadowDecals();
-    upgradeRiverBedShader();
-    createWaterRipples();
     document.fonts?.ready?.then(() => {
       for (let i = 0; i < 3; i++) {
         const bp = materialsByName.get(`LabBlueprintMat_${i}`);
@@ -3736,6 +4271,15 @@ async function bootCinema() {
   window.__onetakeReady = loadedOk;
   if (loadedOk && loaderEl) loaderEl.classList.add('is-ready');
 
+  // Silently preload modular interior/landscape realms right after first paint
+  if (loadedOk) {
+    setTimeout(() => {
+      ensureRealmLoaded('loft')
+        .then(() => ensureRealmLoaded('atlas'))
+        .then(() => ensureRealmLoaded('river'));
+    }, 120);
+  }
+
   window.__qzSetT = (t, instant = true) => {
     const numT = clamp(Number(t) || 0, 0, 1);
     if (numT < 0.24) {
@@ -3745,6 +4289,11 @@ async function bootCinema() {
     }
     return window.__qzGetState();
   };
+  window.__qzEnsureRealms = () => Promise.all([
+    ensureRealmLoaded('loft'),
+    ensureRealmLoaded('atlas'),
+    ensureRealmLoaded('river')
+  ]);
   window.__qzFlyTo = (t, opts) => flyTo(t, opts);
   window.__qzOpenDarkroom = (workSlug, photoIdx = 0) => openDarkroomViewer(workSlug, photoIdx);
   window.__qzSetPoem = (slug) => {
@@ -3756,8 +4305,8 @@ async function bootCinema() {
     const instant = typeof opts === 'boolean' ? opts : (opts?.instant !== false);
     closeInkAtlas();
     matchCutState = null;
-    const veil = document.getElementById('matchcut-veil');
-    if (veil) veil.style.setProperty('--mc-flash', '0');
+    stationTransition = null;
+    setMatchCutVeil(null, 0);
     if (bloomPass) bloomPass.strength = BASE_BLOOM_STRENGTH;
     if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE;
 
@@ -3798,6 +4347,8 @@ async function bootCinema() {
     return {
       ready: Boolean(window.__onetakeReady),
       glbLoaded: Boolean(window.__glbLoaded),
+      realmsLoaded: { ...realmLoaded },
+      activeRealm: activeRealmId,
       mode: state.mode,
       currentT: Number(state.currentT.toFixed(4)),
       targetT: Number(state.targetT.toFixed(4)),
@@ -3811,7 +4362,7 @@ async function bootCinema() {
       orreryVisible,
       bloomStrength: Number((bloomPass?.strength ?? 0).toFixed(3)),
       bloomThreshold: Number((bloomPass?.threshold ?? 0).toFixed(3)),
-      matchCutActive: Boolean(matchCutState),
+      matchCutActive: Boolean(matchCutState || stationTransition),
       cameraPos: [
         Number(camera.position.x.toFixed(3)),
         Number(camera.position.y.toFixed(3)),
@@ -3831,6 +4382,10 @@ async function bootCinema() {
     };
   };
 
+  const _transLook = new THREE.Vector3();
+  const _transQuat = new THREE.Quaternion();
+  const _transMat = new THREE.Matrix4();
+
   let prevMs = performance.now();
   function animate(nowMs) {
     requestAnimationFrame(animate);
@@ -3838,14 +4393,112 @@ async function bootCinema() {
     prevMs = nowMs;
     const elapsed = prefersReducedMotion ? 0 : nowMs * 0.001;
 
+    if (nebulaDomeMat) nebulaDomeMat.uniforms.uTime.value = elapsed;
     if (deepStarMat) deepStarMat.uniforms.time.value = elapsed;
     if (midDustMat) midDustMat.uniforms.time.value = elapsed;
     if (b612MistMat) b612MistMat.uniforms.time.value = elapsed;
+    if (studyDustMat) studyDustMat.uniforms.time.value = elapsed;
+    if (atlasCloudMat) atlasCloudMat.uniforms.uTime.value = elapsed;
+    if (riverFirefliesMat) riverFirefliesMat.uniforms.time.value = elapsed;
 
     if (isOverlayBlockingScene()) return;
 
+    // 1. Multi-Realm Optical Dissolve Transition (Loft <-> Atlas <-> River <-> Cosmos)
+    if (stationTransition) {
+      const tr = stationTransition;
+      if (tr.phase === 'in') {
+        const p = clamp((nowMs - tr.phaseStartMs) / tr.durInMs, 0, 1);
+        const ease = p * p * (3 - 2 * p);
+        camera.position.lerpVectors(tr.startPos, tr.pushPos, ease);
+        _transMat.lookAt(camera.position, tr.pushLook, camera.up);
+        _transQuat.setFromRotationMatrix(_transMat);
+        camera.quaternion.slerpQuaternions(tr.startQuat, _transQuat, ease);
+
+        if (tr.swingWindow) {
+          const sashL = namedObjects.get('Window_Sash_L');
+          const sashR = namedObjects.get('Window_Sash_R');
+          const ang = 0.06 + ease * 1.24;
+          if (sashL) sashL.rotation.y = ang;
+          if (sashR) sashR.rotation.y = -ang;
+        }
+        if (bloomPass) bloomPass.strength = 0.34 + 1.15 * ease;
+        setMatchCutVeil(tr.veilKind, Math.pow(p, 1.1));
+        renderFrame();
+
+        if (p >= 1) {
+          if (tr.destRealm === 'roam') {
+            state.currentT = state.targetT = 0.0;
+            state.activePortal = 'none';
+            state.activeStationId = 'works';
+            document.body.dataset.zone = 'works';
+            document.body.dataset.portal = 'none';
+            syncBodyMode('roam');
+            if (tr.targetRoam === 'b612') {
+              const landing = getB612LandingPose();
+              roamState.position.copy(landing.pos);
+              roamState.yaw = roamState.targetYaw = landing.yaw;
+              roamState.pitch = roamState.targetPitch = landing.pitch;
+            } else {
+              roamState.position.copy(ROAM_HOME_POS);
+              roamState.yaw = roamState.targetYaw = ROAM_HOME_YAW;
+              roamState.pitch = roamState.targetPitch = ROAM_HOME_PITCH;
+            }
+            updateRoamCamera(0, nowMs);
+            updatePhotoFrames(photoFrames, camera, elapsed, 0.016, prefersReducedMotion, true);
+          } else {
+            state.currentT = state.targetT = tr.destT;
+            state.activePortal = 'none';
+            document.body.dataset.portal = 'none';
+            syncBodyMode('station');
+            updateSceneStageIsolations(tr.destT);
+            applyCameraAtT(tr.destT, elapsed);
+            syncHudAndTimeline();
+            renderStationDeck(true);
+            updateSpatialMarkers();
+          }
+          setMatchCutVeil(tr.veilKind, 1);
+          renderFrame();
+          tr.phase = 'out';
+          tr.phaseStartMs = nowMs;
+        }
+        return;
+      }
+
+      const q = clamp((nowMs - tr.phaseStartMs) / tr.durOutMs, 0, 1);
+      const decay = Math.pow(1 - q, 2.6);
+      setMatchCutVeil(tr.veilKind, decay);
+
+      if (tr.destRealm === 'roam') {
+        updateRoamCamera(dt, nowMs);
+        updatePhotoFrames(photoFrames, camera, elapsed, dt, prefersReducedMotion, false);
+        updateStarGuidePip(document.getElementById('star-guide-btn'), camera, 'roam');
+        if (bloomPass) bloomPass.strength = BASE_BLOOM_STRENGTH + 1.0 * decay;
+      } else {
+        applyCameraAtT(tr.destT, elapsed);
+        camera.position.addScaledVector(tr.settleOffset, decay);
+        const u = trackToCurveU(tr.destT);
+        if (lookCurve) {
+          lookCurve.getPoint(u, _transLook);
+          camera.lookAt(_transLook);
+        }
+        syncHudAndTimeline();
+        updateSpatialMarkers();
+        if (bloomPass) bloomPass.strength = 0.32 + 1.0 * decay;
+      }
+      renderFrame();
+
+      if (q >= 1) {
+        setMatchCutVeil(null, 0);
+        applyRealmAtmosphere(tr.destRealm);
+        const toastMsg = tr.toast;
+        stationTransition = null;
+        if (toastMsg) showToast(toastMsg);
+      }
+      return;
+    }
+
+    // 2. B-612 Warm Window Match Cut -> 02 Study
     if (matchCutState) {
-      const veil = document.getElementById('matchcut-veil');
       if (matchCutState.phase === 'in') {
         const p = clamp((nowMs - matchCutState.phaseStartMs) / matchCutState.durInMs, 0, 1);
         const ease = p * p;
@@ -3855,24 +4508,25 @@ async function bootCinema() {
         camera.position.copy(roamState.position);
         camera.rotation.order = 'YXZ';
         camera.rotation.set(roamState.pitch, roamState.yaw, 0, 'YXZ');
-        if (bloomPass) bloomPass.strength = BASE_BLOOM_STRENGTH + 2.35 * ease;
-        if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE + 0.42 * ease;
-        if (veil) veil.style.setProperty('--mc-flash', Math.pow(p, 1.15).toFixed(4));
+        if (bloomPass) bloomPass.strength = BASE_BLOOM_STRENGTH + 2.15 * ease;
+        if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE + 0.36 * ease;
+        setMatchCutVeil('amber', Math.pow(p, 1.15));
         updatePhotoFrames(photoFrames, camera, elapsed, dt, prefersReducedMotion, false);
         const sgBtn = document.getElementById('star-guide-btn');
         if (sgBtn) sgBtn.hidden = true;
         renderFrame();
 
         if (p >= 1) {
-          syncBodyMode('station');
           state.currentT = state.targetT = 0.32;
           state.activePortal = 'none';
           document.body.dataset.portal = 'none';
+          syncBodyMode('station');
+          updateSceneStageIsolations(0.32);
           applyCameraAtT(0.32, elapsed);
           syncHudAndTimeline();
           renderStationDeck(true);
           updateSpatialMarkers();
-          if (veil) veil.style.setProperty('--mc-flash', '1');
+          setMatchCutVeil('amber', 1);
           renderFrame();
           matchCutState.phase = 'out';
           matchCutState.phaseStartMs = nowMs;
@@ -3881,23 +4535,26 @@ async function bootCinema() {
       }
 
       const q = clamp((nowMs - matchCutState.phaseStartMs) / matchCutState.durOutMs, 0, 1);
-      const decay = Math.pow(1 - q, 3);
-      if (bloomPass) bloomPass.strength = STATION_BLOOM_STRENGTH + (BASE_BLOOM_STRENGTH + 2.35 - STATION_BLOOM_STRENGTH) * decay;
-      if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE + 0.42 * decay;
-      if (veil) veil.style.setProperty('--mc-flash', decay.toFixed(4));
+      const decay = Math.pow(1 - q, 2.8);
+      if (bloomPass) bloomPass.strength = 0.26 + (BASE_BLOOM_STRENGTH + 2.15 - 0.26) * decay;
+      if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE + 0.36 * decay;
+      setMatchCutVeil('amber', decay);
       applyCameraAtT(0.32, elapsed);
+      camera.position.y += 0.65 * decay;
+      camera.position.z += 1.15 * decay;
+      if (lookCurve) {
+        lookCurve.getPoint(trackToCurveU(0.32), _transLook);
+        camera.lookAt(_transLook);
+      }
       syncHudAndTimeline();
       updateSpatialMarkers();
       renderFrame();
 
       if (q >= 1) {
-        if (bloomPass) {
-          bloomPass.strength = STATION_BLOOM_STRENGTH;
-          bloomPass.threshold = STATION_BLOOM_THRESHOLD;
-        }
         if (renderer) renderer.toneMappingExposure = BASE_EXPOSURE;
-        if (veil) veil.style.setProperty('--mc-flash', '0');
+        setMatchCutVeil(null, 0);
         matchCutState = null;
+        applyRealmAtmosphere('loft');
         showToast('窗灯余晖渐散 · 步入二层《墨盐》书房 ✨');
       }
       return;
@@ -3912,9 +4569,19 @@ async function bootCinema() {
       return;
     }
 
-    // Station mode (02~05)
+    // Station mode (02~05 isolated realms)
     if (state.autoPlay) {
-      state.targetT = Math.min(1, state.targetT + dt * 0.028);
+      const prevR = getRealmIdByT(state.targetT);
+      const nextAutoT = Math.min(1, state.targetT + dt * 0.028);
+      if (prevR === 'loft' && nextAutoT >= 0.60) {
+        startRealmTransition(0.75, { toast: '推窗入画 · 宋元青绿山河舆图' });
+        return;
+      }
+      if (prevR === 'atlas' && nextAutoT >= 0.85) {
+        startRealmTransition(0.96, { toast: '顺江入夜 · 江南檐下归舟' });
+        return;
+      }
+      state.targetT = nextAutoT;
       if (state.targetT >= 0.999) {
         state.autoPlay = false;
         syncAutoPlayButton();
@@ -3929,59 +4596,41 @@ async function bootCinema() {
 
     state.currentT += (state.targetT - state.currentT) * Math.min(1, dt * 6.5);
 
-    const chime = namedObjects.get('Roof_Windchime');
-    if (chime && worldGroup?.visible && !prefersReducedMotion && state.currentT < 0.35) {
-      chime.rotation.z = Math.sin(elapsed * 1.4) * 0.08;
-    }
-
-    if (worldGroup?.visible && state.currentT >= 0.50) {
+    const curRealm = getRealmIdByT(state.currentT);
+    if (worldGroup?.visible && curRealm === 'atlas') {
+      if (atlasOrbitalRing && !prefersReducedMotion) {
+        atlasOrbitalRing.rotation.y = elapsed * 0.065;
+      }
+      for (const rMat of atlasRiverMats) {
+        rMat.uniforms.uTime.value = elapsed;
+      }
       for (const [idx, entry] of cityBeaconMeshes.entries()) {
         const place = PLACES_22[idx];
         const isSelected = place && place.name === state.selectedCityName;
-        const pulse = 1 + (isSelected ? (prefersReducedMotion ? 0.25 : 0.35 + 0.22 * Math.sin(elapsed * 4.5)) : (prefersReducedMotion ? 0 : 0.08 * Math.sin(elapsed * 2 + idx)));
-        entry.obj.scale.set(isSelected ? 1.38 : 1.0, pulse, isSelected ? 1.38 : 1.0);
-      }
-
-      if (state.currentT >= 0.68) {
-        for (let i = 0; i < riverBoats.length; i++) {
-          const b = riverBoats[i];
-          if (!prefersReducedMotion) {
-            b.obj.position.y = b.baseY + Math.sin(elapsed * 1.5 + b.phase) * 0.055;
-            b.obj.rotation.z = Math.sin(elapsed * 1.1 + b.phase) * 0.038;
-          }
-          if (waterShaderMat && waterShaderMat.uniforms.uBoats.value[i]) {
-            waterShaderMat.uniforms.uBoats.value[i].set(b.obj.position.x, b.obj.position.y, b.obj.position.z - 1.1);
-          }
-        }
-        if (waterShaderMat) waterShaderMat.uniforms.uTime.value = elapsed;
-
-        for (const rp of rippleRings) {
-          const cycle = ((elapsed * 0.42 + rp.phase) % 1);
-          const sc = prefersReducedMotion ? 1.1 : (0.75 + cycle * 1.5);
-          rp.ring.scale.set(sc, sc, sc);
-          rp.ring.material.opacity = prefersReducedMotion ? 0.35 : ((1 - cycle) * 0.52);
-        }
+        const pulse = 1 + (isSelected ? (prefersReducedMotion ? 0.22 : 0.28 + 0.18 * Math.sin(elapsed * 4.2)) : (prefersReducedMotion ? 0 : 0.06 * Math.sin(elapsed * 2 + idx)));
+        entry.obj.scale.set(isSelected ? 1.32 : 1.0, pulse, isSelected ? 1.32 : 1.0);
       }
     }
 
-    if (cascadePoints && worldGroup?.visible && !prefersReducedMotion && state.currentT >= 0.48) {
-      const posAttr = cascadePoints.geometry.getAttribute('position');
-      for (let i = 0; i < cascadeVelocities.length; i++) {
-        const meta = cascadeVelocities[i];
-        if (meta.isCascade) {
-          meta.prog = (meta.prog + dt * meta.speed) % 1;
-          const t = meta.prog;
-          posAttr.setXYZ(
-            i,
-            meta.p0x + (meta.p1x - meta.p0x) * t + meta.xOff * 0.65,
-            1.58 - 8.06 * Math.pow(t, 1.45),
-            meta.p0z + (meta.p1z - meta.p0z) * (0.75 * t + 0.25 * t * t)
-          );
-        } else {
-          posAttr.setY(i, meta.baseY + Math.sin(elapsed * 1.4 + meta.phase) * 0.35);
+    if (worldGroup?.visible && curRealm === 'river') {
+      for (let i = 0; i < riverBoats.length; i++) {
+        const b = riverBoats[i];
+        if (!prefersReducedMotion) {
+          b.obj.position.y = b.baseY + Math.sin(elapsed * 1.45 + b.phase) * 0.05;
+          b.obj.rotation.z = Math.sin(elapsed * 1.05 + b.phase) * 0.032;
+        }
+        if (waterShaderMat && waterShaderMat.uniforms.uBoats.value[i]) {
+          waterShaderMat.uniforms.uBoats.value[i].set(b.obj.position.x, b.obj.position.y, b.obj.position.z + 1.35);
         }
       }
-      posAttr.needsUpdate = true;
+      if (waterShaderMat) waterShaderMat.uniforms.uTime.value = elapsed;
+
+      for (const rp of rippleRings) {
+        const cycle = ((elapsed * 0.38 + rp.phase) % 1);
+        const sc = prefersReducedMotion ? 1.1 : (0.72 + cycle * 1.55);
+        rp.ring.scale.set(sc, sc, sc);
+        rp.ring.material.opacity = prefersReducedMotion ? 0.32 : ((1 - cycle) * 0.48);
+      }
     }
 
     renderOnceAndSync(elapsed);

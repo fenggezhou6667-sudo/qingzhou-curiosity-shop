@@ -136,7 +136,7 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
   background: radial-gradient(circle at 50% 48%, rgba(255, 238, 198, calc(0.18 + var(--portal-strength, 0.2) * 0.36)) 10%, rgba(232, 184, 109, calc(0.16 + var(--portal-strength, 0.2) * 0.24)) 46%, rgba(5, 10, 20, 0.88) 100%);
 }
 
-/* Warm Amber/Ivory Match Cut Radial Exposure Veil */
+/* Multi-Realm Optical Match-Cut & Mist Dissolve Veil */
 #matchcut-veil {
   position: fixed;
   inset: 0;
@@ -151,6 +151,36 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
     #c4863c 100%
   );
   will-change: opacity;
+}
+
+#matchcut-veil[data-veil="mist"] {
+  background: radial-gradient(
+    circle at 50% 46%,
+    rgba(226, 240, 246, 0.96) 0%,
+    rgba(136, 174, 198, 0.95) 38%,
+    rgba(28, 56, 78, 0.98) 76%,
+    rgba(7, 18, 28, 1) 100%
+  );
+}
+
+#matchcut-veil[data-veil="jade"] {
+  background: radial-gradient(
+    circle at 52% 52%,
+    rgba(218, 250, 242, 0.95) 0%,
+    rgba(92, 206, 188, 0.92) 34%,
+    rgba(22, 74, 82, 0.97) 72%,
+    rgba(6, 18, 26, 1) 100%
+  );
+}
+
+#matchcut-veil[data-veil="cosmos"] {
+  background: radial-gradient(
+    circle at 50% 48%,
+    rgba(182, 212, 252, 0.92) 0%,
+    rgba(52, 92, 158, 0.95) 42%,
+    rgba(12, 24, 52, 0.98) 78%,
+    rgba(3, 7, 18, 1) 100%
+  );
 }
 
 /* Edge Star-Guide Pip (Roam Mode) */

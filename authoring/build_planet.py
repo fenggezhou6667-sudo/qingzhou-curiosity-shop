@@ -41,7 +41,7 @@ def paint(name, metallic=0, roughness=.78, glow=0, opacity=1):
 clay = paint('Gouache on stone')
 metal = paint('Hammered copper', .55, .42)
 lamp = paint('Honey lamplight', roughness=.32, glow=.78)
-glass = paint('Blown glass', metallic=.14, roughness=.2, opacity=.14)
+glass = paint('Blown glass', metallic=.06, roughness=.28, opacity=.13)
 parts = {}
 
 
@@ -108,6 +108,42 @@ class Part:
         faces.extend((last+i,last+(i+1)%n,len(pts)-1) for i in range(n))
         first=len(self.faces)
         self.mesh(pts,faces,color)
+        self.smooth_ranges.append(range(first,len(self.faces)))
+
+    def icobulb(self,c,r,color,axes=None):
+        # Seamless geodesic sphere (subdiv=2) with zero UV-pole pinch artifacts.
+        phi=(1+sqrt(5))/2
+        base_v=[Vector(v).normalized() for v in (
+            (-1,phi,0),(1,phi,0),(-1,-phi,0),(1,-phi,0),
+            (0,-1,phi),(0,1,phi),(0,-1,-phi),(0,1,-phi),
+            (phi,0,-1),(phi,0,1),(-phi,0,-1),(-phi,0,1)
+        )]
+        base_f=[
+            (0,11,5),(0,5,1),(0,1,7),(0,7,10),(0,10,11),
+            (1,5,9),(5,11,4),(11,10,2),(10,7,6),(7,1,8),
+            (3,9,4),(3,4,2),(3,2,6),(3,6,8),(3,8,9),
+            (4,9,5),(2,4,11),(6,2,10),(8,6,7),(9,8,1)
+        ]
+        cache={}
+        def mid(a,b):
+            key=(a,b) if a<b else (b,a)
+            if key not in cache:
+                cache[key]=len(base_v)
+                base_v.append((base_v[a]+base_v[b]).normalized())
+            return cache[key]
+        faces=base_f
+        for _ in range(1):
+            nf=[]
+            for a,b,d in faces:
+                ab,bc,ca=mid(a,b),mid(b,d),mid(d,a)
+                nf.extend([(a,ab,ca),(b,bc,ab),(d,ca,bc),(ab,bc,ca)])
+            faces=nf
+        x,y,z=r
+        u,v,w=map(Vector,axes or ((1,0,0),(0,1,0),(0,0,1)))
+        c=Vector(c)
+        pts=[c+u*(p.x*x)+v*(p.y*y)+w*(p.z*z) for p in base_v]
+        first=len(self.faces)
+        self.mesh(pts,faces,color,.035)
         self.smooth_ranges.append(range(first,len(self.faces)))
 
     def finish(self):
@@ -364,7 +400,11 @@ def orchard():
         tree.rod(mid,end,.035,.015,'95755c')
         for _ in range(5):
             pos=end+Vector((rng.uniform(-.16,.16),rng.uniform(-.14,.14),rng.uniform(-.09,.13)))
-            tree.bulb(pos,(rng.uniform(.15,.24),.16,.145),rng.choice(['658d7e','8aab89','aab48b','769b86','b5ae84']),9)
+            th=rng.uniform(0,TAU); ph=rng.uniform(-.4,.4)
+            u=Vector((cos(th)*cos(ph),sin(th)*cos(ph),sin(ph))).normalized()
+            v=Vector((-sin(th),cos(th),0)).normalized()
+            w=u.cross(v).normalized()
+            tree.icobulb(pos,(rng.uniform(.15,.23),.16,.145),rng.choice(['658d7e','8aab89','aab48b','769b86','b5ae84']),(u,v,w))
             for k in range(5):
                 angle=k*TAU/5+rng.uniform(-.2,.2)
                 u=Vector((cos(angle),sin(angle),.18))
@@ -377,12 +417,19 @@ def orchard():
 def rose():
     parent=group('B612_Rose_Cloche')
     stand=Part('Turned brass and enamel',parent,metal)
+    stone=Part('Rose stone terrace',parent,clay)
     bloom=Part('Velvet rose petals',parent)
     bell=Part('Handblown bell',parent,glass)
     p=surface(1.45,-.65)
-    # The keeper has levelled a small plinth into the slope.
+    # Cut-stone stepped retaining collar deeply embedded into the meadow slope.
     up=((1,0,0),(0,1,0),(0,0,1))
-    stand.solid(p,up,[(-.19,.26,.26),(-.035,.32,.32),(.006,.34,.34),(.054,.34,.34),(.073,.30,.30)],32,'be9566')
+    stone.solid(p,up,[(-.42,.42,.42),(-.20,.38,.38),(-.09,.36,.36),(-.03,.33,.33)],20,'6e7a74',.055)
+    for i in range(14):
+        a=TAU*i/14
+        c=p+Vector((.345*cos(a),.345*sin(a),-.07))
+        stone.bulb(c,(.085,.07,.055),rng.choice(['7f8980','8d9184','687670']),6)
+    # Turned brass graduated compass plinth seated atop the stone collar.
+    stand.solid(p,up,[(-.05,.31,.31),(.006,.34,.34),(.054,.34,.34),(.073,.30,.30)],32,'be9566')
     for i in range(32):
         a=i*TAU/32
         start=p+Vector((.337*cos(a),.337*sin(a),.02))
@@ -401,7 +448,9 @@ def rose():
             base=tip+d*.018+Vector((0,0,.014*row))
             rad=.124-.031*row
             bloom.mesh([base,base+d*rad*.8-u*.056+Vector((0,0,.055)),base+d*rad-u*.036+Vector((0,0,.096)),base+d*rad+u*.032+Vector((0,0,.10)),base+d*rad*.8+u*.056+Vector((0,0,.055))],[(0,1,2,3,4)],rng.choice(['b94e62','d96573','e58a89','c45767']))
-    bell.solid(p,up,[(.078,.282,.282),(.41,.282,.282),(.53,.268,.268),(.62,.218,.218),(.69,.142,.142),(.72,.025,.025)],32,'badcda')
+    bell_first=len(bell.faces)
+    bell.solid(p,up,[(.078,.282,.282),(.41,.282,.282),(.53,.268,.268),(.62,.218,.218),(.69,.142,.142),(.72,.025,.025)],36,'badcda',0)
+    bell.smooth_ranges.append(range(bell_first,len(bell.faces)))
     stand.bulb(p+Vector((0,0,.744)),(.045,.045,.047),'dfb274',12)
 
 
