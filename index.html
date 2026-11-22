@@ -4,79 +4,47 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#050a14" />
-  <title>清舟的杂货铺 · 一镜到底空间剧场 (B-612 × Blender 3D)</title>
+  <title>清舟的杂货铺 · 银河、向日葵花海与微缩奇珍阁</title>
   <link rel="icon" type="image/svg+xml" href="./assets/sleeping-cat.svg" />
-  <meta name="description" content="清舟的杂货铺立体宇宙版本：降落暖金 B-612 清舟星与三枚摄影卫星，穿过屋顶落入《墨盐》阁楼长案与实验暗室，推窗俯瞰华夏山河舆图，顺水停泊在屋檐与乌篷归舟之间。" />
+  <meta name="description" content="清舟的杂货铺立体空间剧场：从26,000恒星旋臂银河穿云降落紫金黄昏向日葵花海，跟随萤火虫推门步入温暖木屋，360°端详五座可交互微缩世界。" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="清舟的杂货铺 · B-612 一镜到底空间剧场" />
-  <meta property="og:description" content="降落暖金 B-612 清舟星与摄影卫星，穿入《墨盐》阁楼诗房与月下实验桌，推窗俯瞰华夏山河舆图，停泊江南灯火夜河。" />
+  <meta property="og:title" content="清舟的杂货铺 · 银河、花海与微缩奇珍阁" />
+  <meta property="og:description" content="穿云落入紫金向日葵花海，随萤火虫进入温暖杂货铺，在屋中端详五座可拖拽交互微缩世界。" />
   <meta property="og:image" content="https://fenggezhou6667-sudo.github.io/qingzhou-curiosity-shop/assets/lake-1600.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="stylesheet" href="./unified.css" />
 </head>
-<body class="onetake-cinema" data-mode="roam" data-zone="works" data-portal="none">
-  <canvas id="onetake-canvas" aria-label="清舟的杂货铺三维一镜到底空间舞台"></canvas>
+<body class="onetake-cinema" data-act="galaxy" data-inspect="none">
+  <canvas id="onetake-canvas" aria-label="清舟的杂货铺三维空间剧场"></canvas>
   <div id="aperture-vignette" aria-hidden="true"></div>
   <div id="matchcut-veil" aria-hidden="true"></div>
   <div id="spatial-markers" aria-hidden="false"></div>
 
-  <!-- Edge Star-Guide Pip toward B-612 (Roam Mode) -->
-  <button id="star-guide-btn" type="button" hidden aria-label="寻星微光指引">
-    <span class="star-guide-dot" aria-hidden="true"></span>
-    <span class="star-guide-label">寻星</span>
-  </button>
-
-  <nav id="garden-actions" hidden aria-label="玫瑰花园">
-    <button type="button" class="hud-btn" id="garden-land">降落花径 ↓</button>
-    <button type="button" class="hud-btn" id="garden-rose">轻触玫瑰</button>
-    <button type="button" class="hud-btn" id="garden-study">走进木屋</button>
-    <button type="button" class="hud-btn" id="garden-orbit">回望全星 ↑</button>
-  </nav>
-
-  <!-- Mobile Forward Glide Strip (<=900px Roam Mode) -->
-  <button id="mobile-glide-pad" class="mobile-glide-pad" type="button" aria-label="长按向前飘移 · 单指滑动环顾">
-    <span class="glide-dot" aria-hidden="true"></span>
-    <span>长按向前飘移 · 单指滑动环顾</span>
-  </button>
-
-  <!-- Top Optical Viewfinder Header -->
-  <header id="hud-topbar" aria-label="空间航线导航">
+  <!-- Minimal Top Optical Header (Clean across all 3 Acts!) -->
+  <header id="hud-topbar" aria-label="空间导航">
     <div class="hud-brand">
-      <button type="button" class="brand-seal" id="btn-menu-open" aria-haspopup="dialog" aria-controls="ink-atlas" aria-expanded="false" title="开启清舟卷目 · 空间导航与归档">
+      <button type="button" class="brand-seal" id="btn-menu-open" aria-haspopup="dialog" aria-controls="ink-atlas" aria-expanded="false" title="开启清舟卷目 · 三幕空间与五座微缩世界">
         <span class="seal-mark">舟</span>
       </button>
       <div class="brand-titles">
-        <div class="brand-name">清舟的杂货铺 <span class="brand-badge">B-612 · ONE-TAKE</span></div>
+        <div class="brand-name">清舟的杂货铺 <span class="brand-badge" id="hud-act-badge">ACT I · 旋臂银河</span></div>
         <div class="brand-solar" id="hud-solar-term">节气读取中…</div>
       </div>
     </div>
 
-    <nav class="hud-stations" aria-label="五境空间锚点">
-      <button type="button" class="station-pill is-active" data-station="works" data-t="0.00">
-        <span class="st-idx">01</span><span class="st-name">清舟星</span>
+    <nav class="hud-acts" aria-label="三幕空间切换">
+      <button type="button" class="act-pill is-active" data-act-target="galaxy">
+        <span class="st-idx">I</span><span class="st-name">银河</span>
       </button>
-      <button type="button" class="station-pill" data-station="notes" data-t="0.32">
-        <span class="st-idx">02</span><span class="st-name">墨盐</span>
+      <button type="button" class="act-pill" data-act-target="sunflower">
+        <span class="st-idx">II</span><span class="st-name">花海</span>
       </button>
-      <button type="button" class="station-pill" data-station="labs" data-t="0.50">
-        <span class="st-idx">03</span><span class="st-name">实验</span>
-      </button>
-      <button type="button" class="station-pill" data-station="traces" data-t="0.75">
-        <span class="st-idx">04</span><span class="st-name">山河</span>
-      </button>
-      <button type="button" class="station-pill" data-station="about" data-t="0.96">
-        <span class="st-idx">05</span><span class="st-name">归舟</span>
+      <button type="button" class="act-pill" data-act-target="room">
+        <span class="st-idx">III</span><span class="st-name">奇珍阁</span>
       </button>
     </nav>
 
     <div class="hud-actions">
-      <span class="portal-pill" id="hud-portal-pill" hidden>降落星屋</span>
-      <button type="button" class="hud-btn hud-btn-primary" id="btn-autoplay" aria-pressed="false" title="空格键启停自动长镜头">
-        <span id="autoplay-icon">▶</span> <span id="autoplay-label">一镜巡游</span>
-      </button>
-      <span class="telemetry-readout" id="hud-telemetry">T 0.00</span>
-      <button type="button" class="hud-btn hud-btn-light" id="btn-roam-return" title="返回星海漫游">✦ 返星海</button>
-
       <div id="music-dock" class="music-dock">
         <button type="button" class="hud-btn hud-btn-light" id="dock-toggle" aria-expanded="false" aria-label="展开音乐播放器">
           ♪ <span>声景</span>
@@ -95,18 +63,46 @@
         <audio id="dock-audio" preload="none" src="./assets/where-the-light-settles.mp3"></audio>
       </div>
 
-      <button type="button" class="hud-btn hud-btn-light" id="btn-atlas-open" aria-haspopup="dialog" aria-controls="ink-atlas" aria-expanded="false" title="开启清舟卷目（五境直达与平面归档）">卷目</button>
-
+      <button type="button" class="hud-btn hud-btn-light" id="btn-atlas-open" aria-haspopup="dialog" aria-controls="ink-atlas" aria-expanded="false" title="开启清舟卷目">卷目</button>
       <a class="hud-btn hud-btn-ghost" id="hud-archive-link" href="./archive.html" title="切回原始独立平面档案">原版站点 ↗</a>
     </div>
   </header>
 
-  <!-- Adaptive Floating Station Deck -->
-  <aside id="station-deck" aria-label="当前空间展签">
+  <!-- Act I Bottom Cue: Galaxy -> Cloud-Break Dive -->
+  <div id="act-galaxy-bar" class="act-float-bar">
+    <span class="act-hint-text">拖拽环顾银河 · 滚轮缩放</span>
+    <button type="button" class="hud-btn hud-btn-primary" id="btn-dive-planet">✦ 穿云降落清舟星 ↓</button>
+  </div>
+
+  <!-- Act II Bottom Cue: Sunset Sunflower Sea + Guiding Fireflies -> Enter Cottage -->
+  <div id="act-sunflower-bar" class="act-float-bar" hidden>
+    <button type="button" class="hud-btn" id="btn-back-galaxy">↑ 重返银河</button>
+    <button type="button" class="hud-btn hud-btn-primary" id="btn-enter-room">✦ 随萤火虫推门入屋 →</button>
+  </div>
+
+  <!-- Act III Bottom Miniature Exhibit Switcher Dock -->
+  <nav id="exhibit-dock" class="exhibit-dock" hidden aria-label="屋内五座微缩世界切换">
+    <div id="inspect-hint" class="inspect-hint" hidden>拖拽旋转端详微缩世界 · 滚轮缩放 · Esc 返回全屋</div>
+    <div class="exhibit-dock-row">
+      <button type="button" class="exhibit-arrow" id="btn-exhibit-prev" aria-label="上一件微缩模型">‹</button>
+      <button type="button" class="exhibit-pill" data-exhibit="photo"><span class="ex-idx">01</span> 摄影暗箱</button>
+      <button type="button" class="exhibit-pill" data-exhibit="moyan"><span class="ex-idx">02</span> 墨盐诗卷</button>
+      <button type="button" class="exhibit-pill" data-exhibit="lab"><span class="ex-idx">03</span> 植物标本</button>
+      <button type="button" class="exhibit-pill" data-exhibit="atlas"><span class="ex-idx">04</span> 青绿舆图</button>
+      <button type="button" class="exhibit-pill" data-exhibit="river"><span class="ex-idx">05</span> 江南夜河</button>
+      <button type="button" class="exhibit-arrow" id="btn-exhibit-next" aria-label="下一件微缩模型">›</button>
+      <span class="dock-sep" aria-hidden="true"></span>
+      <button type="button" class="exhibit-util" id="btn-room-overview">全屋全景</button>
+      <button type="button" class="exhibit-util" id="btn-back-sunflower">出门看花海</button>
+    </div>
+  </nav>
+
+  <!-- Adaptive Floating Exhibit Inspection Deck (Shown cleanly when inspecting a miniature world) -->
+  <aside id="station-deck" aria-label="当前微缩世界展签" hidden>
     <div class="station-deck-head">
       <div>
-        <div class="deck-eyebrow" id="deck-eyebrow">ZONE 01 · PLANET B-612</div>
-        <h2 class="deck-title" id="deck-title">B-612 清舟星 · 星屋与摄影卫星</h2>
+        <div class="deck-eyebrow" id="deck-eyebrow">MINIATURE</div>
+        <h2 class="deck-title" id="deck-title">清舟的杂货铺</h2>
       </div>
       <div class="deck-head-btns">
         <button type="button" class="icon-btn" id="btn-deck-about" title="杂货铺扉页与鸣谢">店志</button>
@@ -116,25 +112,6 @@
     <div class="station-deck-body" id="station-deck-body"></div>
   </aside>
 
-  <!-- Bottom Camera Scrubber Rail -->
-  <footer id="timeline-rail" aria-label="长镜头进度轨道">
-    <div class="rail-hint">滚轮 / 拖拽轨道穿行五境 · 点击场景器物交互</div>
-    <div class="rail-track-wrap" id="rail-track-wrap" role="slider" aria-label="长镜头时间轴" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
-      <div class="rail-track-bg"></div>
-      <div class="rail-track-fill" id="rail-track-fill"></div>
-      <div class="rail-thumb" id="rail-thumb"></div>
-      <button type="button" class="rail-tick is-station" style="left:0%" data-t="0.00" title="01 B-612 清舟星">星</button>
-      <button type="button" class="rail-tick is-portal" style="left:20%" data-t="0.20" title="降落星屋入阁楼"></button>
-      <button type="button" class="rail-tick is-station" style="left:32%" data-t="0.32" title="02 墨盐书房">书</button>
-      <button type="button" class="rail-tick is-station" style="left:50%" data-t="0.50" title="03 实验暗室">研</button>
-      <button type="button" class="rail-tick is-portal" style="left:61%" data-t="0.61" title="推开木窗"></button>
-      <button type="button" class="rail-tick is-station" style="left:75%" data-t="0.75" title="04 华夏山河">山</button>
-      <button type="button" class="rail-tick is-portal" style="left:86%" data-t="0.86" title="顺水入夜河"></button>
-      <button type="button" class="rail-tick is-station" style="left:96%" data-t="0.96" title="05 檐下归舟">舟</button>
-    </div>
-    <div class="rail-pct" id="rail-pct">00%</div>
-  </footer>
-
   <!-- Full-Screen Translucent Ink Atlas Overlay -->
   <div id="ink-atlas" class="ink-atlas" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="ink-atlas-title">
     <div id="atlas-backdrop" class="atlas-backdrop"></div>
@@ -142,30 +119,42 @@
       <header class="atlas-head">
         <div>
           <div class="atlas-kicker">QINGZHOU CURIOSITY SHOP · 空间卷目</div>
-          <h2 class="atlas-title" id="ink-atlas-title">星海漫游与五境行录</h2>
+          <h2 class="atlas-title" id="ink-atlas-title">银河、花海与一屋微缩世界</h2>
         </div>
         <button type="button" class="atlas-close" id="atlas-close" aria-label="关闭卷目">✕</button>
       </header>
-      <nav class="atlas-nav" aria-label="五境空间与归档直达">
-        <button type="button" class="atlas-link" data-atlas-action="roam">
-          <span class="atlas-link-main">01 · 星海漫游（B-612 青州星）</span>
-          <span class="atlas-link-sub">星海重游 · 自由环顾与六幅微光星框</span>
+      <nav class="atlas-nav" aria-label="三幕与五座微缩世界直达">
+        <button type="button" class="atlas-link" data-atlas-act="galaxy">
+          <span class="atlas-link-main">第一幕 · 旋臂银河与大气行星</span>
+          <span class="atlas-link-sub">26,000 恒星双旋臂星系 · 点击清舟星穿云降落</span>
         </button>
-        <button type="button" class="atlas-link" data-atlas-t="0.32">
-          <span class="atlas-link-main">02 · 墨盐书房（《墨盐》三十诗）</span>
-          <span class="atlas-link-sub">二层暖灯长案，可钤朱砂印与写眉批</span>
+        <button type="button" class="atlas-link" data-atlas-act="sunflower">
+          <span class="atlas-link-main">第二幕 · 紫金黄昏向日葵花海</span>
+          <span class="atlas-link-sub">随风起伏的向日葵花浪 · 跟随萤火虫推门入屋</span>
         </button>
-        <button type="button" class="atlas-link" data-atlas-t="0.50">
-          <span class="atlas-link-main">03 · 月下实验桌（植物标本与蓝图）</span>
-          <span class="atlas-link-sub">青花蓝图板与四枚植物学标本玻匣</span>
+        <button type="button" class="atlas-link" data-atlas-act="room">
+          <span class="atlas-link-main">第三幕 · 清舟杂货铺全屋全景</span>
+          <span class="atlas-link-sub">一屋陈列五座可拖拽端详的微缩世界</span>
         </button>
-        <button type="button" class="atlas-link" data-atlas-t="0.75">
-          <span class="atlas-link-main">04 · 华夏山河舆图（廿二城行迹）</span>
-          <span class="atlas-link-sub">推窗俯瞰双层台地九州水系与行旅坐标</span>
+        <button type="button" class="atlas-link" data-atlas-exhibit="photo">
+          <span class="atlas-link-main">01 微缩世界 · 复古胶片暗箱（六组摄影）</span>
+          <span class="atlas-link-sub">暖光灯箱滑出底片匣 · 点击直入高清暗房看片台</span>
         </button>
-        <button type="button" class="atlas-link" data-atlas-t="0.96">
-          <span class="atlas-link-main">05 · 檐下夜河归舟（灯船祈愿）</span>
-          <span class="atlas-link-sub">水乡马头墙、屋檐黑猫与乌篷河灯</span>
+        <button type="button" class="atlas-link" data-atlas-exhibit="moyan">
+          <span class="atlas-link-main">02 微缩世界 · 《墨盐》宣纸诗卷与朱砂印</span>
+          <span class="atlas-link-sub">三十首诗作 · 真实抬印落印与宣纸眉批</span>
+        </button>
+        <button type="button" class="atlas-link" data-atlas-exhibit="lab">
+          <span class="atlas-link-main">03 微缩世界 · 掀盖玻璃植物标本匣与蓝晒</span>
+          <span class="atlas-link-sub">玻璃匣盖物理掀开 · 四枚植物标本与实验原理图</span>
+        </button>
+        <button type="button" class="atlas-link" data-atlas-exhibit="atlas">
+          <span class="atlas-link-main">04 微缩世界 · 宋元青绿山河微缩沙盘</span>
+          <span class="atlas-link-sub">桌面360°可转玉雕舆图 · 廿二城行迹与流光水脉</span>
+        </button>
+        <button type="button" class="atlas-link" data-atlas-exhibit="river">
+          <span class="atlas-link-main">05 微缩世界 · 临窗江南夜河微缩水景箱</span>
+          <span class="atlas-link-sub">玻璃箱内波光乌篷船 · 写下寄语放出一盏微光河灯</span>
         </button>
         <a class="atlas-link atlas-link-archive" href="./archive.html">
           <span class="atlas-link-main">原版平面归档 ↗</span>
@@ -201,8 +190,7 @@
         <span class="dr-counter" id="dr-counter">01 / 02</span>
         <button type="button" class="hud-btn" id="dr-intro-toggle" aria-expanded="false">展签导言</button>
         <button type="button" class="hud-btn" id="dr-zoom-btn" aria-pressed="false">1.8× 细节</button>
-        <button type="button" class="hud-btn" id="dr-garden-btn">飞往玫瑰星</button>
-        <button type="button" class="hud-btn hud-btn-primary" id="dr-fly-study-btn">↓ 降落书房</button>
+        <button type="button" class="hud-btn hud-btn-primary" id="dr-fly-study-btn">前往《墨盐》诗卷 →</button>
         <button type="button" class="icon-btn" id="dr-close" aria-label="关闭摄影看图器">✕</button>
       </div>
     </header>
@@ -237,8 +225,8 @@
   <!-- Cinema Loading Curtain -->
   <div id="cinema-loader" class="cinema-loader" aria-live="polite">
     <div class="loader-ring" id="loader-spinner"></div>
-    <div class="loader-title" id="loader-title">清舟的杂货铺 · B-612 一镜到底空间正在显影</div>
-    <div class="loader-sub" id="loader-status">正在载入 Blender 空间架构与星海着色器…</div>
+    <div class="loader-title" id="loader-title">清舟的杂货铺 · 银河与微缩奇珍阁正在显影</div>
+    <div class="loader-sub" id="loader-status">正在点亮 26,000 颗旋臂恒星与大气行星…</div>
     <div class="loader-actions" id="loader-actions" hidden>
       <button type="button" class="hud-btn hud-btn-primary" id="btn-loader-retry">重新载入空间</button>
       <a class="hud-btn" href="./archive.html">前往原版平面站点 ↗</a>

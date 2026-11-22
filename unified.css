@@ -2156,3 +2156,569 @@ body[data-mode="station"] .hud-btn-light:hover {
   .dr-topbar { flex-wrap: wrap; }
   .dr-controls { max-width: 100%; flex-wrap: wrap; gap: 4px; }
 }
+
+
+/* =========================================================================
+   3-Act Architecture: Spiral Galaxy -> Golden-Violet Sunflower Sea ->
+   Single-Room Curiosity Shop & 5 Draggable Miniature Worlds
+   ========================================================================= */
+body[data-act] #hud-topbar {
+  background: rgba(8, 12, 20, 0.56) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-color: rgba(232, 184, 109, 0.22) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.34) !important;
+}
+
+body[data-act="galaxy"] #hud-topbar,
+body[data-act="sunflower"] #hud-topbar {
+  background: rgba(10, 12, 22, 0.38) !important;
+}
+
+.hud-acts {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(12, 16, 26, 0.52);
+  border: 1px solid rgba(232, 184, 109, 0.22);
+}
+
+.act-pill {
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(243, 230, 207, 0.74);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  padding: 6px 13px;
+  min-height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.25s ease;
+}
+
+.act-pill:hover {
+  color: #fff6e6;
+  background: rgba(232, 184, 109, 0.12);
+}
+
+.act-pill.is-active {
+  color: #fff8ea;
+  background: rgba(232, 184, 109, 0.22);
+  border-color: rgba(232, 184, 109, 0.55);
+  box-shadow: 0 0 14px rgba(232, 184, 109, 0.22);
+}
+
+/* Floating Bottom Act Cues (Acts I & II) */
+.act-float-bar {
+  position: fixed;
+  bottom: max(26px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px 6px 16px;
+  border-radius: 999px;
+  background: rgba(8, 12, 22, 0.64);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(232, 184, 109, 0.28);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.42);
+  white-space: nowrap;
+}
+
+.act-float-bar[hidden] {
+  display: none !important;
+}
+
+.act-hint-text {
+  font-size: 12.5px;
+  color: rgba(243, 230, 207, 0.72);
+  letter-spacing: 0.05em;
+}
+
+.act-float-bar .hud-btn {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+/* Act III Bottom Miniature Exhibit Switcher Dock */
+.exhibit-dock {
+  position: fixed;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 24px);
+}
+
+.exhibit-dock[hidden] {
+  display: none !important;
+}
+
+.inspect-hint {
+  font-size: 12px;
+  color: rgba(243, 230, 207, 0.78);
+  letter-spacing: 0.06em;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(10, 12, 18, 0.66);
+  border: 1px solid rgba(232, 184, 109, 0.22);
+  backdrop-filter: blur(10px);
+}
+
+.exhibit-dock-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(10, 12, 18, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(232, 184, 109, 0.28);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5);
+  overflow-x: auto;
+  max-width: 100%;
+  scrollbar-width: none;
+}
+
+.exhibit-dock-row::-webkit-scrollbar {
+  display: none;
+}
+
+.exhibit-pill,
+.exhibit-util,
+.exhibit-arrow {
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(243, 230, 207, 0.78);
+  font-size: 12.5px;
+  padding: 7px 12px;
+  min-height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: all 0.22s ease;
+}
+
+.exhibit-arrow {
+  width: 36px;
+  padding: 0;
+  justify-content: center;
+  font-size: 18px;
+  color: rgba(232, 184, 109, 0.85);
+}
+
+.exhibit-pill:hover,
+.exhibit-util:hover,
+.exhibit-arrow:hover {
+  color: #fff8ea;
+  background: rgba(232, 184, 109, 0.14);
+}
+
+.exhibit-pill.is-active {
+  color: #fff8ea;
+  background: rgba(232, 184, 109, 0.24);
+  border-color: rgba(232, 184, 109, 0.62);
+  box-shadow: 0 0 14px rgba(232, 184, 109, 0.24);
+}
+
+.ex-idx {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--gold-brass);
+  opacity: 0.9;
+}
+
+.dock-sep {
+  width: 1px;
+  height: 18px;
+  background: rgba(232, 184, 109, 0.26);
+  margin: 0 2px;
+  flex: 0 0 auto;
+}
+
+.exhibit-util {
+  color: rgba(95, 226, 204, 0.88);
+  border-color: rgba(95, 226, 204, 0.22);
+}
+
+/* Show Station Deck cleanly ONLY when inspecting an exhibit inside Act III */
+body[data-act="room"][data-inspect="none"] #station-deck,
+body[data-act="galaxy"] #station-deck,
+body[data-act="sunflower"] #station-deck {
+  display: none !important;
+}
+
+body[data-act="room"]:not([data-inspect="none"]) #station-deck {
+  display: flex !important;
+  bottom: 84px;
+  max-height: calc(100vh - 180px);
+}
+
+/* Keep brand titles & archive button visible in 3-act mode */
+body[data-act] .brand-titles,
+body[data-act] #hud-archive-link {
+  display: flex !important;
+}
+
+body[data-act] .brand-titles {
+  flex-direction: column;
+}
+
+@media (max-width: 900px) {
+  body[data-act] #hud-topbar {
+    flex-wrap: wrap;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  body[data-act] .brand-solar,
+  body[data-act] .brand-badge,
+  body[data-act] #hud-archive-link,
+  .act-hint-text {
+    display: none !important;
+  }
+
+  .hud-acts {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .act-pill {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 6px 8px;
+  }
+
+  .act-float-bar {
+    padding: 6px 10px;
+    max-width: calc(100vw - 20px);
+  }
+
+  .exhibit-dock {
+    bottom: max(12px, env(safe-area-inset-bottom));
+    max-width: calc(100vw - 12px);
+  }
+
+  .inspect-hint {
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+
+  body[data-act="room"]:not([data-inspect="none"]) #station-deck {
+    bottom: 68px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-height: 46vh;
+  }
+}
+
+
+/* =========================================================================
+   3-Act Spatial Floating Pins & Exhibit Inspection Deck Polish
+   ========================================================================= */
+#matchcut-veil {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 224, 158, 0.96) 0%, rgba(214, 128, 62, 0.92) 55%, rgba(28, 16, 12, 0.98) 100%) !important;
+  transition: opacity 0.12s linear;
+}
+
+.spatial-pin {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 9;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px 5px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 184, 109, 0.48);
+  background: rgba(11, 13, 22, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fff6e4;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, border-color 0.2s ease, background 0.2s ease;
+  white-space: nowrap;
+}
+
+.spatial-pin:hover {
+  background: rgba(232, 184, 109, 0.24);
+  border-color: rgba(255, 224, 152, 0.88);
+}
+
+.spatial-pin .pin-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffd98a;
+  box-shadow: 0 0 10px rgba(255, 210, 118, 0.95);
+  flex-shrink: 0;
+}
+
+.spatial-pin .pin-label {
+  font-weight: 600;
+}
+
+.spatial-pin .pin-sub {
+  font-size: 11px;
+  color: rgba(243, 230, 207, 0.72);
+  padding-left: 5px;
+  border-left: 1px solid rgba(232, 184, 109, 0.3);
+}
+
+/* Exhibit Inspection Deck Interior Components */
+.work-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.work-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.04);
+  text-align: left;
+  transition: border-color 0.2s ease, transform 0.16s ease;
+}
+
+.work-card:hover,
+.work-card.is-active {
+  border-color: var(--gold-brass);
+  transform: translateY(-1px);
+}
+
+.work-card img {
+  width: 100%;
+  height: 64px;
+  object-fit: cover;
+  display: block;
+}
+
+.work-card-meta {
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.work-card-meta span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--gold-brass);
+}
+
+.work-card-meta strong {
+  font-size: 12px;
+  color: var(--ink-ivory);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.poem-select {
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-gold);
+  background: rgba(14, 16, 26, 0.85);
+  color: var(--ink-ivory);
+  font-size: 12.5px;
+  margin-bottom: 10px;
+}
+
+.poem-preview-card {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(232, 184, 109, 0.28);
+  background: rgba(243, 230, 207, 0.05);
+  margin-bottom: 10px;
+}
+
+.poem-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.poem-preview-head strong {
+  font-size: 14px;
+  color: #fff2dc;
+}
+
+.poem-preview-head span {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--gold-brass);
+}
+
+.poem-preview-card pre.poem-preview-lines {
+  margin: 0;
+  font-family: inherit;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: rgba(243, 230, 207, 0.92);
+  white-space: pre-wrap;
+}
+
+.pill-row,
+.city-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.chip-btn {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  transition: all 0.18s ease;
+}
+
+.chip-btn:hover {
+  color: var(--ink-ivory);
+  border-color: rgba(232, 184, 109, 0.5);
+}
+
+.chip-btn.has-poem {
+  border-color: rgba(232, 184, 109, 0.45);
+  color: #ffd899;
+}
+
+.chip-btn.is-active {
+  background: rgba(232, 184, 109, 0.24);
+  border-color: var(--gold-brass);
+  color: #fff6e4;
+}
+
+.sample-readout,
+.city-card {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(95, 226, 204, 0.30);
+  background: rgba(8, 22, 26, 0.65);
+  margin: 8px 0 10px;
+  font-size: 12.5px;
+}
+
+.sample-latin {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--jade-glow);
+  margin-bottom: 3px;
+}
+
+.sample-readout p,
+.city-desc {
+  margin: 6px 0;
+  color: rgba(243, 230, 207, 0.86);
+  line-height: 1.6;
+}
+
+.sample-verse {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(95, 226, 204, 0.25);
+  color: #d6fff6;
+  font-style: italic;
+}
+
+.city-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.city-head strong {
+  font-size: 15px;
+  color: #fff4df;
+}
+
+.city-group {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(95, 226, 204, 0.14);
+  color: var(--jade-glow);
+}
+
+.deck-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.wish-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  background: rgba(0, 0, 0, 0.38);
+  color: var(--ink-ivory);
+  font-size: 12.5px;
+}
+
+.wish-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.wish-stamp {
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.wish-text p {
+  margin: 0;
+  color: var(--ink-ivory);
+  line-height: 1.45;
+}
+
+.wish-text span {
+  font-size: 10.5px;
+  color: var(--ink-muted);
+}
+
+.exhibit-util.is-active {
+  background: rgba(95, 226, 204, 0.18);
+  border-color: rgba(95, 226, 204, 0.58);
+  color: #e2fff9;
+}
