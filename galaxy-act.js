@@ -1,13 +1,9 @@
 import * as THREE from './vendor/three/three.module.js';
 
 /**
- * Act I: Upgraded Dual-Arm Spiral Galaxy (26,000 stars + 360° celestial deep field + soft nebula gas)
- * + Real Atmospheric Celestial Planet 「清舟星」 (oceans, sunflower plains, volumetric cloud shell,
- *   Rayleigh/Fresnel atmospheric rim halo, subtle brass orbital beacon — NO house or grass glued to a sphere!)
- * + Fullscreen GLSL Volumetric Cloud-Break Dive Transition (`createCloudDiveScene`).
+ * Act I: Pure Dual-Arm Spiral Galaxy (26,000 stars + 360° celestial deep field + soft nebula gas)
+ * + Delicate Breathing Outer-Arm Star Beacon 「清舟星」 (NO giant disproportionate planet beside the galaxy!).
  */
-export const PLANET_POS = new THREE.Vector3(5.6, 0.45, 2.8);
-export const PLANET_RADIUS = 1.28;
 
 export function buildGalaxyAct(dpr = 1) {
   const group = new THREE.Group();
@@ -263,238 +259,125 @@ export function buildGalaxyAct(dpr = 1) {
   group.add(new THREE.Points(deepGeo, deepMat));
 
   // -------------------------------------------------------------------------
-  // 4. REAL ATMOSPHERIC CELESTIAL PLANET 「清舟星」 (Seated gracefully on an outer spiral arm!)
+  // 4. DELICATE BREATHING OUTER-ARM STAR BEACON 「清舟星」 (True Cosmic Scale!)
   // -------------------------------------------------------------------------
-  const planetGroup = new THREE.Group();
-  planetGroup.name = 'Qingzhou_Planet';
-  planetGroup.position.copy(PLANET_POS);
-  group.add(planetGroup);
+  const beaconR = 4.9;
+  const beaconTheta = Math.PI + 0.44 + 1.38 * Math.log(beaconR / 1.65);
+  const starBeaconGroup = new THREE.Group();
+  starBeaconGroup.name = 'Qingzhou_Star_Beacon';
+  starBeaconGroup.position.set(
+    Math.cos(beaconTheta) * beaconR,
+    0.14,
+    Math.sin(beaconTheta) * beaconR
+  );
+  galaxyDisk.add(starBeaconGroup);
 
-  const sunDir = new THREE.Vector3(-0.78, 0.36, 0.52).normalize();
-
-  // 4A. Planet Surface Shader (deep indigo-sapphire oceans, ochre/sunflower plains, sunset terminator, tiny night lantern embers!)
-  const surfaceMat = new THREE.ShaderMaterial({
-    uniforms: {
-      uTime: { value: 0 },
-      uSunDir: { value: sunDir },
-      uHover: { value: 0 }
-    },
-    vertexShader: `
-      varying vec3 vNormalWorld;
-      varying vec3 vPosLocal;
-      varying vec3 vViewDir;
-      void main() {
-        vPosLocal = normalize(position);
-        vec4 wp = modelMatrix * vec4(position, 1.0);
-        vNormalWorld = normalize(mat3(modelMatrix) * normal);
-        vViewDir = normalize(cameraPosition - wp.xyz);
-        gl_Position = projectionMatrix * viewMatrix * wp;
-      }
-    `,
-    fragmentShader: `
-      uniform float uTime;
-      uniform vec3 uSunDir;
-      uniform float uHover;
-      varying vec3 vNormalWorld;
-      varying vec3 vPosLocal;
-      varying vec3 vViewDir;
-
-      float hash31(vec3 p) {
-        p = fract(p * 0.1031);
-        p += dot(p, p.yzx + 33.33);
-        return fract((p.x + p.y) * p.z);
-      }
-      float n3(vec3 p) {
-        vec3 i = floor(p);
-        vec3 f = fract(p);
-        f = f * f * (3.0 - 2.0 * f);
-        return mix(
-          mix(mix(hash31(i), hash31(i + vec3(1,0,0)), f.x),
-              mix(hash31(i + vec3(0,1,0)), hash31(i + vec3(1,1,0)), f.x), f.y),
-          mix(mix(hash31(i + vec3(0,0,1)), hash31(i + vec3(1,0,1)), f.x),
-              mix(hash31(i + vec3(0,1,1)), hash31(i + vec3(1,1,1)), f.x), f.y),
-          f.z
-        );
-      }
-      float fbm(vec3 p) {
-        float v = 0.0;
-        float a = 0.5;
-        for (int i = 0; i < 4; i++) {
-          v += a * n3(p);
-          p = p * 2.08 + vec3(1.7, -2.3, 0.9);
-          a *= 0.5;
-        }
-        return v;
-      }
-
-      void main() {
-        vec3 n = normalize(vNormalWorld);
-        vec3 v = normalize(vViewDir);
-        float ndl = dot(n, normalize(uSunDir));
-        float day = smoothstep(-0.18, 0.45, ndl);
-        float twilight = exp(-pow((ndl + 0.02) * 5.2, 2.0));
-
-        // Continents & sunflower-gold highlands vs sapphire oceans
-        float cont = fbm(vPosLocal * 2.4 + vec3(0.4, -0.2, 1.1));
-        float detail = fbm(vPosLocal * 6.2);
-        float isLand = smoothstep(0.49, 0.57, cont + (detail - 0.5) * 0.12);
-
-        vec3 oceanDeep = vec3(0.05, 0.13, 0.28);
-        vec3 oceanShallow = vec3(0.09, 0.29, 0.42);
-        vec3 oceanCol = mix(oceanDeep, oceanShallow, smoothstep(0.32, 0.50, cont));
-
-        vec3 plainsGold = vec3(0.74, 0.55, 0.25); // hint of golden sunflower plains!
-        vec3 meadowJade = vec3(0.24, 0.40, 0.28);
-        vec3 peakWarm   = vec3(0.84, 0.72, 0.52);
-        vec3 landCol = mix(meadowJade, plainsGold, smoothstep(0.52, 0.72, cont + detail * 0.2));
-        landCol = mix(landCol, peakWarm, smoothstep(0.76, 0.90, cont + detail * 0.22));
-
-        // Subtle polar twilight frost
-        float polar = smoothstep(0.78, 0.95, abs(vPosLocal.y));
-        vec3 surface = mix(oceanCol, landCol, isLand);
-        surface = mix(surface, vec3(0.72, 0.82, 0.92), polar * 0.55);
-
-        // Specular sun glint on ocean
-        vec3 h = normalize(normalize(uSunDir) + v);
-        float spec = pow(max(0.0, dot(n, h)), 36.0) * (1.0 - isLand) * day * 0.48;
-
-        // Night-side dark indigo + warm twilight sunset band along the terminator!
-        vec3 nightCol = surface * vec3(0.06, 0.08, 0.16);
-        vec3 dayCol = surface * (0.28 + 0.92 * day) + vec3(1.0, 0.85, 0.62) * spec;
-        vec3 col = mix(nightCol, dayCol, day);
-        col += vec3(0.96, 0.46, 0.28) * twilight * 0.36;
-
-        // Tiny warm lantern ember specks on the night-side land (curiosity cottage lights!)
-        float ember = smoothstep(0.84, 0.95, n3(vPosLocal * 22.0)) * isLand * (1.0 - day) * 0.75;
-        col += vec3(1.0, 0.76, 0.38) * ember;
-
-        // Subtle inner atmospheric Fresnel scatter (sky-blue on day side, golden-violet on twilight rim)
-        float fresnel = pow(clamp(1.0 - max(0.0, dot(n, v)), 0.0, 1.0), 2.8);
-        vec3 atmoTint = mix(vec3(0.36, 0.56, 0.98), vec3(1.0, 0.68, 0.38), twilight * 0.75 + uHover * 0.25);
-        col += atmoTint * fresnel * (0.48 + 0.42 * day + uHover * 0.25);
-
-        gl_FragColor = vec4(col, 1.0);
-        #include <colorspace_fragment>
-      }
-    `
-  });
-  const planetMesh = new THREE.Mesh(new THREE.SphereGeometry(PLANET_RADIUS, 48, 36), surfaceMat);
-  planetMesh.name = 'Qingzhou_Planet_Core';
-  planetGroup.add(planetMesh);
-
-  // 4B. Independent Rotating Volumetric Cloud Shell (catches golden sunset rim light!)
-  const cloudShellMat = new THREE.ShaderMaterial({
+  // 45 tiny warm golden-amber companion cluster stars nestled along the spiral arm
+  const clCount = 45;
+  const clPos = new Float32Array(clCount * 3);
+  const clCol = new Float32Array(clCount * 3);
+  const clSz = new Float32Array(clCount);
+  const clPh = new Float32Array(clCount);
+  const clPalette = [0xfff2cf, 0xffd788, 0xcbe2ff, 0xffe4aa];
+  for (let i = 0; i < clCount; i++) {
+    const u = rand() * 2 - 1;
+    const phi = rand() * Math.PI * 2;
+    const rr = 0.14 + Math.pow(rand(), 0.72) * 0.86;
+    const s = Math.sqrt(Math.max(0, 1 - u * u));
+    clPos[i * 3] = rr * s * Math.cos(phi);
+    clPos[i * 3 + 1] = rr * u * 0.42;
+    clPos[i * 3 + 2] = rr * s * Math.sin(phi);
+    color.setHex(clPalette[i % clPalette.length]);
+    const lum = 0.45 + rand() * 0.55;
+    clCol[i * 3] = color.r * lum;
+    clCol[i * 3 + 1] = color.g * lum;
+    clCol[i * 3 + 2] = color.b * lum;
+    clSz[i] = 0.75 + rand() * 0.75;
+    clPh[i] = rand() * Math.PI * 2;
+  }
+  const clGeo = new THREE.BufferGeometry();
+  clGeo.setAttribute('position', new THREE.BufferAttribute(clPos, 3));
+  clGeo.setAttribute('color', new THREE.BufferAttribute(clCol, 3));
+  clGeo.setAttribute('aSize', new THREE.BufferAttribute(clSz, 1));
+  clGeo.setAttribute('aPhase', new THREE.BufferAttribute(clPh, 1));
+  const clMat = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
-    uniforms: {
-      uTime: { value: 0 },
-      uSunDir: { value: sunDir }
-    },
-    vertexShader: `
-      varying vec3 vNormalWorld;
-      varying vec3 vPosLocal;
-      varying vec3 vViewDir;
-      void main() {
-        vPosLocal = normalize(position);
-        vec4 wp = modelMatrix * vec4(position, 1.0);
-        vNormalWorld = normalize(mat3(modelMatrix) * normal);
-        vViewDir = normalize(cameraPosition - wp.xyz);
-        gl_Position = projectionMatrix * viewMatrix * wp;
-      }
-    `,
-    fragmentShader: `
-      uniform float uTime;
-      uniform vec3 uSunDir;
-      varying vec3 vNormalWorld;
-      varying vec3 vPosLocal;
-      varying vec3 vViewDir;
-
-      float hash31(vec3 p) {
-        p = fract(p * 0.1031);
-        p += dot(p, p.yzx + 33.33);
-        return fract((p.x + p.y) * p.z);
-      }
-      float n3(vec3 p) {
-        vec3 i = floor(p);
-        vec3 f = fract(p);
-        f = f * f * (3.0 - 2.0 * f);
-        return mix(
-          mix(mix(hash31(i), hash31(i + vec3(1,0,0)), f.x),
-              mix(hash31(i + vec3(0,1,0)), hash31(i + vec3(1,1,0)), f.x), f.y),
-          mix(mix(hash31(i + vec3(0,0,1)), hash31(i + vec3(1,0,1)), f.x),
-              mix(hash31(i + vec3(0,1,1)), hash31(i + vec3(1,1,1)), f.x), f.y),
-          f.z
-        );
-      }
-      void main() {
-        vec3 p = vPosLocal * 3.4 + vec3(uTime * 0.04, 0.0, -uTime * 0.02);
-        float c = n3(p) * 0.58 + n3(p * 2.2 + vec3(3.1, -1.4, 2.2)) * 0.42;
-        float wisps = smoothstep(0.52, 0.80, c);
-        if (wisps < 0.01) discard;
-
-        vec3 n = normalize(vNormalWorld);
-        float ndl = dot(n, normalize(uSunDir));
-        float day = smoothstep(-0.22, 0.45, ndl);
-        float sunset = exp(-pow((ndl + 0.04) * 5.0, 2.0));
-
-        vec3 cloudDay = vec3(0.95, 0.96, 1.0);
-        vec3 cloudNight = vec3(0.14, 0.18, 0.30);
-        vec3 col = mix(cloudNight, cloudDay, day);
-        col = mix(col, vec3(1.0, 0.72, 0.46), sunset * 0.72);
-        gl_FragColor = vec4(col, wisps * (0.28 + 0.42 * day + sunset * 0.25));
-        #include <colorspace_fragment>
-      }
-    `
-  });
-  const cloudShell = new THREE.Mesh(new THREE.SphereGeometry(PLANET_RADIUS * 1.036, 40, 28), cloudShellMat);
-  planetGroup.add(cloudShell);
-
-  // 4C. Outer Rayleigh / Fresnel Atmospheric Halo Shell (luminous sapphire-violet-gold atmosphere!)
-  const haloMat = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    side: THREE.BackSide,
     blending: THREE.AdditiveBlending,
-    uniforms: {
-      uSunDir: { value: sunDir },
-      uHover: { value: 0 }
-    },
+    vertexColors: true,
+    uniforms: { uScale: { value: dpr }, uTime: { value: 0 } },
     vertexShader: `
-      varying vec3 vNormalWorld;
-      varying vec3 vViewDir;
+      attribute float aSize;
+      attribute float aPhase;
+      varying vec3 vColor;
+      varying float vTw;
+      uniform float uScale;
+      uniform float uTime;
       void main() {
-        vec4 wp = modelMatrix * vec4(position, 1.0);
-        vNormalWorld = normalize(mat3(modelMatrix) * normal);
-        vViewDir = normalize(cameraPosition - wp.xyz);
-        gl_Position = projectionMatrix * viewMatrix * wp;
+        vColor = color;
+        vTw = 0.75 + 0.25 * sin(uTime * 2.2 + aPhase * 3.1);
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = clamp(24.0 * aSize * uScale / max(1.4, -mv.z), 1.0, 4.2);
+        gl_Position = projectionMatrix * mv;
       }
     `,
     fragmentShader: `
-      uniform vec3 uSunDir;
-      uniform float uHover;
-      varying vec3 vNormalWorld;
-      varying vec3 vViewDir;
+      varying vec3 vColor;
+      varying float vTw;
       void main() {
-        vec3 n = normalize(vNormalWorld);
-        vec3 v = normalize(vViewDir);
-        float rim = pow(clamp(0.68 - dot(-n, v), 0.0, 1.0), 2.5);
-        float ndl = dot(n, normalize(uSunDir));
-        float sunSide = smoothstep(-0.4, 0.65, ndl);
-        float sunsetBand = exp(-pow(ndl * 3.8, 2.0));
-        vec3 atmo = mix(vec3(0.28, 0.56, 1.0), vec3(1.0, 0.68, 0.38), sunsetBand * 0.65 + uHover * 0.25);
-        float alpha = rim * (0.42 + 0.58 * sunSide + uHover * 0.35);
-        gl_FragColor = vec4(atmo, alpha);
+        float d = length(gl_PointCoord - vec2(0.5));
+        if (d > 0.5) discard;
+        float core = exp(-d * d * 28.0);
+        gl_FragColor = vec4(vColor, core * vTw);
         #include <colorspace_fragment>
       }
     `
   });
-  const haloMesh = new THREE.Mesh(new THREE.SphereGeometry(PLANET_RADIUS * 1.18, 40, 28), haloMat);
-  planetGroup.add(haloMesh);
+  starBeaconGroup.add(new THREE.Points(clGeo, clMat));
 
-  // 4D. Delicate Brass-Starlight Orbital Beacon Ring (gives clear visual affordance to click & descend!)
-  const ringGeo = new THREE.RingGeometry(PLANET_RADIUS * 1.44, PLANET_RADIUS * 1.50, 96);
-  ringGeo.rotateX(-Math.PI / 2);
-  const ringMat = new THREE.ShaderMaterial({
+  // Breathing Warm Ivory-Gold Star Core (Billboarded, restrained diamond glint!)
+  const starCoreMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: { uTime: { value: 0 }, uHover: { value: 0 } },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform float uHover;
+      varying vec2 vUv;
+      void main() {
+        vec2 p = vUv - 0.5;
+        float d = length(p);
+        if (d > 0.5) discard;
+
+        float breath = 0.86 + 0.14 * sin(uTime * 2.4);
+        float edgeFade = 1.0 - smoothstep(0.18, 0.50, d);
+        float core = exp(-d * d * 110.0);
+        float halo = exp(-d * d * 24.0) * (0.52 + uHover * 0.28) * edgeFade;
+        float spikes = (exp(-abs(p.x) * 48.0) * exp(-abs(p.y) * 11.0)
+                      + exp(-abs(p.y) * 48.0) * exp(-abs(p.x) * 11.0)) * 0.14 * edgeFade;
+
+        vec3 col = mix(vec3(1.0, 0.78, 0.36), vec3(1.0, 0.98, 0.90), clamp(core * 1.35 + spikes, 0.0, 1.0));
+        float alpha = clamp((core * 1.15 + halo + spikes) * breath * (1.0 + uHover * 0.25), 0.0, 1.0);
+        gl_FragColor = vec4(col, alpha);
+        #include <colorspace_fragment>
+      }
+    `
+  });
+  const starCoreMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.15, 2.15), starCoreMat);
+  starBeaconGroup.add(starCoreMesh);
+
+  // Subtle Champagne-Gold Astrolabe Pulse Ring & Expanding Ripple in Galactic Plane
+  const astroRingGeo = new THREE.RingGeometry(0.42, 0.46, 64);
+  astroRingGeo.rotateX(-Math.PI / 2);
+  const astroRingMat = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
     side: THREE.DoubleSide,
@@ -512,165 +395,75 @@ export function buildGalaxyAct(dpr = 1) {
       uniform float uHover;
       varying vec3 vPos;
       void main() {
-        float ang = atan(vPos.z, vPos.x);
-        float pulse = 0.55 + 0.45 * sin(ang * 2.0 - uTime * 1.4);
-        vec3 col = mix(vec3(0.84, 0.72, 0.48), vec3(1.0, 0.88, 0.58), uHover);
-        gl_FragColor = vec4(col, (0.28 + 0.34 * pulse + uHover * 0.28));
+        float a = atan(vPos.z, vPos.x);
+        float pulse = 0.55 + 0.45 * sin(a * 2.0 - uTime * 1.8);
+        vec3 col = mix(vec3(0.92, 0.78, 0.48), vec3(1.0, 0.92, 0.68), uHover);
+        gl_FragColor = vec4(col, (0.20 + 0.24 * pulse + uHover * 0.30));
         #include <colorspace_fragment>
       }
     `
   });
-  const beaconRing = new THREE.Mesh(ringGeo, ringMat);
-  beaconRing.rotation.set(0.36, 0.15, -0.24);
-  planetGroup.add(beaconRing);
+  const astroRing = new THREE.Mesh(astroRingGeo, astroRingMat);
+  starBeaconGroup.add(astroRing);
 
-  // Generous invisible click hitbox over the atmospheric planet
-  const planetHit = new THREE.Mesh(
-    new THREE.SphereGeometry(PLANET_RADIUS * 1.55, 16, 12),
+  const pulseRingGeo = new THREE.RingGeometry(0.44, 0.47, 64);
+  pulseRingGeo.rotateX(-Math.PI / 2);
+  const pulseRingMat = new THREE.MeshBasicMaterial({
+    color: 0xffdea0,
+    transparent: true,
+    opacity: 0.22,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+  const pulseRing = new THREE.Mesh(pulseRingGeo, pulseRingMat);
+  starBeaconGroup.add(pulseRing);
+
+  // Generous invisible click sphere around the breathing star beacon
+  const beaconHit = new THREE.Mesh(
+    new THREE.SphereGeometry(1.45, 16, 12),
     new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false })
   );
-  planetHit.name = 'HitProxy_Qingzhou_Planet';
-  planetHit.userData.__qzInteractiveName = 'Qingzhou_Planet';
-  planetGroup.add(planetHit);
+  beaconHit.name = 'HitProxy_Qingzhou_Planet';
+  beaconHit.userData.__qzInteractiveName = 'Qingzhou_Planet';
+  starBeaconGroup.add(beaconHit);
+
+  function getBeaconWorldPos(outVec = new THREE.Vector3()) {
+    group.updateMatrixWorld(true);
+    return starBeaconGroup.getWorldPosition(outVec);
+  }
 
   let hoverLerp = 0;
-  function update(elapsed, dt, isPlanetHovered, prefersReducedMotion) {
+  function update(elapsed, dt, isBeaconHovered, prefersReducedMotion, camera) {
     starsMat.uniforms.uTime.value = elapsed;
     deepMat.uniforms.uTime.value = elapsed;
-    surfaceMat.uniforms.uTime.value = elapsed;
-    cloudShellMat.uniforms.uTime.value = elapsed;
-    ringMat.uniforms.uTime.value = elapsed;
+    clMat.uniforms.uTime.value = elapsed;
+    starCoreMat.uniforms.uTime.value = elapsed;
+    astroRingMat.uniforms.uTime.value = elapsed;
 
-    hoverLerp += ((isPlanetHovered ? 1 : 0) - hoverLerp) * Math.min(1, dt * 7);
-    surfaceMat.uniforms.uHover.value = hoverLerp;
-    haloMat.uniforms.uHover.value = hoverLerp;
-    ringMat.uniforms.uHover.value = hoverLerp;
+    hoverLerp += ((isBeaconHovered ? 1 : 0) - hoverLerp) * Math.min(1, dt * 7);
+    starCoreMat.uniforms.uHover.value = hoverLerp;
+    astroRingMat.uniforms.uHover.value = hoverLerp;
 
     if (!prefersReducedMotion) {
       galaxyDisk.rotation.y = elapsed * 0.018;
-      planetMesh.rotation.y = elapsed * 0.085;
-      cloudShell.rotation.y = elapsed * 0.125;
-      beaconRing.rotation.y = -elapsed * 0.14;
+      astroRing.rotation.y = -elapsed * 0.28;
+      const cyc = (elapsed * 0.42) % 1.0;
+      const pulseSc = 0.85 + cyc * 1.45;
+      pulseRing.scale.setScalar(pulseSc);
+      pulseRingMat.opacity = (1.0 - cyc) * (0.28 + hoverLerp * 0.24);
+    }
+
+    if (camera) {
+      starCoreMesh.lookAt(camera.position);
     }
   }
 
   return {
     group,
-    planetGroup,
-    hitTargets: [planetHit],
+    starBeaconGroup,
+    getBeaconWorldPos,
+    hitTargets: [beaconHit],
     update
-  };
-}
-
-/**
- * Fullscreen GLSL Volumetric Cloud-Break Dive Transition Overlay!
- * Renders seamlessly over the WebGL canvas during Act I <-> Act II transitions:
- * Space Indigo -> Twilight Violet -> Molten Sunset Gold clouds rushing past and parting open.
- */
-export function createCloudDiveScene() {
-  const cloudScene = new THREE.Scene();
-  const cloudCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-
-  const cloudMat = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    depthTest: false,
-    uniforms: {
-      uProgress: { value: 0 }, // 0 = hidden, 0.5 = dense cloud-break climax, 1 = parted open
-      uTime: { value: 0 },
-      uAspect: { value: 1.6 }
-    },
-    vertexShader: `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = vec4(position.xy, 0.0, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform float uProgress;
-      uniform float uTime;
-      uniform float uAspect;
-      varying vec2 vUv;
-
-      float hash21(vec2 p) {
-        p = fract(p * vec2(123.34, 456.21));
-        p += dot(p, p + 45.32);
-        return fract(p.x * p.y);
-      }
-      float n2(vec2 p) {
-        vec2 i = floor(p);
-        vec2 f = fract(p);
-        f = f * f * (3.0 - 2.0 * f);
-        return mix(
-          mix(hash21(i), hash21(i + vec2(1.0, 0.0)), f.x),
-          mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), f.x),
-          f.y
-        );
-      }
-      float fbm(vec2 p) {
-        float v = 0.0;
-        float a = 0.52;
-        for (int i = 0; i < 4; i++) {
-          v += a * n2(p);
-          p = p * 2.05 + vec2(1.7, -1.2);
-          a *= 0.5;
-        }
-        return v;
-      }
-
-      void main() {
-        float p = clamp(uProgress, 0.0, 1.0);
-        if (p <= 0.002 || p >= 0.998) discard;
-
-        // Radial zoom & cloud parting coordinates from lens center
-        vec2 uv = (vUv - 0.5) * vec2(uAspect, 1.0);
-        float r = length(uv);
-        float ang = atan(uv.y, uv.x);
-
-        // Two rushing cloud strata zooming outward as we dive through the atmosphere
-        float zoomA = exp(-p * 1.45);
-        float zoomB = exp(-p * 2.10);
-        vec2 cUvA = uv * (2.6 * zoomA) + vec2(cos(ang), sin(ang)) * p * 0.45 + vec2(uTime * 0.08, -p * 0.6);
-        vec2 cUvB = uv * (4.4 * zoomB) - vec2(uTime * 0.06, p * 1.1);
-        float cloud = fbm(cUvA) * 0.62 + fbm(cUvB) * 0.38;
-
-        // Envelope peaks smoothly around p=0.48..0.55 and parts radially from center on exit!
-        float enterEnv = smoothstep(0.0, 0.44, p);
-        float exitPart = smoothstep(0.56, 0.98, p);
-        float centerOpening = smoothstep(exitPart * 0.88 - 0.18, exitPart * 0.88 + 0.34, r + (cloud - 0.5) * 0.42);
-        float density = enterEnv * centerOpening * smoothstep(0.24, 0.82, cloud + enterEnv * 0.32);
-
-        // Color journey: Deep Atmospheric Azure -> Twilight Violet-Plum -> Molten Sunset Gold!
-        vec3 colSpace  = vec3(0.16, 0.32, 0.62);
-        vec3 colViolet = vec3(0.46, 0.24, 0.46);
-        vec3 colSunset = vec3(1.00, 0.72, 0.38);
-        vec3 colCream  = vec3(1.00, 0.92, 0.72);
-
-        vec3 tint = mix(colSpace, colViolet, smoothstep(0.10, 0.52, p));
-        tint = mix(tint, colSunset, smoothstep(0.42, 0.82, p));
-        tint = mix(tint, colCream, smoothstep(0.55, 0.92, cloud) * smoothstep(0.35, 0.85, p) * 0.65);
-
-        float alpha = clamp(density * (1.0 - smoothstep(0.86, 1.0, p)), 0.0, 0.98);
-        gl_FragColor = vec4(tint, alpha);
-        #include <colorspace_fragment>
-      }
-    `
-  });
-
-  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), cloudMat);
-  cloudScene.add(quad);
-
-  return {
-    cloudScene,
-    cloudCam,
-    cloudMat,
-    setAspect(a) {
-      cloudMat.uniforms.uAspect.value = a;
-    },
-    update(progress, elapsed) {
-      cloudMat.uniforms.uProgress.value = progress;
-      cloudMat.uniforms.uTime.value = elapsed;
-    }
   };
 }

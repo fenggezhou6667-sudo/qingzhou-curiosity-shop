@@ -5,7 +5,8 @@ import { RenderPass } from './vendor/three/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from './vendor/three/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from './vendor/three/postprocessing/OutputPass.js';
 
-import { buildGalaxyAct, createCloudDiveScene, PLANET_POS } from './galaxy-act.js';
+import { buildGalaxyAct } from './galaxy-act.js';
+import { createDescentRig, createDoorPortalPass } from './descent-rig.js';
 import { buildSunflowerAct } from './sunflower-act.js';
 import {
   buildRoomAct,
@@ -51,13 +52,13 @@ const state = {
   hoveredExhibit: null,
   hoveredObjectName: null,
 
-  // Act I Galaxy camera orbit
-  galaxyYaw: 0.34,
-  galaxyPitch: 0.42,
-  galaxyDist: 19.6,
-  targetGalaxyYaw: 0.34,
-  targetGalaxyPitch: 0.42,
-  targetGalaxyDist: 19.6,
+  // Act I Galaxy camera orbit (responsive distance so outer-arm star beacon fits mobile portrait too!)
+  galaxyYaw: 0.28,
+  galaxyPitch: 0.46,
+  galaxyDist: window.innerWidth < 720 ? 23.2 : 18.8,
+  targetGalaxyYaw: 0.28,
+  targetGalaxyPitch: 0.46,
+  targetGalaxyDist: window.innerWidth < 720 ? 23.2 : 18.8,
 
   // Act II Sunflower meadow walk & parallax
   sunflowerWalk: 0.0,
@@ -96,7 +97,8 @@ const state = {
 
   // Active transition director
   transition: null, // { kind: 'dive'|'rise'|'enterRoom'|'exitRoom', elapsed, dur, swapped, startPos, startLook }
-  manualCloudDive: -1,
+  previewDive: -1,
+  previewDoorWipe: -1,
 
   // Room & Cottage asset loading status
   roomLoaded: false,
@@ -126,9 +128,13 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x04070f);
 
 const camera = new THREE.PerspectiveCamera(44, window.innerWidth / window.innerHeight, 0.08, 420);
-camera.position.set(6.4, 8.2, 18.2);
+{
+  const initDist = window.innerWidth < 720 ? 23.2 : 18.8;
+  const initCosP = Math.cos(0.46);
+  camera.position.set(Math.sin(0.28) * initCosP * initDist, Math.sin(0.46) * initDist, Math.cos(0.28) * initCosP * initDist);
+}
 const camPos = camera.position.clone();
-const camLook = new THREE.Vector3(0.8, 0.2, 0.4);
+const camLook = new THREE.Vector3(0.0, 0.0, 0.0);
 camera.lookAt(camLook);
 
 // Procedural neutral-warm IBL for realistic brass, glass & carved walnut highlights
@@ -153,18 +159,21 @@ composer.addPass(bloomPass);
 composer.addPass(outputPass);
 
 /* =========================================================================
-   3. BUILD THE 3 PROCEDURAL ACT STAGE CONTAINERS + CLOUD-BREAK OVERLAY
+   3. BUILD THE 3 PROCEDURAL ACT STAGE CONTAINERS + PHASE 3 TRANSITION RIGS
    ========================================================================= */
 const galaxyAct = buildGalaxyAct(dpr);
 const sunflowerAct = buildSunflowerAct(dpr);
 const roomAct = buildRoomAct(dpr);
-const cloudDive = createCloudDiveScene();
-cloudDive.setAspect(window.innerWidth / Math.max(1, window.innerHeight));
+const descentRig = createDescentRig(dpr);
+const doorPortal = createDoorPortalPass();
+descentRig.setAspect(window.innerWidth / Math.max(1, window.innerHeight));
+doorPortal.resize(window.innerWidth * dpr, window.innerHeight * dpr);
 
 sunflowerAct.group.visible = false;
 roomAct.group.visible = false;
 
 scene.add(galaxyAct.group);
+scene.add(descentRig.horizonGroup);
 scene.add(sunflowerAct.group);
 scene.add(roomAct.group);
 
@@ -671,8 +680,16 @@ const modals = createShopModals({
 /* =========================================================================
    6. ACT ATMOSPHERE, HUD SYNC & SPATIAL MARKERS
    ========================================================================= */
+function setCameraFov(fov) {
+  if (Math.abs(camera.fov - fov) > 0.01) {
+    camera.fov = fov;
+    camera.updateProjectionMatrix();
+  }
+}
+
 function applyActAtmosphere(act) {
   galaxyAct.group.visible = (act === 'galaxy');
+  descentRig.horizonGroup.visible = (act === 'horizon');
   sunflowerAct.group.visible = (act === 'sunflower');
   roomAct.group.visible = (act === 'room');
 
@@ -684,6 +701,14 @@ function applyActAtmosphere(act) {
     bloomPass.strength = 0.40;
     bloomPass.threshold = 0.80;
     renderer.toneMappingExposure = 1.06;
+  } else if (act === 'horizon') {
+    scene.background.setHex(0x02050c);
+    scene.fog = null;
+    globalAmbient.color.setHex(0x8aa8d8);
+    globalAmbient.intensity = 0.24;
+    bloomPass.strength = 0.48;
+    bloomPass.threshold = 0.74;
+    renderer.toneMappingExposure = 1.08;
   } else if (act === 'sunflower') {
     scene.background.setHex(0x281730);
     // Warm amber-plum atmospheric sunset depth (never grey!)
@@ -796,9 +821,13 @@ function updateSpatialMarkers() {
     el.style.pointerEvents = 'auto';
   };
 
-  if (!state.transition) {
+const beaconPinVec = new THREE.Vector3();
+
+  if (!state.transition && state.previewDive < 0 && state.previewDoorWipe < 0) {
     if (state.act === 'galaxy') {
-      placePin('planet', new THREE.Vector3(PLANET_POS.x, PLANET_POS.y + 1.85, PLANET_POS.z), '清舟星', '点击穿云降落', () => startCloudBreakDive());
+      galaxyAct.getBeaconWorldPos(beaconPinVec);
+      beaconPinVec.y += 0.72;
+      placePin('planet', beaconPinVec, '清舟星', '跃迁穿云降落', () => startCloudBreakDive());
     } else if (state.act === 'sunflower') {
       placePin('cottage', new THREE.Vector3(0.0, 6.85, -17.2), '清舟杂货铺', '随萤火虫入屋', () => startEnterRoomTransition());
     } else if (state.act === 'room' && !state.focusedExhibit) {
@@ -859,7 +888,7 @@ function startCloudBreakDive() {
   state.transition = {
     kind: 'dive',
     elapsed: 0,
-    dur: 2.2,
+    dur: 4.2,
     swapped: false,
     startPos: camPos.clone(),
     startLook: camLook.clone()
@@ -876,7 +905,7 @@ function startRiseToGalaxy() {
   state.transition = {
     kind: 'rise',
     elapsed: 0,
-    dur: 1.75,
+    dur: 2.4,
     swapped: false,
     startPos: camPos.clone(),
     startLook: camLook.clone()
@@ -886,7 +915,7 @@ function startRiseToGalaxy() {
 async function startEnterRoomTransition() {
   if (state.transition) return;
   playChimeSound();
-  await ensureRoomLoaded();
+  await Promise.all([ensureSunflowerCottageLoaded(), ensureRoomLoaded()]);
   if (prefersReducedMotion) {
     goAct('room', true);
     return;
@@ -894,7 +923,7 @@ async function startEnterRoomTransition() {
   state.transition = {
     kind: 'enterRoom',
     elapsed: 0,
-    dur: 1.55,
+    dur: 2.1,
     swapped: false,
     startPos: camPos.clone(),
     startLook: camLook.clone()
@@ -912,7 +941,7 @@ function startExitRoomToSunflower() {
   state.transition = {
     kind: 'exitRoom',
     elapsed: 0,
-    dur: 1.25,
+    dur: 1.5,
     swapped: false,
     startPos: camPos.clone(),
     startLook: camLook.clone()
@@ -941,8 +970,11 @@ async function goAct(act, instant = false) {
     }
   }
   state.transition = null;
+  state.previewDive = -1;
+  state.previewDoorWipe = -1;
   state.act = act;
   if (act !== 'room') state.focusedExhibit = null;
+  setCameraFov(44);
   const veil = document.getElementById('matchcut-veil');
   if (veil) veil.style.opacity = '0';
   applyActAtmosphere(act);
@@ -953,7 +985,7 @@ async function goAct(act, instant = false) {
       Math.sin(state.galaxyPitch) * state.galaxyDist,
       Math.cos(state.galaxyYaw) * cosP * state.galaxyDist
     );
-    camLook.set(1.2, 0.2, 0.5);
+    camLook.set(0.0, 0.0, 0.0);
   } else if (act === 'sunflower') {
     state.sunflowerWalk = 0;
     state.targetSunflowerWalk = 0;
@@ -1280,176 +1312,31 @@ function bindHudControls() {
 }
 
 /* =========================================================================
-   9. MAIN CINEMA RENDER LOOP
+   9. MAIN CINEMA RENDER LOOP & PHASE 3 SEAMLESS TRANSITION DIRECTOR
    ========================================================================= */
 const clock = new THREE.Clock();
 const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+const smoothstepJS = (e0, e1, x) => {
+  const t = clamp((x - e0) / (e1 - e0), 0, 1);
+  return t * t * (3 - 2 * t);
+};
 
-function animate() {
-  requestAnimationFrame(animate);
-  const dt = Math.min(0.05, clock.getDelta());
-  const elapsed = clock.elapsedTime;
-  simElapsed = elapsed;
+const ORBIT_START_POS = new THREE.Vector3(-1.8, 3.6, 15.5);
+const ORBIT_END_POS = new THREE.Vector3(0.4, 0.6, -5.5);
+const ORBIT_START_LOOK = new THREE.Vector3(0.0, -3.2, -26.0);
+const ORBIT_END_LOOK = new THREE.Vector3(0.2, -11.5, -24.0);
 
-  state.smoothPtrX += (state.pointerNdcX - state.smoothPtrX) * Math.min(1, dt * 4.5);
-  state.smoothPtrY += (state.pointerNdcY - state.smoothPtrY) * Math.min(1, dt * 4.5);
+const _vBeacon = new THREE.Vector3();
+const _vDir = new THREE.Vector3();
+const _vNear = new THREE.Vector3();
+const _vHigh = new THREE.Vector3();
+const _vLookHigh = new THREE.Vector3();
+const _vTmp = new THREE.Vector3();
+const _vProj = new THREE.Vector3();
 
-  let cloudDiveProgress = state.manualCloudDive >= 0 ? state.manualCloudDive : 0;
-
-  // --- A. ACTIVE TRANSITIONS ---
-  if (state.transition) {
-    const tr = state.transition;
-    tr.elapsed += dt;
-    const p = clamp(tr.elapsed / tr.dur, 0, 1);
-    const ep = easeInOut(p);
-
-    if (tr.kind === 'dive') {
-      cloudDiveProgress = p;
-      if (p < 0.50) {
-        // Spiral dive into Qingzhou_Planet's atmospheric glow!
-        const sub = easeInOut(p / 0.50);
-        const dest = PLANET_POS.clone().add(new THREE.Vector3(0.15, 0.25, 1.35));
-        camPos.lerpVectors(tr.startPos, dest, sub);
-        camLook.lerpVectors(tr.startLook, PLANET_POS, sub);
-      } else {
-        if (!tr.swapped) {
-          tr.swapped = true;
-          state.act = 'sunflower';
-          state.sunflowerWalk = 0;
-          state.targetSunflowerWalk = 0;
-          applyActAtmosphere('sunflower');
-          syncHudUI();
-        }
-        // Emerge smoothly from golden clouds descending into the sunflower meadow!
-        const sub = easeInOut((p - 0.50) / 0.50);
-        const endPose = getSunflowerCameraPose(0, 0, 0);
-        const highStart = endPose.pos.clone().add(new THREE.Vector3(0, 8.5, 4.0));
-        camPos.lerpVectors(highStart, endPose.pos, sub);
-        camLook.lerpVectors(endPose.look.clone().add(new THREE.Vector3(0, 2.2, 0)), endPose.look, sub);
-      }
-      if (p >= 1) state.transition = null;
-    } else if (tr.kind === 'rise') {
-      cloudDiveProgress = 1.0 - p;
-      if (p < 0.48) {
-        const sub = easeInOut(p / 0.48);
-        camPos.lerpVectors(tr.startPos, tr.startPos.clone().add(new THREE.Vector3(0, 12.0, 2.0)), sub);
-        camLook.lerpVectors(tr.startLook, tr.startLook.clone().add(new THREE.Vector3(0, 14.0, 0)), sub);
-      } else {
-        if (!tr.swapped) {
-          tr.swapped = true;
-          state.act = 'galaxy';
-          applyActAtmosphere('galaxy');
-          syncHudUI();
-        }
-        const sub = easeInOut((p - 0.48) / 0.52);
-        const cosP = Math.cos(state.targetGalaxyPitch);
-        const dest = new THREE.Vector3(
-          Math.sin(state.targetGalaxyYaw) * cosP * state.targetGalaxyDist,
-          Math.sin(state.targetGalaxyPitch) * state.targetGalaxyDist,
-          Math.cos(state.targetGalaxyYaw) * cosP * state.targetGalaxyDist
-        );
-        camPos.lerpVectors(PLANET_POS.clone().add(new THREE.Vector3(0, 0.6, 2.2)), dest, sub);
-        camLook.lerpVectors(PLANET_POS, new THREE.Vector3(1.2, 0.2, 0.5), sub);
-      }
-      if (p >= 1) state.transition = null;
-    } else if (tr.kind === 'enterRoom' || tr.kind === 'exitRoom') {
-      const veil = document.getElementById('matchcut-veil');
-      const pulse = Math.sin(p * Math.PI);
-      if (veil) veil.style.opacity = String((pulse * 0.92).toFixed(3));
-
-      if (tr.kind === 'enterRoom') {
-        sunflowerAct.setDoorOpen(Math.min(1, p * 2.2));
-        if (p < 0.52) {
-          const sub = easeInOut(p / 0.52);
-          camPos.lerpVectors(tr.startPos, new THREE.Vector3(0, 1.9, -15.4), sub);
-          camLook.lerpVectors(tr.startLook, new THREE.Vector3(0, 1.85, -18.5), sub);
-        } else {
-          if (!tr.swapped) {
-            tr.swapped = true;
-            state.act = 'room';
-            state.focusedExhibit = null;
-            applyActAtmosphere('room');
-            syncHudUI();
-          }
-          const sub = easeInOut((p - 0.52) / 0.48);
-          camPos.lerpVectors(new THREE.Vector3(0, 2.5, 9.4), ROOM_OVERVIEW_POS, sub);
-          camLook.lerpVectors(new THREE.Vector3(0, 1.4, -1.6), ROOM_OVERVIEW_TARGET, sub);
-        }
-      } else {
-        if (p < 0.50) {
-          const sub = easeInOut(p / 0.50);
-          camPos.lerpVectors(tr.startPos, new THREE.Vector3(0, 2.4, 9.6), sub);
-        } else {
-          if (!tr.swapped) {
-            tr.swapped = true;
-            state.act = 'sunflower';
-            state.sunflowerWalk = 0.28;
-            state.targetSunflowerWalk = 0.28;
-            sunflowerAct.setDoorOpen(0, true);
-            applyActAtmosphere('sunflower');
-            syncHudUI();
-          }
-          const sub = easeInOut((p - 0.50) / 0.50);
-          const pose = getSunflowerCameraPose(state.sunflowerWalk, 0, 0);
-          camPos.lerpVectors(new THREE.Vector3(0, 2.1, -13.5), pose.pos, sub);
-          camLook.lerpVectors(new THREE.Vector3(0, 2.2, -18.5), pose.look, sub);
-        }
-      }
-      if (p >= 1) {
-        if (veil) veil.style.opacity = '0';
-        state.transition = null;
-      }
-    }
-  } else {
-    // --- B. NORMAL PER-ACT SMOOTH CAMERA ---
-    const damp = Math.min(1, dt * 6.5);
-    if (state.act === 'galaxy') {
-      state.galaxyYaw += (state.targetGalaxyYaw - state.galaxyYaw) * damp;
-      state.galaxyPitch += (state.targetGalaxyPitch - state.galaxyPitch) * damp;
-      state.galaxyDist += (state.targetGalaxyDist - state.galaxyDist) * damp;
-      const cosP = Math.cos(state.galaxyPitch);
-      const goalPos = new THREE.Vector3(
-        Math.sin(state.galaxyYaw) * cosP * state.galaxyDist,
-        Math.sin(state.galaxyPitch) * state.galaxyDist,
-        Math.cos(state.galaxyYaw) * cosP * state.galaxyDist
-      );
-      camPos.lerp(goalPos, damp);
-      camLook.lerp(new THREE.Vector3(1.2, 0.2, 0.5), damp);
-    } else if (state.act === 'sunflower') {
-      state.sunflowerWalk += (state.targetSunflowerWalk - state.sunflowerWalk) * damp;
-      const pose = getSunflowerCameraPose(state.sunflowerWalk, state.smoothPtrX, state.smoothPtrY);
-      camPos.lerp(pose.pos, damp);
-      camLook.lerp(pose.look, damp);
-    } else if (state.act === 'room') {
-      if (state.focusedExhibit) {
-        const ex = getExhibitById(state.focusedExhibit);
-        if (ex) {
-          state.inspectYaw += (state.targetInspectYaw - state.inspectYaw) * damp;
-          state.inspectPitch += (state.targetInspectPitch - state.inspectPitch) * damp;
-          state.inspectDist += (state.targetInspectDist - state.inspectDist) * damp;
-          const pose = getInspectCameraPose(ex, state.inspectYaw, state.inspectPitch, state.inspectDist);
-          camPos.lerp(pose.pos, Math.min(1, dt * 7.2));
-          camLook.lerp(pose.look, Math.min(1, dt * 7.2));
-        }
-      } else {
-        const goalPos = ROOM_OVERVIEW_POS.clone().add(
-          new THREE.Vector3(state.smoothPtrX * 0.42, state.smoothPtrY * 0.22, 0)
-        );
-        const goalLook = ROOM_OVERVIEW_TARGET.clone().add(
-          new THREE.Vector3(state.smoothPtrX * 0.28, state.smoothPtrY * 0.14, 0)
-        );
-        camPos.lerp(goalPos, Math.min(1, dt * 5.8));
-        camLook.lerp(goalLook, Math.min(1, dt * 5.8));
-      }
-    }
-  }
-
-  camera.position.copy(camPos);
-  camera.lookAt(camLook);
-
-  // --- C. UPDATE ACTIVE WORLD SIMULATIONS ---
+function updateActiveWorldSimulations(elapsed, dt) {
   if (galaxyAct.group.visible) {
-    galaxyAct.update(elapsed, dt, state.hoveredObjectName === 'Qingzhou_Planet', prefersReducedMotion);
+    galaxyAct.update(elapsed, dt, state.hoveredObjectName === 'Qingzhou_Planet', prefersReducedMotion, camera);
   }
   if (sunflowerAct.group.visible) {
     sunflowerAct.update(elapsed, camera, state.smoothPtrX, state.smoothPtrY, state.sunflowerWalk, prefersReducedMotion, dt);
@@ -1483,9 +1370,7 @@ function animate() {
       }
     }
     if (miniWaterMat) {
-      // Foreground eave palace lantern at index 6
       miniWaterMat.uniforms.uBoatLights.value[6].set(-3.05, -4.15, -70.7);
-      // Dynamic Lotus Wish Lantern lights
       const wlArr = miniWaterMat.uniforms.uWishLights.value;
       const activeWish = roomAct.getSpawnedLanterns();
       for (let j = 0; j < 8; j++) {
@@ -1503,17 +1388,323 @@ function animate() {
       eaveCatObj.rotation.y = Math.sin(elapsed * 0.52) * 0.055;
     }
   }
+}
 
-  // --- D. RENDER COMPOSER + OPTIONAL VOLUMETRIC CLOUD-BREAK PASS ---
-  composer.render();
-  if (cloudDiveProgress > 0.002 && cloudDiveProgress < 0.998) {
-    cloudDive.update(cloudDiveProgress, elapsed);
-    renderer.autoClear = false;
-    renderer.clearDepth();
-    renderer.render(cloudDive.cloudScene, cloudDive.cloudCam);
-    renderer.autoClear = true;
+function applyDiveFrame(p, startPos, startLook, elapsed, dt, isRise = false) {
+  if (p < 0.35) {
+    applyActAtmosphere('galaxy');
+    galaxyAct.getBeaconWorldPos(_vBeacon);
+    _vDir.copy(startPos).sub(_vBeacon).normalize();
+    _vNear.copy(_vBeacon).addScaledVector(_vDir, 0.72);
+    const sub = easeInOut(p / 0.35);
+    camPos.lerpVectors(startPos, _vNear, sub);
+    camLook.lerpVectors(startLook, _vBeacon, easeInOut(Math.min(1, p / 0.24)));
+    setCameraFov(44 + 22 * Math.pow(sub, 1.35));
+  } else if (p < 0.76) {
+    applyActAtmosphere('horizon');
+    const sub = (p - 0.35) / 0.41;
+    const es = easeInOut(sub);
+    camPos.lerpVectors(ORBIT_START_POS, ORBIT_END_POS, es);
+    camLook.lerpVectors(ORBIT_START_LOOK, ORBIT_END_LOOK, es);
+    const fovMid = sub < 0.56
+      ? (66 - 14 * easeInOut(sub / 0.56))
+      : (52 + 12 * easeInOut((sub - 0.56) / 0.44));
+    setCameraFov(fovMid);
+  } else {
+    if (state.act !== 'sunflower' && !isRise) {
+      state.act = 'sunflower';
+      state.sunflowerWalk = 0;
+      state.targetSunflowerWalk = 0;
+      syncHudUI();
+    }
+    applyActAtmosphere('sunflower');
+    sunflowerAct.setDoorOpen(0, true);
+    const sub = easeInOut((p - 0.76) / 0.24);
+    const endPose = getSunflowerCameraPose(0, 0, 0);
+    _vHigh.copy(endPose.pos).add(_vTmp.set(0, 10.5, 4.2));
+    _vLookHigh.copy(endPose.look).add(_vTmp.set(0, 2.8, -1.5));
+    camPos.lerpVectors(_vHigh, endPose.pos, sub);
+    camLook.lerpVectors(_vLookHigh, endPose.look, sub);
+    setCameraFov(64 - 20 * sub);
+  }
+  camera.position.copy(camPos);
+  camera.lookAt(camLook);
+  camera.updateMatrixWorld(true);
+  updateActiveWorldSimulations(elapsed, dt);
+  descentRig.update(p, elapsed, camera, isRise);
+}
+
+function projectDoorwayPortalRect(gy) {
+  const corners = [
+    [-0.53, gy + 0.75, -16.28],
+    [+0.53, gy + 0.75, -16.28],
+    [-0.53, gy + 2.86, -16.28],
+    [+0.53, gy + 2.86, -16.28]
+  ];
+  let uMin = 1;
+  let vMin = 1;
+  let uMax = 0;
+  let vMax = 0;
+  for (const [cx, cy, cz] of corners) {
+    _vProj.set(cx, cy, cz).project(camera);
+    const u = _vProj.x * 0.5 + 0.5;
+    const v = _vProj.y * 0.5 + 0.5;
+    if (u < uMin) uMin = u;
+    if (v < vMin) vMin = v;
+    if (u > uMax) uMax = u;
+    if (v > vMax) vMax = v;
+  }
+  return [clamp(uMin, -0.5, 1.5), clamp(vMin, -0.5, 1.5), clamp(uMax, -0.5, 1.5), clamp(vMax, -0.5, 1.5)];
+}
+
+function renderDoorWipeFrame(pEnter, startPos, startLook, elapsed, dt) {
+  const veil = document.getElementById('matchcut-veil');
+  if (veil) veil.style.opacity = '0';
+
+  const gy = sunflowerAct.groundY(0, -18.5);
+  const porchEntryPos = new THREE.Vector3(0.0, gy + 1.90, -11.60);
+  const porchEntryLook = new THREE.Vector3(0.0, gy + 1.92, -18.50);
+  const thresholdPos = new THREE.Vector3(0.0, gy + 1.86, -15.35);
+  const thresholdLook = new THREE.Vector3(0.0, gy + 1.84, -19.00);
+  const roomEntryStart = new THREE.Vector3(0.0, 2.35, 9.70);
+  const roomEntryMid = new THREE.Vector3(0.0, 2.95, 8.65);
+  const roomEntryLook = new THREE.Vector3(0.0, 1.48, -0.85);
+
+  if (pEnter < 0.42) {
+    applyActAtmosphere('sunflower');
+    sunflowerAct.setDoorOpen(clamp(pEnter / 0.36, 0, 1), true);
+    const sub = easeInOut(pEnter / 0.42);
+    camPos.lerpVectors(startPos, porchEntryPos, sub);
+    camLook.lerpVectors(startLook, porchEntryLook, sub);
+    setCameraFov(44 + 3 * sub);
+    camera.position.copy(camPos);
+    camera.lookAt(camLook);
+    updateActiveWorldSimulations(elapsed, dt);
+    composer.render();
+    return;
   }
 
+  if (pEnter < 0.72) {
+    const sub = (pEnter - 0.42) / 0.30;
+    const es = easeInOut(sub);
+
+    // Pass 1: Render Act II cottage porch & 85° open door into offscreen HDR render target
+    applyActAtmosphere('sunflower');
+    sunflowerAct.setDoorOpen(1.0, true);
+    camPos.lerpVectors(porchEntryPos, thresholdPos, es);
+    camLook.lerpVectors(porchEntryLook, thresholdLook, es);
+    setCameraFov(47 + 4 * es);
+    camera.position.copy(camPos);
+    camera.lookAt(camLook);
+    camera.updateMatrixWorld(true);
+    updateActiveWorldSimulations(elapsed, dt);
+    const [uMin, vMin, uMax, vMax] = projectDoorwayPortalRect(gy);
+
+    renderer.setRenderTarget(doorPortal.captureTarget);
+    renderer.clear();
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+
+    // Pass 2: Render Act III Curiosity Room live & composite doorway frame-wipe cutout over it
+    // (Keep Act II HUD status until actually crossing the threshold p >= 0.72 so dock doesn't pop early!)
+    applyActAtmosphere('room');
+    camPos.lerpVectors(roomEntryStart, roomEntryMid, es);
+    camLook.lerpVectors(roomEntryLook, ROOM_OVERVIEW_TARGET, es);
+    setCameraFov(51 - 2 * es);
+    camera.position.copy(camPos);
+    camera.lookAt(camLook);
+    camera.updateMatrixWorld(true);
+    updateActiveWorldSimulations(elapsed, dt);
+    composer.render();
+
+    const uOpen = smoothstepJS(0.42, 0.54, pEnter);
+    const uFadeOut = 1.0 - smoothstepJS(0.67, 0.72, pEnter);
+    doorPortal.setPortalRect(uMin, vMin, uMax, vMax);
+    doorPortal.setMix(uOpen, uFadeOut);
+    doorPortal.renderComposite(renderer);
+    return;
+  }
+
+  // Stage C (0.72..1.00): Pure Act III interior glide into overview
+  if (state.act !== 'room') {
+    state.act = 'room';
+    state.focusedExhibit = null;
+    syncHudUI();
+  }
+  applyActAtmosphere('room');
+  const sub = easeInOut((pEnter - 0.72) / 0.28);
+  camPos.lerpVectors(roomEntryMid, ROOM_OVERVIEW_POS, sub);
+  camLook.lerpVectors(ROOM_OVERVIEW_TARGET, ROOM_OVERVIEW_TARGET, sub);
+  setCameraFov(49 - 5 * sub);
+  camera.position.copy(camPos);
+  camera.lookAt(camLook);
+  updateActiveWorldSimulations(elapsed, dt);
+  composer.render();
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.05, clock.getDelta());
+  const elapsed = clock.elapsedTime;
+  simElapsed = elapsed;
+
+  state.smoothPtrX += (state.pointerNdcX - state.smoothPtrX) * Math.min(1, dt * 4.5);
+  state.smoothPtrY += (state.pointerNdcY - state.smoothPtrY) * Math.min(1, dt * 4.5);
+
+  if (state.previewDive >= 0) {
+    const cosP = Math.cos(state.galaxyPitch);
+    const gStart = new THREE.Vector3(
+      Math.sin(state.galaxyYaw) * cosP * state.galaxyDist,
+      Math.sin(state.galaxyPitch) * state.galaxyDist,
+      Math.cos(state.galaxyYaw) * cosP * state.galaxyDist
+    );
+    applyDiveFrame(state.previewDive, gStart, new THREE.Vector3(0, 0, 0), elapsed, dt, false);
+    composer.render();
+    descentRig.renderOverlay(renderer);
+    updateSpatialMarkers();
+    return;
+  }
+
+  if (state.previewDoorWipe >= 0) {
+    const porchPreviewStart = getSunflowerCameraPose(0.84, 0, 0);
+    renderDoorWipeFrame(state.previewDoorWipe, porchPreviewStart.pos, porchPreviewStart.look, elapsed, dt);
+    updateSpatialMarkers();
+    return;
+  }
+
+  let hasDescentOverlay = false;
+
+  // --- A. ACTIVE TRANSITIONS ---
+  if (state.transition) {
+    const tr = state.transition;
+    tr.elapsed += dt;
+    const p = clamp(tr.elapsed / tr.dur, 0, 1);
+
+    if (tr.kind === 'dive') {
+      applyDiveFrame(p, tr.startPos, tr.startLook, elapsed, dt, false);
+      hasDescentOverlay = p > 0.002 && p < 0.998;
+      if (p >= 1) {
+        setCameraFov(44);
+        state.transition = null;
+      }
+      composer.render();
+      if (hasDescentOverlay) descentRig.renderOverlay(renderer);
+      updateSpatialMarkers();
+      return;
+    }
+
+    if (tr.kind === 'rise') {
+      const cosP = Math.cos(state.targetGalaxyPitch);
+      const gGoalPos = new THREE.Vector3(
+        Math.sin(state.targetGalaxyYaw) * cosP * state.targetGalaxyDist,
+        Math.sin(state.targetGalaxyPitch) * state.targetGalaxyDist,
+        Math.cos(state.targetGalaxyYaw) * cosP * state.targetGalaxyDist
+      );
+      const gGoalLook = new THREE.Vector3(0, 0, 0);
+      const pDive = 1.0 - p;
+      if (pDive < 0.35 && state.act !== 'galaxy') {
+        state.act = 'galaxy';
+        syncHudUI();
+      }
+      applyDiveFrame(pDive, gGoalPos, gGoalLook, elapsed, dt, true);
+      hasDescentOverlay = pDive > 0.002 && pDive < 0.998;
+      if (p >= 1) {
+        state.act = 'galaxy';
+        applyActAtmosphere('galaxy');
+        syncHudUI();
+        setCameraFov(44);
+        state.transition = null;
+      }
+      composer.render();
+      if (hasDescentOverlay) descentRig.renderOverlay(renderer);
+      updateSpatialMarkers();
+      return;
+    }
+
+    if (tr.kind === 'enterRoom') {
+      renderDoorWipeFrame(p, tr.startPos, tr.startLook, elapsed, dt);
+      if (p >= 1) {
+        setCameraFov(44);
+        state.transition = null;
+      }
+      updateSpatialMarkers();
+      return;
+    }
+
+    if (tr.kind === 'exitRoom') {
+      const exitTargetPose = getSunflowerCameraPose(0.28, 0, 0);
+      const pEnterRev = 1.0 - p;
+      if (pEnterRev < 0.42 && state.act !== 'sunflower') {
+        state.act = 'sunflower';
+        state.sunflowerWalk = 0.28;
+        state.targetSunflowerWalk = 0.28;
+        syncHudUI();
+      }
+      renderDoorWipeFrame(pEnterRev, exitTargetPose.pos, exitTargetPose.look, elapsed, dt);
+      if (p >= 1) {
+        state.act = 'sunflower';
+        state.sunflowerWalk = 0.28;
+        state.targetSunflowerWalk = 0.28;
+        sunflowerAct.setDoorOpen(0, true);
+        applyActAtmosphere('sunflower');
+        syncHudUI();
+        setCameraFov(44);
+        state.transition = null;
+      }
+      updateSpatialMarkers();
+      return;
+    }
+  }
+
+  // --- B. NORMAL PER-ACT SMOOTH CAMERA ---
+  setCameraFov(44);
+  const damp = Math.min(1, dt * 6.5);
+  if (state.act === 'galaxy') {
+    state.galaxyYaw += (state.targetGalaxyYaw - state.galaxyYaw) * damp;
+    state.galaxyPitch += (state.targetGalaxyPitch - state.galaxyPitch) * damp;
+    state.galaxyDist += (state.targetGalaxyDist - state.galaxyDist) * damp;
+    const cosP = Math.cos(state.galaxyPitch);
+    const goalPos = new THREE.Vector3(
+      Math.sin(state.galaxyYaw) * cosP * state.galaxyDist,
+      Math.sin(state.galaxyPitch) * state.galaxyDist,
+      Math.cos(state.galaxyYaw) * cosP * state.galaxyDist
+    );
+    camPos.lerp(goalPos, damp);
+    camLook.lerp(new THREE.Vector3(0.0, 0.0, 0.0), damp);
+  } else if (state.act === 'sunflower') {
+    state.sunflowerWalk += (state.targetSunflowerWalk - state.sunflowerWalk) * damp;
+    const pose = getSunflowerCameraPose(state.sunflowerWalk, state.smoothPtrX, state.smoothPtrY);
+    camPos.lerp(pose.pos, damp);
+    camLook.lerp(pose.look, damp);
+  } else if (state.act === 'room') {
+    if (state.focusedExhibit) {
+      const ex = getExhibitById(state.focusedExhibit);
+      if (ex) {
+        state.inspectYaw += (state.targetInspectYaw - state.inspectYaw) * damp;
+        state.inspectPitch += (state.targetInspectPitch - state.inspectPitch) * damp;
+        state.inspectDist += (state.targetInspectDist - state.inspectDist) * damp;
+        const pose = getInspectCameraPose(ex, state.inspectYaw, state.inspectPitch, state.inspectDist);
+        camPos.lerp(pose.pos, Math.min(1, dt * 7.2));
+        camLook.lerp(pose.look, Math.min(1, dt * 7.2));
+      }
+    } else {
+      const goalPos = ROOM_OVERVIEW_POS.clone().add(
+        new THREE.Vector3(state.smoothPtrX * 0.42, state.smoothPtrY * 0.22, 0)
+      );
+      const goalLook = ROOM_OVERVIEW_TARGET.clone().add(
+        new THREE.Vector3(state.smoothPtrX * 0.28, state.smoothPtrY * 0.14, 0)
+      );
+      camPos.lerp(goalPos, Math.min(1, dt * 5.8));
+      camLook.lerp(goalLook, Math.min(1, dt * 5.8));
+    }
+  }
+
+  camera.position.copy(camPos);
+  camera.lookAt(camLook);
+
+  // --- C. UPDATE ACTIVE WORLD SIMULATIONS & RENDER ---
+  updateActiveWorldSimulations(elapsed, dt);
+  composer.render();
   updateSpatialMarkers();
 }
 
@@ -1527,7 +1718,8 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(w, h);
   composer.setSize(w, h);
-  cloudDive.setAspect(w / Math.max(1, h));
+  descentRig.setAspect(w / Math.max(1, h));
+  doorPortal.resize(w * dpr, h * dpr);
 });
 
 updateSolarTermHUD();
@@ -1557,14 +1749,38 @@ window.__qzGetState = () => ({
   selectedCityName: state.selectedCityName,
   selectedSampleIdx: state.selectedSampleIdx,
   cameraPos: camPos.toArray().map((v) => Number(v.toFixed(2))),
-  cameraLook: camLook.toArray().map((v) => Number(v.toFixed(2)))
+  cameraLook: camLook.toArray().map((v) => Number(v.toFixed(2))),
+  cameraFov: Number(camera.fov.toFixed(1))
 });
 window.__qzGoAct = (act, instant = true) => goAct(act, instant);
 window.__qzFocusExhibit = async (id, instant = true) => {
   if (state.act !== 'room') await goAct('room', true);
   focusExhibit(id, instant);
 };
-window.__qzSetCloudDive = (p) => { state.manualCloudDive = p; };
+window.__qzPreviewDive = async (p) => {
+  if (p < 0 || p === null || p === undefined) {
+    state.previewDive = -1;
+    await goAct(state.act, true);
+    return;
+  }
+  await ensureSunflowerCottageLoaded();
+  state.previewDoorWipe = -1;
+  state.previewDive = clamp(p, 0, 1);
+  state.act = state.previewDive < 0.76 ? 'galaxy' : 'sunflower';
+  syncHudUI();
+};
+window.__qzPreviewDoorWipe = async (p) => {
+  if (p < 0 || p === null || p === undefined) {
+    state.previewDoorWipe = -1;
+    await goAct(state.act, true);
+    return;
+  }
+  await Promise.all([ensureSunflowerCottageLoaded(), ensureRoomLoaded()]);
+  state.previewDive = -1;
+  state.previewDoorWipe = clamp(p, 0, 1);
+  state.act = state.previewDoorWipe < 0.72 ? 'sunflower' : 'room';
+  syncHudUI();
+};
 window.__qzEnsureRoom = () => ensureRoomLoaded();
 window.__qzEnsureCottage = () => ensureSunflowerCottageLoaded();
 window.__qzSetSunflowerWalk = (w) => {
