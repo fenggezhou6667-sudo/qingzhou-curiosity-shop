@@ -98,9 +98,11 @@ const state = {
   transition: null, // { kind: 'dive'|'rise'|'enterRoom'|'exitRoom', elapsed, dur, swapped, startPos, startLook }
   manualCloudDive: -1,
 
-  // Room asset loading status
+  // Room & Cottage asset loading status
   roomLoaded: false,
-  roomLoadingPromise: null
+  roomLoadingPromise: null,
+  cottageLoaded: false,
+  cottageLoadingPromise: null
 };
 
 /* =========================================================================
@@ -577,6 +579,30 @@ function ensureRoomLoaded() {
   return state.roomLoadingPromise;
 }
 
+function ensureSunflowerCottageLoaded() {
+  if (state.cottageLoaded) return Promise.resolve();
+  if (state.cottageLoadingPromise) return state.cottageLoadingPromise;
+
+  const loader = new GLTFLoader();
+  state.cottageLoadingPromise = new Promise((resolve, reject) => {
+    loader.load(
+      './assets/sunflower-cottage.glb',
+      (gltf) => {
+        sunflowerAct.mountSculptedCottage(gltf.scene);
+        state.cottageLoaded = true;
+        resolve();
+      },
+      undefined,
+      (err) => {
+        console.error('[SunflowerCottage] Failed loading sunflower-cottage.glb:', err);
+        state.cottageLoadingPromise = null;
+        reject(err);
+      }
+    );
+  });
+  return state.cottageLoadingPromise;
+}
+
 function highlightSelectedCityBeacon() {
   const sel = PLACES_22.find((p) => p.name === state.selectedCityName);
   const selIdx = sel ? sel.index : 15;
@@ -774,7 +800,7 @@ function updateSpatialMarkers() {
     if (state.act === 'galaxy') {
       placePin('planet', new THREE.Vector3(PLANET_POS.x, PLANET_POS.y + 1.85, PLANET_POS.z), '清舟星', '点击穿云降落', () => startCloudBreakDive());
     } else if (state.act === 'sunflower') {
-      placePin('cottage', new THREE.Vector3(0.0, 5.2, -16.8), '清舟杂货铺', '随萤火虫入屋', () => startEnterRoomTransition());
+      placePin('cottage', new THREE.Vector3(0.0, 6.85, -17.2), '清舟杂货铺', '随萤火虫入屋', () => startEnterRoomTransition());
     } else if (state.act === 'room' && !state.focusedExhibit) {
       const pinOffsets = {
         photo: new THREE.Vector3(-4.15, 2.20, 1.32),
@@ -824,6 +850,7 @@ function getInspectCameraPose(ex, yaw, pitch, dist) {
 function startCloudBreakDive() {
   if (state.transition) return;
   playChimeSound();
+  ensureSunflowerCottageLoaded().catch(() => {});
   ensureRoomLoaded().catch(() => {});
   if (prefersReducedMotion) {
     goAct('sunflower', true);
@@ -893,6 +920,7 @@ function startExitRoomToSunflower() {
 }
 
 async function goAct(act, instant = false) {
+  if (act === 'sunflower') await ensureSunflowerCottageLoaded();
   if (act === 'room') await ensureRoomLoaded();
   if (!instant && !prefersReducedMotion) {
     if (state.act === 'galaxy' && act === 'sunflower') {
@@ -929,6 +957,7 @@ async function goAct(act, instant = false) {
   } else if (act === 'sunflower') {
     state.sunflowerWalk = 0;
     state.targetSunflowerWalk = 0;
+    sunflowerAct.setDoorOpen(0, true);
     const pose = getSunflowerCameraPose(0, 0, 0);
     camPos.copy(pose.pos);
     camLook.copy(pose.look);
@@ -1329,6 +1358,7 @@ function animate() {
       if (veil) veil.style.opacity = String((pulse * 0.92).toFixed(3));
 
       if (tr.kind === 'enterRoom') {
+        sunflowerAct.setDoorOpen(Math.min(1, p * 2.2));
         if (p < 0.52) {
           const sub = easeInOut(p / 0.52);
           camPos.lerpVectors(tr.startPos, new THREE.Vector3(0, 1.9, -15.4), sub);
@@ -1355,6 +1385,7 @@ function animate() {
             state.act = 'sunflower';
             state.sunflowerWalk = 0.28;
             state.targetSunflowerWalk = 0.28;
+            sunflowerAct.setDoorOpen(0, true);
             applyActAtmosphere('sunflower');
             syncHudUI();
           }
@@ -1421,7 +1452,7 @@ function animate() {
     galaxyAct.update(elapsed, dt, state.hoveredObjectName === 'Qingzhou_Planet', prefersReducedMotion);
   }
   if (sunflowerAct.group.visible) {
-    sunflowerAct.update(elapsed, camera, state.smoothPtrX, state.smoothPtrY, state.sunflowerWalk, prefersReducedMotion);
+    sunflowerAct.update(elapsed, camera, state.smoothPtrX, state.smoothPtrY, state.sunflowerWalk, prefersReducedMotion, dt);
   }
   if (roomAct.group.visible) {
     roomAct.update({
@@ -1512,14 +1543,16 @@ if (loaderEl) {
   setTimeout(() => { loaderEl.hidden = true; }, 450);
 }
 
-// Quietly stream the Act III miniature room GLBs in the background right after Act I paints!
-setTimeout(() => { ensureRoomLoaded().catch(() => {}); }, 250);
+// Quietly stream Act II cottage & Act III room GLBs in the background right after Act I paints!
+setTimeout(() => { ensureSunflowerCottageLoaded().catch(() => {}); }, 160);
+setTimeout(() => { ensureRoomLoaded().catch(() => {}); }, 320);
 
 // Expose clean QA / Director verification hooks
 window.__qzGetState = () => ({
   act: state.act,
   focusedExhibit: state.focusedExhibit,
   roomLoaded: state.roomLoaded,
+  cottageLoaded: state.cottageLoaded,
   selectedPoemSlug: state.selectedPoemSlug,
   selectedCityName: state.selectedCityName,
   selectedSampleIdx: state.selectedSampleIdx,
@@ -1533,6 +1566,16 @@ window.__qzFocusExhibit = async (id, instant = true) => {
 };
 window.__qzSetCloudDive = (p) => { state.manualCloudDive = p; };
 window.__qzEnsureRoom = () => ensureRoomLoaded();
+window.__qzEnsureCottage = () => ensureSunflowerCottageLoaded();
+window.__qzSetSunflowerWalk = (w) => {
+  state.sunflowerWalk = state.targetSunflowerWalk = clamp(w, 0, 1);
+  const pose = getSunflowerCameraPose(state.sunflowerWalk, 0, 0);
+  camPos.copy(pose.pos);
+  camLook.copy(pose.look);
+  camera.position.copy(camPos);
+  camera.lookAt(camLook);
+};
+window.__qzSetDoorOpen = (v) => sunflowerAct.setDoorOpen(v, true);
 window.__qzTriggerSeal = () => {
   togglePoemSeal(state.selectedPoemSlug);
   roomAct.triggerSealStamp();

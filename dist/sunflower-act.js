@@ -1,8 +1,15 @@
 import * as THREE from './vendor/three/three.module.js';
+import {
+  makeSunflowerHeadTexture,
+  makeSunflowerLeafTexture,
+  makeMeadowGrassTexture,
+  makeMeadowGroundTexture
+} from './sunflower-textures.js';
 
 /**
- * Act II: 2.5D × 3D Hybrid Golden-Violet Sunset Sunflower Meadow
- * + Interactive Guiding Fireflies + Warm-Lit Curiosity Shop Cottage.
+ * Act II: 3D Painterly Oil-Book Golden-Violet Sunset Sunflower Meadow
+ * + 3,200 Wind-Swept Grass Clumps + Diagonal Sunset God-Rays + Drifting Pollen
+ * + Interactive Guiding Fireflies + Blender-Sculpted Curiosity Cottage with Opening Door.
  */
 export function buildSunflowerAct(dpr = 1) {
   const group = new THREE.Group();
@@ -15,7 +22,7 @@ export function buildSunflowerAct(dpr = 1) {
   };
 
   // =========================================================================
-  // 1. GLSL GOLDEN-VIOLET SUNSET DUSK SKY DOME (with emerging evening stars!)
+  // 1. GLSL GOLDEN-VIOLET SUNSET DUSK SKY DOME (with emerging pinpoint stars)
   // =========================================================================
   const skyMat = new THREE.ShaderMaterial({
     side: THREE.BackSide,
@@ -53,7 +60,7 @@ export function buildSunflowerAct(dpr = 1) {
         vec3 d = normalize(vDir);
         float h = clamp(d.y, -0.1, 1.0);
 
-        // Richer Makoto Shinkai golden-violet twilight sunset palette (deep violet dusk -> rose-plum -> molten amber-gold!)
+        // Rich Makoto Shinkai golden-violet twilight sunset palette
         vec3 zenith = vec3(0.05, 0.04, 0.16);
         vec3 violet = vec3(0.22, 0.11, 0.34);
         vec3 rose   = vec3(0.62, 0.25, 0.36);
@@ -65,7 +72,7 @@ export function buildSunflowerAct(dpr = 1) {
         col = mix(col, violet, smoothstep(0.18, 0.42, h));
         col = mix(col, zenith, smoothstep(0.38, 0.78, h));
 
-        // Setting sun glow just off-left behind the distant cottage hills (restrained warm disc, never blown-out white)
+        // Setting sun glow just off-left behind the distant cottage hills
         vec3 sunDir = normalize(vec3(-0.24, 0.075, -0.97));
         float sunDot = max(0.0, dot(d, sunDir));
         col += vec3(0.98, 0.62, 0.28) * pow(sunDot, 12.0) * 0.36;
@@ -80,7 +87,7 @@ export function buildSunflowerAct(dpr = 1) {
           col = mix(col, cloudTint, cloudBand * 0.58);
         }
 
-        // First delicate pinpoint evening stars sparkling in the violet zenith (NEVER blocky squares!)
+        // Pinpoint evening stars sparkling in the violet zenith
         if (h > 0.16) {
           vec2 starCell = vec2(atan(d.x, d.z) * 58.0, asin(d.y) * 58.0);
           vec2 g = floor(starCell);
@@ -103,19 +110,22 @@ export function buildSunflowerAct(dpr = 1) {
   group.add(skyDome);
 
   // =========================================================================
-  // 2. 2.5D LAYERED PARALLAX DISTANT HILLS & SUNSET SILHOUETTE RIDGES
+  // 2. 2.5D LAYERED PARALLAX DISTANT HILLS & SUNSET TREELINE RIDGES
   // =========================================================================
-  function makeRidgeLayer(zDist, width, height, colorHex, rimHex, seedOff) {
-    const segs = 96;
+  function makeRidgeLayer(zDist, width, height, colorHex, rimHex, seedOff, addTrees = false) {
+    const segs = 128;
     const geo = new THREE.PlaneGeometry(width, height, segs, 1);
     const pos = geo.attributes.position;
     for (let i = 0; i <= segs; i++) {
       const u = i / segs;
       const x = (u - 0.5) * width;
-      const ridge =
+      let ridge =
         Math.sin(x * 0.045 + seedOff) * height * 0.32 +
         Math.sin(x * 0.11 - seedOff * 1.7) * height * 0.18 +
         Math.cos(x * 0.24 + seedOff * 0.6) * height * 0.08;
+      if (addTrees) {
+        ridge += Math.max(0, Math.sin(x * 1.85 + seedOff) * Math.cos(x * 0.72)) * 0.65;
+      }
       pos.setY(i, height * 0.5 + ridge);
     }
     geo.computeVertexNormals();
@@ -139,7 +149,8 @@ export function buildSunflowerAct(dpr = 1) {
         varying vec2 vUv;
         void main() {
           float rim = smoothstep(0.84, 1.0, vUv.y);
-          vec3 col = mix(uBase, uRim, rim * 0.55);
+          float mist = smoothstep(0.0, 0.32, vUv.y);
+          vec3 col = mix(vec3(0.32, 0.17, 0.24), mix(uBase, uRim, rim * 0.58), mist);
           gl_FragColor = vec4(col, 1.0);
           #include <colorspace_fragment>
         }
@@ -149,12 +160,12 @@ export function buildSunflowerAct(dpr = 1) {
     m.position.set(0, -1.2, zDist);
     group.add(m);
   }
-  makeRidgeLayer(-96, 220, 16, 0x2a1c38, 0xd87a64, 0.7);
-  makeRidgeLayer(-68, 165, 11.5, 0x1e182e, 0xc97452, 2.3);
-  makeRidgeLayer(-46, 120, 7.2, 0x171822, 0xa86842, 4.1);
+  makeRidgeLayer(-96, 220, 16.5, 0x2a1c38, 0xd87a64, 0.7, false);
+  makeRidgeLayer(-68, 165, 11.8, 0x1e182e, 0xc97452, 2.3, false);
+  makeRidgeLayer(-46, 120, 7.6, 0x161920, 0xae6e44, 4.1, true);
 
   // =========================================================================
-  // 3. ROLLING SUNFLOWER MEADOW GROUND + WINDING GOLDEN GARDEN PATH
+  // 3. TEXTURED ROLLING MEADOW GROUND + STEPPING STONES + PATHSIDE LANTERNS
   // =========================================================================
   const pathCenterX = (z) => Math.sin((z + 16) * 0.17) * 1.15 * Math.min(1, Math.abs(z + 18.5) / 14);
   const groundY = (x, z) => {
@@ -164,13 +175,13 @@ export function buildSunflowerAct(dpr = 1) {
     return hill * pathFlat;
   };
 
-  const gGeo = new THREE.PlaneGeometry(76, 56, 72, 64);
+  const gGeo = new THREE.PlaneGeometry(78, 58, 72, 64);
   gGeo.rotateX(-Math.PI / 2);
   const gPos = gGeo.attributes.position;
   const gCol = new Float32Array(gPos.count * 3);
-  const cGrass = new THREE.Color(0x22301f);
+  const cGrass = new THREE.Color(0x1f2d1d);
   const cWarmGrass = new THREE.Color(0x3a3b22);
-  const cPath = new THREE.Color(0x7c5a3e);
+  const cPath = new THREE.Color(0x745338);
   const tmpC = new THREE.Color();
   for (let i = 0; i < gPos.count; i++) {
     const x = gPos.getX(i);
@@ -179,263 +190,520 @@ export function buildSunflowerAct(dpr = 1) {
     const y = groundY(x, z);
     gPos.setY(i, y);
     const dp = Math.abs(x - pathCenterX(z));
-    const pMask = Math.max(0, 1 - Math.max(0, dp - 0.68) / 0.82);
+    const pMask = Math.max(0, 1 - Math.max(0, dp - 0.65) / 0.85);
     tmpC.copy(cGrass).lerp(cWarmGrass, Math.max(0, Math.sin(x * 0.3 + z * 0.25) * 0.5 + 0.5));
-    tmpC.lerp(cPath, pMask * 0.92);
+    tmpC.lerp(cPath, pMask * 0.90);
     gCol[i * 3] = tmpC.r;
     gCol[i * 3 + 1] = tmpC.g;
     gCol[i * 3 + 2] = tmpC.b;
   }
   gGeo.setAttribute('color', new THREE.BufferAttribute(gCol, 3));
   gGeo.computeVertexNormals();
+  const groundTex = makeMeadowGroundTexture();
   const groundMesh = new THREE.Mesh(
     gGeo,
-    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0.02 })
+    new THREE.MeshStandardMaterial({ map: groundTex, vertexColors: true, roughness: 0.94, metalness: 0.02 })
   );
   group.add(groundMesh);
 
-  // Warm Stepping Stones along the winding garden path toward the cottage
-  const stoneGeo = new THREE.CylinderGeometry(0.42, 0.48, 0.08, 9);
-  const stoneMat = new THREE.MeshStandardMaterial({ color: 0xa68a6d, roughness: 0.88 });
+  // Mossy Stepping Stones along the winding garden path
+  const stoneGeo = new THREE.CylinderGeometry(0.41, 0.48, 0.085, 9);
+  const stoneMats = [
+    new THREE.MeshStandardMaterial({ color: 0x9b8268, roughness: 0.90 }),
+    new THREE.MeshStandardMaterial({ color: 0x86745d, roughness: 0.92 }),
+    new THREE.MeshStandardMaterial({ color: 0x77745c, roughness: 0.92 })
+  ];
   for (let i = 0; i < 19; i++) {
     const sz = 8.5 - i * 1.28;
     const sx = pathCenterX(sz) + (i % 2 === 0 ? -0.14 : 0.14);
-    const st = new THREE.Mesh(stoneGeo, stoneMat);
-    st.position.set(sx, groundY(sx, sz) + 0.03, sz);
+    const st = new THREE.Mesh(stoneGeo, stoneMats[i % stoneMats.length]);
+    st.position.set(sx, groundY(sx, sz) + 0.032, sz);
     st.scale.set(0.95 + rand() * 0.25, 1, 0.72 + rand() * 0.2);
     st.rotation.y = rand() * Math.PI;
     group.add(st);
   }
 
+  // 4 Low Charming Pathside Wooden & Brass Garden Lanterns
+  const postWoodMat = new THREE.MeshStandardMaterial({ color: 0x3b2519, roughness: 0.78 });
+  const postCapMat = new THREE.MeshStandardMaterial({ color: 0xb98d4e, metalness: 0.75, roughness: 0.32 });
+  const postGlowMat = new THREE.MeshBasicMaterial({ color: 0xffdf92 });
+  [4.2, -1.2, -6.6, -12.0].forEach((lz, idx) => {
+    const lx = pathCenterX(lz) + (idx % 2 === 0 ? -1.08 : 1.08);
+    const ly = groundY(lx, lz);
+    const lp = new THREE.Group();
+    lp.position.set(lx, ly, lz);
+    const stake = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.56, 0.06), postWoodMat);
+    stake.position.y = 0.26;
+    const bulb = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.14, 0.11), postGlowMat);
+    bulb.position.y = 0.58;
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.08, 4), postCapMat);
+    cap.rotation.y = Math.PI / 4;
+    cap.position.y = 0.68;
+    lp.add(stake, bulb, cap);
+    group.add(lp);
+  });
+
+  // Two subtle warm pathside fill lights illuminating petals & grass along the walk
+  const pathGlow1 = new THREE.PointLight(0xffb454, 4.2, 8.5, 1.6);
+  pathGlow1.position.set(pathCenterX(1.5), groundY(0, 1.5) + 0.9, 1.5);
+  const pathGlow2 = new THREE.PointLight(0xffb454, 4.6, 8.5, 1.6);
+  pathGlow2.position.set(pathCenterX(-9.5), groundY(0, -9.5) + 0.9, -9.5);
+  group.add(pathGlow1, pathGlow2);
+
   // =========================================================================
-  // 4. 3D WIND-SWEPT SUNFLOWER SEA (1,450 Instanced Sunflowers + GLSL Wind!)
+  // 4. PAINTERLY 3D SUNFLOWER SEA (1,650 Blossoms + Leaves + 3,200 Grass Tufts!)
   // =========================================================================
   const windUniforms = { uTime: { value: 0 } };
-  function injectWindShader(mat, swayAmt = 0.14) {
+  function injectBotanicalShader(mat, mode, swayAmt = 0.13) {
+    mat.customProgramCacheKey = () => `qz-botanical-${mode}-${swayAmt.toFixed(2)}`;
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = windUniforms.uTime;
-      shader.vertexShader = `uniform float uTime;\n` + shader.vertexShader;
+      shader.vertexShader = `uniform float uTime;\nvarying vec2 vBotUv;\n` + shader.vertexShader;
       shader.vertexShader = shader.vertexShader.replace(
         '#include <begin_vertex>',
         `#include <begin_vertex>
+         vBotUv = uv;
          vec3 instOrigin = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]);
-         float wave = sin(uTime * 1.45 + instOrigin.x * 0.42 + instOrigin.z * 0.34)
-                    + 0.45 * cos(uTime * 2.1 - instOrigin.x * 0.7 + instOrigin.z * 0.55);
+         float wave = sin(uTime * 1.48 + instOrigin.x * 0.42 + instOrigin.z * 0.34)
+                    + 0.42 * cos(uTime * 2.15 - instOrigin.x * 0.68 + instOrigin.z * 0.52);
          float bend = smoothstep(0.0, 1.35, position.y);
          transformed.x += wave * ${swayAmt.toFixed(3)} * bend;
-         transformed.z += wave * ${(swayAmt * 0.55).toFixed(3)} * bend;`
+         transformed.z += wave * ${(swayAmt * 0.52).toFixed(3)} * bend;`
       );
+      if (mode !== 'stem') {
+        shader.fragmentShader = `varying vec2 vBotUv;\n` + shader.fragmentShader;
+        let glowSnippet = '';
+        if (mode === 'petal') {
+          glowSnippet = `
+            float radialP = smoothstep(0.18, 0.44, length(vBotUv - vec2(0.5)));
+            totalEmissiveRadiance += vec3(0.95, 0.52, 0.12) * radialP * 0.56;
+          `;
+        } else if (mode === 'leaf') {
+          glowSnippet = `
+            float tipL = smoothstep(0.32, 0.92, vBotUv.y);
+            totalEmissiveRadiance += vec3(0.28, 0.34, 0.08) * tipL * 0.34;
+          `;
+        } else if (mode === 'grass') {
+          glowSnippet = `
+            float tipG = smoothstep(0.42, 0.98, vBotUv.y);
+            totalEmissiveRadiance += vec3(0.64, 0.38, 0.11) * tipG * 0.42;
+          `;
+        }
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <emissivemap_fragment>',
+          `#include <emissivemap_fragment>\n${glowSnippet}`
+        );
+      }
     };
   }
 
-  // Build clean sunflower stem + 2 broad leaves geometry (merged manually for 1 draw call!)
-  const stemGeo = new THREE.CylinderGeometry(0.022, 0.038, 1.28, 6);
-  stemGeo.translate(0, 0.64, 0);
-  const stemMat = new THREE.MeshStandardMaterial({ color: 0x3b5932, roughness: 0.82 });
-  injectWindShader(stemMat, 0.13);
+  // 4A. Gently Bowed Organic Stem (5 height segments)
+  const stemGeo = new THREE.CylinderGeometry(0.022, 0.042, 1.32, 6, 5);
+  stemGeo.translate(0, 0.66, 0);
+  const stemPos = stemGeo.attributes.position;
+  for (let i = 0; i < stemPos.count; i++) {
+    const t = Math.max(0, Math.min(1, stemPos.getY(i) / 1.32));
+    stemPos.setZ(i, stemPos.getZ(i) + Math.sin(t * Math.PI) * 0.045);
+  }
+  stemGeo.computeVertexNormals();
+  const stemMat = new THREE.MeshStandardMaterial({ color: 0x35532c, roughness: 0.84 });
+  injectBotanicalShader(stemMat, 'stem', 0.13);
 
-  // Sunflower dark seed center disk
-  const diskGeo = new THREE.CylinderGeometry(0.16, 0.13, 0.07, 10);
-  diskGeo.rotateX(Math.PI / 2);
-  diskGeo.translate(0, 1.28, 0.04);
-  const diskMat = new THREE.MeshStandardMaterial({ color: 0x3b2212, roughness: 0.90 });
-  injectWindShader(diskMat, 0.13);
-
-  // Sunflower radiant golden petal crown (12 sculpted pointed petals around the disk!)
-  const petalPositions = [];
-  const petalNormals = [];
-  const petalColors = [];
-  const pOuter = new THREE.Color(0xf7b93c);
-  const pInner = new THREE.Color(0xe68422);
-  for (let p = 0; p < 12; p++) {
-    const ang = (p / 12) * Math.PI * 2;
-    const ca = Math.cos(ang), sa = Math.sin(ang);
-    const tx = -sa, ty = ca;
-    const r0 = 0.13, r1 = 0.36 + (p % 2) * 0.04;
-    const zTilt = (p % 2 === 0 ? 0.045 : -0.015);
-    const b0 = [ca * r0 - tx * 0.042, 1.28 + sa * r0 - ty * 0.042, 0.02];
-    const b1 = [ca * r0 + tx * 0.042, 1.28 + sa * r0 + ty * 0.042, 0.02];
-    const m0 = [ca * (r0 + (r1 - r0) * 0.6) - tx * 0.056, 1.28 + sa * (r0 + (r1 - r0) * 0.6) - ty * 0.056, 0.02 + zTilt * 0.5];
-    const m1 = [ca * (r0 + (r1 - r0) * 0.6) + tx * 0.056, 1.28 + sa * (r0 + (r1 - r0) * 0.6) + ty * 0.056, 0.02 + zTilt * 0.5];
-    const tip = [ca * r1, 1.28 + sa * r1, 0.02 + zTilt];
-    const tris = [b0, b1, m1, b0, m1, m0, m0, m1, tip];
-    const cols = [pInner, pInner, pOuter, pInner, pOuter, pOuter, pOuter, pOuter, pOuter];
-    for (let k = 0; k < tris.length; k++) {
-      petalPositions.push(...tris[k]);
-      petalNormals.push(0, 0.15, 0.98);
-      petalColors.push(cols[k].r, cols[k].g, cols[k].b);
+  // 4B. Cupped 3D Painterly Sunflower Blossom Dish (512px oil-painted petals + Fibonacci disc!)
+  const headTex = makeSunflowerHeadTexture();
+  const headGeo = new THREE.PlaneGeometry(0.92, 0.92, 6, 6);
+  const hPos = headGeo.attributes.position;
+  for (let i = 0; i < hPos.count; i++) {
+    const x = hPos.getX(i);
+    const y = hPos.getY(i);
+    const r = Math.hypot(x, y);
+    if (r < 0.18) {
+      hPos.setZ(i, 0.045 * Math.cos((r / 0.18) * Math.PI * 0.5));
+    } else {
+      const ang = Math.atan2(y, x);
+      const t = Math.min(1, (r - 0.18) / 0.38);
+      hPos.setZ(i, -0.068 * Math.pow(t, 1.4) + Math.sin(ang * 6.0) * 0.016 * t);
     }
   }
-  const petalGeo = new THREE.BufferGeometry();
-  petalGeo.setAttribute('position', new THREE.Float32BufferAttribute(petalPositions, 3));
-  petalGeo.setAttribute('normal', new THREE.Float32BufferAttribute(petalNormals, 3));
-  petalGeo.setAttribute('color', new THREE.Float32BufferAttribute(petalColors, 3));
-  const petalMat = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    roughness: 0.64,
-    emissive: new THREE.Color(0x522908),
-    emissiveIntensity: 0.35,
-    side: THREE.DoubleSide
+  headGeo.rotateX(-0.08);
+  headGeo.translate(0, 1.30, 0.045);
+  headGeo.computeVertexNormals();
+  const headMat = new THREE.MeshStandardMaterial({
+    map: headTex,
+    alphaTest: 0.36,
+    side: THREE.DoubleSide,
+    roughness: 0.70,
+    metalness: 0.02
   });
-  injectWindShader(petalMat, 0.13);
+  injectBotanicalShader(headMat, 'petal', 0.13);
 
-  // Scatter 1,450 sunflowers across the meadow leaving the winding path & cottage yard clear!
+  // 4C. Paired Broad Arched Opposite Stem Leaves (Merged Left + Right in 1 Draw Call!)
+  const leafTex = makeSunflowerLeafTexture();
+  function buildSingleLeaf(attachY, rotY, tiltX) {
+    const g = new THREE.PlaneGeometry(0.38, 0.54, 4, 5);
+    g.translate(0, 0.27, 0); // pivot at bottom stem join
+    const lp = g.attributes.position;
+    for (let i = 0; i < lp.count; i++) {
+      const u = lp.getY(i) / 0.54;
+      const sideFold = Math.abs(lp.getX(i)) * 0.18;
+      lp.setZ(i, lp.getZ(i) + Math.sin(u * Math.PI) * 0.08 + sideFold - u * u * 0.11);
+    }
+    g.rotateX(tiltX);
+    g.rotateY(rotY);
+    g.translate(0, attachY, 0);
+    return g;
+  }
+  const leafL = buildSingleLeaf(0.46, -1.35, 1.05);
+  const leafR = buildSingleLeaf(0.76, +1.42, 0.95);
+  const mergedLeafGeo = new THREE.BufferGeometry();
+  const lPosA = leafL.attributes.position.array;
+  const lPosB = leafR.attributes.position.array;
+  const lUvA = leafL.attributes.uv.array;
+  const lUvB = leafR.attributes.uv.array;
+  const lIdxA = leafL.index.array;
+  const lIdxB = leafR.index.array;
+  const posArr = new Float32Array(lPosA.length + lPosB.length);
+  posArr.set(lPosA, 0);
+  posArr.set(lPosB, lPosA.length);
+  const uvArr = new Float32Array(lUvA.length + lUvB.length);
+  uvArr.set(lUvA, 0);
+  uvArr.set(lUvB, lUvA.length);
+  const vCountA = leafL.attributes.position.count;
+  const idxArr = new Uint16Array(lIdxA.length + lIdxB.length);
+  idxArr.set(lIdxA, 0);
+  for (let k = 0; k < lIdxB.length; k++) idxArr[lIdxA.length + k] = lIdxB[k] + vCountA;
+  mergedLeafGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+  mergedLeafGeo.setAttribute('uv', new THREE.BufferAttribute(uvArr, 2));
+  mergedLeafGeo.setIndex(new THREE.BufferAttribute(idxArr, 1));
+  mergedLeafGeo.computeVertexNormals();
+  leafL.dispose();
+  leafR.dispose();
+
+  const leafMat = new THREE.MeshStandardMaterial({
+    map: leafTex,
+    alphaTest: 0.36,
+    side: THREE.DoubleSide,
+    roughness: 0.78
+  });
+  injectBotanicalShader(leafMat, 'leaf', 0.10);
+
+  // Scatter 1,650 sunflowers across the meadow leaving winding path & porch yard clear!
   const transforms = [];
+  const flowerTints = [];
+  const tintPalette = [0xffffff, 0xfff0d0, 0xffe4b8, 0xffd8aa];
   const dummy = new THREE.Object3D();
-  for (let i = 0; i < 2200 && transforms.length < 1450; i++) {
-    const z = 11.5 - Math.pow(rand(), 0.85) * 34.0;
-    const x = (rand() - 0.5) * (24 + Math.max(0, -z) * 1.15);
+  for (let i = 0; i < 2600 && transforms.length < 1650; i++) {
+    const z = 11.8 - Math.pow(rand(), 0.85) * 34.5;
+    const x = (rand() - 0.5) * (25 + Math.max(0, -z) * 1.18);
     const dp = Math.abs(x - pathCenterX(z));
-    if (dp < 1.38 + rand() * 0.35) continue; // Keep garden path clear!
-    if (z < -13.5 && Math.abs(x) < 5.2) continue; // Keep cottage porch yard clear!
+    if (dp < 1.32 + rand() * 0.32) continue;
+    if (z < -13.2 && Math.abs(x) < 5.2) continue;
     const y = groundY(x, z);
-    const sc = 0.78 + rand() * 0.52;
-    dummy.position.set(x, y - 0.04, z);
-    dummy.scale.set(sc, sc * (0.9 + rand() * 0.25), sc);
-    // Sunflowers face warmly toward camera / setting sun with gentle organic variation
-    dummy.rotation.set(-0.18 + (rand() - 0.5) * 0.26, (rand() - 0.5) * 0.72, (rand() - 0.5) * 0.14);
+    const sc = 0.76 + rand() * 0.54;
+    dummy.position.set(x, y - 0.05, z);
+    dummy.scale.set(sc, sc * (0.90 + rand() * 0.26), sc);
+    dummy.rotation.set(-0.14 + (rand() - 0.5) * 0.24, (rand() - 0.5) * 0.78, (rand() - 0.5) * 0.14);
     dummy.updateMatrix();
     transforms.push(dummy.matrix.clone());
+    flowerTints.push(new THREE.Color(tintPalette[i % tintPalette.length]));
   }
 
   const instCount = transforms.length;
   const stems = new THREE.InstancedMesh(stemGeo, stemMat, instCount);
-  const disks = new THREE.InstancedMesh(diskGeo, diskMat, instCount);
-  const petals = new THREE.InstancedMesh(petalGeo, petalMat, instCount);
+  const heads = new THREE.InstancedMesh(headGeo, headMat, instCount);
+  const leaves = new THREE.InstancedMesh(mergedLeafGeo, leafMat, instCount);
   for (let i = 0; i < instCount; i++) {
     stems.setMatrixAt(i, transforms[i]);
-    disks.setMatrixAt(i, transforms[i]);
-    petals.setMatrixAt(i, transforms[i]);
+    heads.setMatrixAt(i, transforms[i]);
+    leaves.setMatrixAt(i, transforms[i]);
+    heads.setColorAt(i, flowerTints[i]);
   }
   stems.instanceMatrix.needsUpdate = true;
-  disks.instanceMatrix.needsUpdate = true;
-  petals.instanceMatrix.needsUpdate = true;
-  group.add(stems, disks, petals);
+  heads.instanceMatrix.needsUpdate = true;
+  leaves.instanceMatrix.needsUpdate = true;
+  if (heads.instanceColor) heads.instanceColor.needsUpdate = true;
+  group.add(stems, heads, leaves);
+
+  // 4D. 3,200 Wind-Swept Cross-Quad Meadow Grass Clumps (conceals ground seams!)
+  const grassTex = makeMeadowGrassTexture();
+  function makeGrassCrossGeo() {
+    const p1 = new THREE.PlaneGeometry(0.64, 0.58, 2, 3);
+    p1.translate(0, 0.29, 0);
+    const p2 = new THREE.PlaneGeometry(0.64, 0.58, 2, 3);
+    p2.translate(0, 0.29, 0);
+    p2.rotateY(Math.PI * 0.42);
+    const geo = new THREE.BufferGeometry();
+    const pa = p1.attributes.position.array;
+    const pb = p2.attributes.position.array;
+    const ua = p1.attributes.uv.array;
+    const ub = p2.attributes.uv.array;
+    const ia = p1.index.array;
+    const ib = p2.index.array;
+    const pos = new Float32Array(pa.length + pb.length);
+    pos.set(pa, 0); pos.set(pb, pa.length);
+    const uv = new Float32Array(ua.length + ub.length);
+    uv.set(ua, 0); uv.set(ub, ua.length);
+    const vcA = p1.attributes.position.count;
+    const idx = new Uint16Array(ia.length + ib.length);
+    idx.set(ia, 0);
+    for (let k = 0; k < ib.length; k++) idx[ia.length + k] = ib[k] + vcA;
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    geo.setIndex(new THREE.BufferAttribute(idx, 1));
+    geo.computeVertexNormals();
+    p1.dispose(); p2.dispose();
+    return geo;
+  }
+  const grassGeo = makeGrassCrossGeo();
+  const grassMat = new THREE.MeshStandardMaterial({
+    map: grassTex,
+    alphaTest: 0.34,
+    side: THREE.DoubleSide,
+    roughness: 0.86
+  });
+  injectBotanicalShader(grassMat, 'grass', 0.14);
+
+  const grassTransforms = [];
+  for (let i = 0; i < 4200 && grassTransforms.length < 3200; i++) {
+    const z = 11.8 - Math.pow(rand(), 0.82) * 34.0;
+    const cxP = pathCenterX(z);
+    // Bias 30% of tufts right along path borders for lush organic trail edging!
+    const x = (i % 3 === 0)
+      ? cxP + (rand() < 0.5 ? -1 : 1) * (0.76 + rand() * 0.95)
+      : (rand() - 0.5) * (25 + Math.max(0, -z) * 1.12);
+    const dp = Math.abs(x - cxP);
+    if (dp < 0.72) continue;
+    if (z < -13.8 && Math.abs(x) < 4.5) continue;
+    const y = groundY(x, z);
+    const sc = 0.75 + rand() * 0.75;
+    dummy.position.set(x, y - 0.04, z);
+    dummy.scale.set(sc, sc * (0.85 + rand() * 0.4), sc);
+    dummy.rotation.set((rand() - 0.5) * 0.16, rand() * Math.PI * 2, (rand() - 0.5) * 0.16);
+    dummy.updateMatrix();
+    grassTransforms.push(dummy.matrix.clone());
+  }
+  const grassMesh = new THREE.InstancedMesh(grassGeo, grassMat, grassTransforms.length);
+  for (let i = 0; i < grassTransforms.length; i++) {
+    grassMesh.setMatrixAt(i, grassTransforms[i]);
+  }
+  grassMesh.instanceMatrix.needsUpdate = true;
+  group.add(grassMesh);
 
   // =========================================================================
-  // 5. COZY WARM-LIT CURIOSITY SHOP COTTAGE AT PATH'S END (z = -18.5)
+  // 5. DIAGONAL VOLUMETRIC SUNSET GOD-RAYS + DRIFTING GOLDEN POLLEN
+  // =========================================================================
+  const rayMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+    uniforms: { uTime: { value: 0 } },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      varying vec2 vUv;
+      void main() {
+        float edgeX = pow(sin(vUv.x * 3.14159265), 2.2);
+        float edgeY = pow(sin(vUv.y * 3.14159265), 1.5);
+        float breath = 0.78 + 0.22 * sin(uTime * 0.65 + vUv.x * 4.0);
+        vec3 col = vec3(1.0, 0.72, 0.36);
+        gl_FragColor = vec4(col, edgeX * edgeY * 0.072 * breath);
+        #include <colorspace_fragment>
+      }
+    `
+  });
+  const raySpecs = [
+    [-9.5, 6.2, -16.0, 12.0, 26.0, 0.58],
+    [-4.2, 6.8, -11.5, 10.5, 24.0, 0.56],
+    [1.8, 7.0, -7.0, 11.0, 25.0, 0.54],
+    [7.2, 6.4, -14.0, 11.5, 24.0, 0.58],
+    [-1.5, 6.4, -1.5, 9.5, 22.0, 0.55]
+  ];
+  for (const [rx, ry, rz, rw, rh, tz] of raySpecs) {
+    const shaft = new THREE.Mesh(new THREE.PlaneGeometry(rw, rh), rayMat);
+    shaft.position.set(rx, ry, rz);
+    shaft.rotation.set(0.22, -0.18, -tz);
+    group.add(shaft);
+  }
+
+  // 180 Drifting Sunlit Pollen Motes riding the evening breeze
+  const pCount = 180;
+  const pPos = new Float32Array(pCount * 3);
+  const pPhase = new Float32Array(pCount);
+  for (let i = 0; i < pCount; i++) {
+    const z = 10.5 - rand() * 30.0;
+    const x = (rand() - 0.5) * 22.0;
+    pPos[i * 3] = x;
+    pPos[i * 3 + 1] = groundY(x, z) + 0.4 + rand() * 3.8;
+    pPos[i * 3 + 2] = z;
+    pPhase[i] = rand() * Math.PI * 2;
+  }
+  const pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  pGeo.setAttribute('aPhase', new THREE.BufferAttribute(pPhase, 1));
+  const pollenMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: { uTime: { value: 0 }, uScale: { value: dpr } },
+    vertexShader: `
+      attribute float aPhase;
+      varying float vA;
+      uniform float uTime;
+      uniform float uScale;
+      void main() {
+        vec3 p = position;
+        p.x += sin(uTime * 0.45 + aPhase) * 0.8 + mod(uTime * 0.22 + aPhase * 2.0, 6.0) - 3.0;
+        p.y += sin(uTime * 0.72 + aPhase * 1.4) * 0.35;
+        vA = 0.28 + 0.38 * sin(uTime * 1.6 + aPhase);
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_PointSize = clamp(16.0 * uScale / max(1.8, -mv.z), 1.2, 5.5);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      varying float vA;
+      void main() {
+        float d = length(gl_PointCoord - vec2(0.5));
+        if (d > 0.5) discard;
+        float a = smoothstep(0.5, 0.1, d) * vA;
+        gl_FragColor = vec4(vec3(1.0, 0.86, 0.54), a);
+        #include <colorspace_fragment>
+      }
+    `
+  });
+  group.add(new THREE.Points(pGeo, pollenMat));
+
+  // =========================================================================
+  // 6. BLENDER SCULPTED CURIOSITY COTTAGE MOUNT + SWINGING DOOR + SMOKE
   // =========================================================================
   const cottage = new THREE.Group();
   cottage.name = 'Sunflower_Cottage';
   cottage.position.set(0.0, groundY(0, -18.5), -18.5);
   group.add(cottage);
 
-  const mWall = new THREE.MeshStandardMaterial({ color: 0xc2ab8e, roughness: 0.88 });
-  const mTimber = new THREE.MeshStandardMaterial({ color: 0x3b2519, roughness: 0.68 });
-  const mRoof = new THREE.MeshStandardMaterial({ color: 0x263440, roughness: 0.66 });
-  const mStone = new THREE.MeshStandardMaterial({ color: 0x5c5b58, roughness: 0.88 });
-  const mGlowWin = new THREE.MeshStandardMaterial({
-    color: 0xffe2a6,
-    emissive: new THREE.Color(0xffb452),
-    emissiveIntensity: 2.35,
-    roughness: 0.25
+  const cottageMount = new THREE.Group();
+  cottageMount.name = 'Sunflower_Cottage_Mount';
+  cottage.add(cottageMount);
+
+  // Ultra-lightweight temporary silhouette until sunflower-cottage.glb finishes loading (~150ms)
+  const fallbackCottage = new THREE.Group();
+  const fbMat = new THREE.MeshStandardMaterial({ color: 0xc2ab8e, roughness: 0.88 });
+  const fbBody = new THREE.Mesh(new THREE.BoxGeometry(6.2, 3.3, 4.6), fbMat);
+  fbBody.position.set(0, 2.35, -0.1);
+  fallbackCottage.add(fbBody);
+  cottageMount.add(fallbackCottage);
+
+  let sculptedMounted = false;
+  let doorPivot = null;
+  let porchLanternPivot = null;
+  let doorOpenTarget = 0; // 0 = cozy ajar 15 deg (0.26 rad), 1 = wide open 85 deg (1.48 rad)
+  let doorOpenCur = 0;
+
+  function mountSculptedCottage(gltfScene) {
+    if (sculptedMounted || !gltfScene) return;
+    sculptedMounted = true;
+    cottageMount.remove(fallbackCottage);
+    cottageMount.add(gltfScene);
+    gltfScene.traverse((obj) => {
+      if (obj.name === 'Cottage_Door_Pivot') {
+        doorPivot = obj;
+        doorPivot.rotation.y = 0.26;
+      }
+      if (obj.name === 'Cottage_Porch_Lantern') {
+        porchLanternPivot = obj;
+      }
+    });
+  }
+
+  function setDoorOpen(v, instant = false) {
+    doorOpenTarget = Math.max(0, Math.min(1, v));
+    if (instant) {
+      doorOpenCur = doorOpenTarget;
+      if (doorPivot) doorPivot.rotation.y = 0.26 + doorOpenCur * 1.22;
+    }
+  }
+
+  // Rising Chimney Hearth Smoke Wisps above the cottage roof (-2.15, 6.55, -0.85)
+  const sCount = 26;
+  const sPos = new Float32Array(sCount * 3);
+  const sSeed = new Float32Array(sCount);
+  for (let i = 0; i < sCount; i++) {
+    sPos[i * 3] = -2.15;
+    sPos[i * 3 + 1] = 6.55;
+    sPos[i * 3 + 2] = -0.85;
+    sSeed[i] = i / sCount;
+  }
+  const sGeo = new THREE.BufferGeometry();
+  sGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
+  sGeo.setAttribute('aSeed', new THREE.BufferAttribute(sSeed, 1));
+  const smokeMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    uniforms: { uTime: { value: 0 }, uScale: { value: dpr } },
+    vertexShader: `
+      attribute float aSeed;
+      varying float vLife;
+      uniform float uTime;
+      uniform float uScale;
+      void main() {
+        float life = fract(aSeed + uTime * 0.085);
+        vLife = life;
+        vec3 p = position;
+        p.y += life * 4.4;
+        p.x += life * 1.65 + sin(uTime * 0.9 + aSeed * 12.0) * 0.35 * life;
+        p.z += cos(uTime * 0.7 + aSeed * 9.0) * 0.25 * life;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_PointSize = clamp((180.0 + life * 360.0) * uScale / max(4.0, -mv.z), 4.0, 34.0);
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      varying float vLife;
+      void main() {
+        float d = length(gl_PointCoord - vec2(0.5));
+        if (d > 0.5) discard;
+        float puff = smoothstep(0.5, 0.05, d);
+        float env = smoothstep(0.0, 0.18, vLife) * smoothstep(1.0, 0.35, vLife);
+        gl_FragColor = vec4(vec3(0.88, 0.76, 0.72), puff * env * 0.18);
+        #include <colorspace_fragment>
+      }
+    `
   });
-
-  // Stone porch foundation & steps
-  const base = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.72, 5.4), mStone);
-  base.position.set(0, 0.36, 0);
-  cottage.add(base);
-  for (let s = 0; s < 3; s++) {
-    const step = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.16, 0.42), mStone);
-    step.position.set(0, 0.56 - s * 0.16, 2.95 + s * 0.36);
-    cottage.add(step);
-  }
-  // Main timber-framed house body + pitched gable wall
-  const body = new THREE.Mesh(new THREE.BoxGeometry(6.2, 3.3, 4.8), mWall);
-  body.position.set(0, 2.35, -0.1);
-  cottage.add(body);
-
-  // Pitched roof slopes
-  const roofL = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.24, 6.0), mRoof);
-  roofL.position.set(-1.75, 4.95, 0.15);
-  roofL.rotation.z = 0.66;
-  const roofR = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.24, 6.0), mRoof);
-  roofR.position.set(1.75, 4.95, 0.15);
-  roofR.rotation.z = -0.66;
-  const gableGeo = new THREE.ConeGeometry(3.55, 2.3, 4);
-  gableGeo.rotateY(Math.PI / 4);
-  gableGeo.scale(1.22, 1.0, 0.94);
-  const gable = new THREE.Mesh(gableGeo, mWall);
-  gable.position.set(0, 4.95, -0.1);
-  cottage.add(roofL, roofR, gable);
-
-  // Brick chimney
-  const chimney = new THREE.Mesh(new THREE.BoxGeometry(0.68, 2.2, 0.68), mStone);
-  chimney.position.set(-1.9, 5.65, -0.8);
-  cottage.add(chimney);
-
-  // Glowing Ajar Doorway (warm invitation into the Curiosity Shop!)
-  const doorGlow = new THREE.Mesh(new THREE.PlaneGeometry(1.18, 2.15), mGlowWin);
-  doorGlow.position.set(0, 1.80, 2.33);
-  const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.42, 2.32, 0.16), mTimber);
-  doorFrame.position.set(0, 1.85, 2.26);
-  // Half-open wooden door leaf angled invitingly inward
-  const doorLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.12, 2.12, 0.08), new THREE.MeshStandardMaterial({ color: 0x36524d, roughness: 0.72 }));
-  doorLeaf.position.set(-0.46, 1.80, 2.02);
-  doorLeaf.rotation.y = 0.72;
-  cottage.add(doorFrame, doorGlow, doorLeaf);
-
-  // Twin Warm Glowing Lattice Windows + Attic Rose Window
-  for (const wx of [-1.85, 1.85]) {
-    const wf = new THREE.Mesh(new THREE.BoxGeometry(1.32, 1.24, 0.14), mTimber);
-    wf.position.set(wx, 2.28, 2.32);
-    const wg = new THREE.Mesh(new THREE.PlaneGeometry(1.10, 1.04), mGlowWin);
-    wg.position.set(wx, 2.28, 2.40);
-    const mv = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.08, 0.06), mTimber);
-    mv.position.set(wx, 2.28, 2.42);
-    const mh = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.06, 0.06), mTimber);
-    mh.position.set(wx, 2.28, 2.42);
-    cottage.add(wf, wg, mv, mh);
-  }
-  const roseWin = new THREE.Mesh(new THREE.CircleGeometry(0.48, 20), mGlowWin);
-  roseWin.position.set(0, 4.55, 2.34);
-  cottage.add(roseWin);
-
-  // Porch overhang & Swaying Brass Hanging Lantern
-  const porchRoof = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.14, 1.45), mRoof);
-  porchRoof.position.set(0, 3.22, 2.85);
-  porchRoof.rotation.x = 0.22;
-  cottage.add(porchRoof);
-  for (const px of [-1.18, 1.18]) {
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 2.55, 8), mTimber);
-    post.position.set(px, 1.92, 3.35);
-    cottage.add(post);
-  }
-  const lanternPivot = new THREE.Group();
-  lanternPivot.position.set(0.82, 3.05, 3.32);
-  const lanternCord = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.45, 6), mTimber);
-  lanternCord.position.y = -0.22;
-  const lanternGlobe = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), mGlowWin);
-  lanternGlobe.position.y = -0.52;
-  lanternPivot.add(lanternCord, lanternGlobe);
-  cottage.add(lanternPivot);
+  cottage.add(new THREE.Points(sGeo, smokeMat));
 
   // Invisible generous click target over the cottage & porch
   const cottageHit = new THREE.Mesh(
-    new THREE.BoxGeometry(7.2, 5.8, 6.2),
+    new THREE.BoxGeometry(7.4, 6.2, 6.5),
     new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false })
   );
-  cottageHit.position.set(0, 2.8, 0.5);
+  cottageHit.position.set(0, 3.0, 0.6);
   cottageHit.name = 'HitProxy_Sunflower_Cottage';
   cottageHit.userData.__qzInteractiveName = 'Sunflower_Cottage';
   cottage.add(cottageHit);
 
   // =========================================================================
-  // 6. LIGHTING FOR GOLDEN-VIOLET SUNSET MEADOW
+  // 7. LIGHTING FOR GOLDEN-VIOLET SUNSET MEADOW
   // =========================================================================
-  const sunsetSun = new THREE.DirectionalLight(0xffae5c, 2.25);
+  const sunsetSun = new THREE.DirectionalLight(0xffae5c, 2.35);
   sunsetSun.position.set(-14, 7.5, -42);
   group.add(sunsetSun);
 
-  const twilightHemi = new THREE.HemisphereLight(0x8c68a8, 0x262118, 0.92);
+  const twilightHemi = new THREE.HemisphereLight(0x8c68a8, 0x262118, 0.96);
   group.add(twilightHemi);
 
-  const porchLight = new THREE.PointLight(0xffb454, 18.0, 18.0, 1.55);
-  porchLight.position.set(0.0, 2.4, -15.2);
+  const porchLight = new THREE.PointLight(0xffb454, 11.5, 16.5, 1.65);
+  porchLight.position.set(0.0, 2.45, -14.8);
   group.add(porchLight);
 
   // =========================================================================
-  // 7. AMBIENT GOLDEN FIREFLIES + 5 INTERACTIVE GUIDING FIREFLIES
+  // 8. AMBIENT GOLDEN FIREFLIES + 5 INTERACTIVE GUIDING FIREFLIES
   // =========================================================================
   const fCount = 120;
   const fPos = new Float32Array(fCount * 3);
@@ -491,7 +759,7 @@ export function buildSunflowerAct(dpr = 1) {
   });
   group.add(new THREE.Points(fGeo, fireflyMat));
 
-  // 5 Hero Guiding Fireflies flying along the garden path toward the glowing cottage doorway!
+  // 5 Hero Guiding Fireflies dancing ahead of viewer along path toward the doorway
   const guideMat = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
@@ -526,25 +794,36 @@ export function buildSunflowerAct(dpr = 1) {
     guideFlies.push({ mesh: spr, offset: i * 0.20, lateral: (i - 2) * 0.32, freq: 1.5 + i * 0.25 });
   }
 
-  function update(elapsed, camera, pointerX, pointerY, walkProgress, prefersReducedMotion) {
+  function update(elapsed, camera, pointerX, pointerY, walkProgress, prefersReducedMotion, dt = 0.016) {
     skyMat.uniforms.uTime.value = elapsed;
     windUniforms.uTime.value = elapsed;
+    rayMat.uniforms.uTime.value = elapsed;
+    pollenMat.uniforms.uTime.value = elapsed;
+    smokeMat.uniforms.uTime.value = elapsed;
     fireflyMat.uniforms.uTime.value = elapsed;
     guideMat.uniforms.uTime.value = elapsed;
-    if (!prefersReducedMotion) {
-      lanternPivot.rotation.z = Math.sin(elapsed * 1.35) * 0.065;
+
+    // Smooth door opening (0 = cozy 15 deg ajar, 1 = wide 85 deg inward!)
+    doorOpenCur += (doorOpenTarget - doorOpenCur) * Math.min(1, dt * (prefersReducedMotion ? 20 : 6.5));
+    if (doorPivot) {
+      doorPivot.rotation.y = 0.26 + doorOpenCur * 1.22;
     }
-    // Guiding fireflies beckon smoothly ahead of viewer along path toward the warm glowing doorway
+
+    if (!prefersReducedMotion && porchLanternPivot) {
+      porchLanternPivot.rotation.z = Math.sin(elapsed * 1.35) * 0.065;
+    }
+
     for (const g of guideFlies) {
       const cycle = ((elapsed * 0.085 + g.offset) % 1.0);
-      // Travel from near viewer (+5.. -15.5) into the warm doorway
       const zStart = 5.2 - walkProgress * 11.0;
-      const zEnd = -15.6;
+      const zEnd = -15.2;
       const z = zStart + (zEnd - zStart) * cycle;
       const px = pathCenterX(z) + Math.sin(elapsed * g.freq + g.offset * 12) * 0.48 + g.lateral * (1 - cycle * 0.7) + pointerX * 0.45 * (1 - cycle);
       const py = groundY(px, z) + 1.15 + Math.sin(elapsed * 2.1 + g.offset * 18) * 0.28 + cycle * 0.55 + pointerY * 0.25 * (1 - cycle);
       g.mesh.position.set(px, py, z);
-      const sc = 0.65 + 0.55 * Math.sin(cycle * Math.PI);
+      const dist = camera ? Math.hypot(camera.position.x - px, camera.position.y - py, camera.position.z - z) : 5.0;
+      const nearFade = Math.max(0.0, Math.min(1.0, (dist - 1.5) / 1.8));
+      const sc = (0.58 + 0.48 * Math.sin(cycle * Math.PI)) * nearFade;
       g.mesh.scale.setScalar(sc);
       if (camera) g.mesh.lookAt(camera.position);
     }
@@ -556,6 +835,8 @@ export function buildSunflowerAct(dpr = 1) {
     hitTargets: [cottageHit, ...guideFlies.map((g) => g.mesh)],
     pathCenterX,
     groundY,
+    mountSculptedCottage,
+    setDoorOpen,
     update
   };
 }
