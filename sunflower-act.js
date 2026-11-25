@@ -1,6 +1,7 @@
 import * as THREE from './vendor/three/three.module.js';
 import {
-  makeSunflowerHeadTexture,
+  makeSinglePetalTexture,
+  makeSunflowerDiscTexture,
   makeSunflowerLeafTexture,
   makeMeadowGrassTexture,
   makeMeadowGroundTexture
@@ -251,11 +252,53 @@ export function buildSunflowerAct(dpr = 1) {
   group.add(pathGlow1, pathGlow2);
 
   // =========================================================================
-  // 4. PAINTERLY 3D SUNFLOWER SEA (1,650 Blossoms + Leaves + 3,200 Grass Tufts!)
+  // 4. SCULPTED 3D SUNFLOWER SEA (Multi-Ring Curved Petals + Seed Disc + Calyx + Grass)
   // =========================================================================
+  function mergeIndexedGeos(geos) {
+    let totalVerts = 0;
+    let totalIndices = 0;
+    const hasColor = geos.every((g) => Boolean(g.attributes.color));
+    for (const g of geos) {
+      if (!g.attributes.normal) g.computeVertexNormals();
+      totalVerts += g.attributes.position.count;
+      totalIndices += g.index ? g.index.count : g.attributes.position.count;
+    }
+    const pos = new Float32Array(totalVerts * 3);
+    const norm = new Float32Array(totalVerts * 3);
+    const uv = new Float32Array(totalVerts * 2);
+    const col = hasColor ? new Float32Array(totalVerts * 3) : null;
+    const IdxArr = totalVerts > 65535 ? Uint32Array : Uint16Array;
+    const idx = new IdxArr(totalIndices);
+
+    let vOff = 0;
+    let iOff = 0;
+    for (const g of geos) {
+      const vc = g.attributes.position.count;
+      pos.set(g.attributes.position.array, vOff * 3);
+      norm.set(g.attributes.normal.array, vOff * 3);
+      if (g.attributes.uv) uv.set(g.attributes.uv.array, vOff * 2);
+      if (hasColor) col.set(g.attributes.color.array, vOff * 3);
+      if (g.index) {
+        const srcIdx = g.index.array;
+        for (let k = 0; k < srcIdx.length; k++) idx[iOff++] = srcIdx[k] + vOff;
+      } else {
+        for (let k = 0; k < vc; k++) idx[iOff++] = k + vOff;
+      }
+      vOff += vc;
+      g.dispose();
+    }
+    const out = new THREE.BufferGeometry();
+    out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    out.setAttribute('normal', new THREE.BufferAttribute(norm, 3));
+    out.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    if (hasColor) out.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    out.setIndex(new THREE.BufferAttribute(idx, 1));
+    return out;
+  }
+
   const windUniforms = { uTime: { value: 0 } };
   function injectBotanicalShader(mat, mode, swayAmt = 0.13) {
-    mat.customProgramCacheKey = () => `qz-botanical-${mode}-${swayAmt.toFixed(2)}`;
+    mat.customProgramCacheKey = () => `qz-botanical-v2-${mode}-${swayAmt.toFixed(2)}`;
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = windUniforms.uTime;
       shader.vertexShader = `uniform float uTime;\nvarying vec2 vBotUv;\n` + shader.vertexShader;
@@ -266,27 +309,27 @@ export function buildSunflowerAct(dpr = 1) {
          vec3 instOrigin = vec3(instanceMatrix[3][0], instanceMatrix[3][1], instanceMatrix[3][2]);
          float wave = sin(uTime * 1.48 + instOrigin.x * 0.42 + instOrigin.z * 0.34)
                     + 0.42 * cos(uTime * 2.15 - instOrigin.x * 0.68 + instOrigin.z * 0.52);
-         float bend = smoothstep(0.0, 1.35, position.y);
+         float bend = smoothstep(0.0, 1.28, position.y);
          transformed.x += wave * ${swayAmt.toFixed(3)} * bend;
          transformed.z += wave * ${(swayAmt * 0.52).toFixed(3)} * bend;`
       );
-      if (mode !== 'stem') {
+      if (mode !== 'stem' && mode !== 'disc') {
         shader.fragmentShader = `varying vec2 vBotUv;\n` + shader.fragmentShader;
         let glowSnippet = '';
         if (mode === 'petal') {
           glowSnippet = `
-            float radialP = smoothstep(0.18, 0.44, length(vBotUv - vec2(0.5)));
-            totalEmissiveRadiance += vec3(0.95, 0.52, 0.12) * radialP * 0.56;
+            float sss = smoothstep(0.16, 0.90, vBotUv.y);
+            totalEmissiveRadiance += diffuseColor.rgb * vec3(1.06, 0.92, 0.28) * sss * 0.42;
           `;
         } else if (mode === 'leaf') {
           glowSnippet = `
             float tipL = smoothstep(0.32, 0.92, vBotUv.y);
-            totalEmissiveRadiance += vec3(0.28, 0.34, 0.08) * tipL * 0.34;
+            totalEmissiveRadiance += diffuseColor.rgb * vec3(0.55, 0.72, 0.20) * tipL * 0.28;
           `;
         } else if (mode === 'grass') {
           glowSnippet = `
-            float tipG = smoothstep(0.42, 0.98, vBotUv.y);
-            totalEmissiveRadiance += vec3(0.64, 0.38, 0.11) * tipG * 0.42;
+            float tipG = smoothstep(0.45, 0.98, vBotUv.y);
+            totalEmissiveRadiance += diffuseColor.rgb * vec3(0.58, 0.68, 0.18) * tipG * 0.28;
           `;
         }
         shader.fragmentShader = shader.fragmentShader.replace(
@@ -297,87 +340,231 @@ export function buildSunflowerAct(dpr = 1) {
     };
   }
 
-  // 4A. Gently Bowed Organic Stem (5 height segments)
-  const stemGeo = new THREE.CylinderGeometry(0.022, 0.042, 1.32, 6, 5);
-  stemGeo.translate(0, 0.66, 0);
-  const stemPos = stemGeo.attributes.position;
+  const HEAD_TILT_X = -0.14;
+  const HEAD_CENTER = new THREE.Vector3(0, 1.28, 0.044);
+
+  // 4A. Bowed Stalk + Green Sepal Calyx Cup & Flared Bracts
+  const stemPart = new THREE.CylinderGeometry(0.022, 0.038, 1.27, 6, 5);
+  stemPart.translate(0, 0.635, 0);
+  const stemPos = stemPart.attributes.position;
   for (let i = 0; i < stemPos.count; i++) {
-    const t = Math.max(0, Math.min(1, stemPos.getY(i) / 1.32));
-    stemPos.setZ(i, stemPos.getZ(i) + Math.sin(t * Math.PI) * 0.045);
+    const t = Math.max(0, Math.min(1, stemPos.getY(i) / 1.27));
+    stemPos.setZ(i, stemPos.getZ(i) + Math.sin(t * Math.PI) * 0.030 + Math.pow(t, 2.2) * 0.026);
   }
-  stemGeo.computeVertexNormals();
-  const stemMat = new THREE.MeshStandardMaterial({ color: 0x35532c, roughness: 0.84 });
+  stemPart.computeVertexNormals();
+
+  const calyxCup = new THREE.SphereGeometry(0.135, 12, 6, 0, Math.PI * 2, Math.PI * 0.48, Math.PI * 0.52);
+  calyxCup.rotateX(-Math.PI * 0.5); // open rim faces +Z, rounded back faces -Z
+  calyxCup.scale(1.0, 1.0, 0.48);
+  calyxCup.rotateX(HEAD_TILT_X);
+  calyxCup.translate(HEAD_CENTER.x, HEAD_CENTER.y, 0.028);
+
+  const calyxGeos = [stemPart, calyxCup];
+  for (let b = 0; b < 8; b++) {
+    const ba = (b / 8) * Math.PI * 2 + 0.2;
+    const bract = new THREE.ConeGeometry(0.036, 0.095, 3);
+    bract.scale(1.0, 1.0, 0.28);
+    bract.translate(0, 0.045, 0);
+    bract.rotateX(-0.28);
+    bract.rotateZ(ba - Math.PI * 0.5);
+    bract.translate(Math.cos(ba) * 0.095, Math.sin(ba) * 0.095, -0.015);
+    bract.rotateX(HEAD_TILT_X);
+    bract.translate(HEAD_CENTER.x, HEAD_CENTER.y, 0.028);
+    bract.computeVertexNormals();
+    calyxGeos.push(bract);
+  }
+  const stemCalyxGeo = mergeIndexedGeos(calyxGeos);
+  const stemMat = new THREE.MeshStandardMaterial({ color: 0x3b632e, roughness: 0.82 });
   injectBotanicalShader(stemMat, 'stem', 0.13);
 
-  // 4B. Cupped 3D Painterly Sunflower Blossom Dish (512px oil-painted petals + Fibonacci disc!)
-  const headTex = makeSunflowerHeadTexture();
-  const headGeo = new THREE.PlaneGeometry(0.92, 0.92, 6, 6);
-  const hPos = headGeo.attributes.position;
-  for (let i = 0; i < hPos.count; i++) {
-    const x = hPos.getX(i);
-    const y = hPos.getY(i);
-    const r = Math.hypot(x, y);
-    if (r < 0.18) {
-      hPos.setZ(i, 0.045 * Math.cos((r / 0.18) * Math.PI * 0.5));
-    } else {
-      const ang = Math.atan2(y, x);
-      const t = Math.min(1, (r - 0.18) / 0.38);
-      hPos.setZ(i, -0.068 * Math.pow(t, 1.4) + Math.sin(ang * 6.0) * 0.016 * t);
+  // 4B. Convex Domed Botanical Seed Disc with Warm Fibonacci Corona
+  const discTex = makeSunflowerDiscTexture();
+  function buildDomedDiscGeo(R = 0.132, angSegs = 18, radSegs = 4) {
+    const g = new THREE.BufferGeometry();
+    const verts = [0, 0, 0.050];
+    const uvs = [0.5, 0.5];
+    const indices = [];
+    for (let ir = 1; ir <= radSegs; ir++) {
+      const f = ir / radSegs;
+      const r = R * f;
+      const z = 0.050 * Math.cos(f * Math.PI * 0.46) - 0.004 * f * f;
+      for (let ia = 0; ia < angSegs; ia++) {
+        const th = (ia / angSegs) * Math.PI * 2;
+        const x = Math.cos(th) * r;
+        const y = Math.sin(th) * r;
+        verts.push(x, y, z);
+        uvs.push(0.5 + (0.5 * x) / R, 0.5 + (0.5 * y) / R);
+      }
     }
+    for (let ia = 0; ia < angSegs; ia++) {
+      const next = (ia + 1) % angSegs;
+      indices.push(0, 1 + ia, 1 + next);
+    }
+    for (let ir = 1; ir < radSegs; ir++) {
+      const r0 = 1 + (ir - 1) * angSegs;
+      const r1 = 1 + ir * angSegs;
+      for (let ia = 0; ia < angSegs; ia++) {
+        const next = (ia + 1) % angSegs;
+        indices.push(r0 + ia, r1 + ia, r1 + next, r0 + ia, r1 + next, r0 + next);
+      }
+    }
+    g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    g.setIndex(indices);
+    g.rotateX(HEAD_TILT_X);
+    g.translate(HEAD_CENTER.x, HEAD_CENTER.y, 0.056);
+    g.computeVertexNormals();
+    return g;
   }
-  headGeo.rotateX(-0.08);
-  headGeo.translate(0, 1.30, 0.045);
-  headGeo.computeVertexNormals();
-  const headMat = new THREE.MeshStandardMaterial({
-    map: headTex,
-    alphaTest: 0.36,
-    side: THREE.DoubleSide,
-    roughness: 0.70,
-    metalness: 0.02
+  const discGeo = buildDomedDiscGeo(0.132, 18, 4);
+  const discMat = new THREE.MeshStandardMaterial({
+    map: discTex,
+    roughness: 0.90,
+    metalness: 0.0,
+    emissive: new THREE.Color(0x2b1707),
+    emissiveIntensity: 0.38
   });
-  injectBotanicalShader(headMat, 'petal', 0.13);
+  injectBotanicalShader(discMat, 'disc', 0.13);
 
-  // 4C. Paired Broad Arched Opposite Stem Leaves (Merged Left + Right in 1 Draw Call!)
+  // 4C. True 3D Multi-Ring Sculpted Curved Overlapping Petals (2 Variants!)
+  const petalTex = makeSinglePetalTexture();
+  function build3DPetalBlossomGeo(seedInit) {
+    let s = seedInit >>> 0;
+    const rnd = () => {
+      s = (1664525 * s + 1013904223) >>> 0;
+      return s / 4294967296;
+    };
+
+    const segU = 2;
+    const segV = 3;
+    const positions = [];
+    const uvs = [];
+    const colors = [];
+    const indices = [];
+
+    const addPetal = (theta, rStart, len, width, ringZ, pitch, roll, curl, tintCol, archPow) => {
+      const baseV = positions.length / 3;
+      const cosT = Math.cos(theta);
+      const sinT = Math.sin(theta);
+      const cosP = Math.cos(pitch);
+      const sinP = Math.sin(pitch);
+      const cosR = Math.cos(roll);
+      const sinR = Math.sin(roll);
+
+      for (let iv = 0; iv <= segV; iv++) {
+        const v = iv / segV;
+        const y0 = v * len;
+        const baseZ = Math.sin(v * Math.PI) * 0.026 - archPow * v * v;
+        for (let iu = 0; iu <= segU; iu++) {
+          const u = (iu / segU) * 2 - 1;
+          const x0 = u * (width * 0.5) + curl * v * v;
+          const cupZ = baseZ + 0.012 * u * u;
+
+          // Pitch forward/back around tangential axis
+          const yP = y0 * cosP - cupZ * sinP;
+          const zP = y0 * sinP + cupZ * cosP;
+
+          // Gentle twist around radial axis so neighboring petals catch dusk light uniquely
+          const xR = x0 * cosR - zP * sinR;
+          const zR = x0 * sinR + zP * cosR + ringZ;
+
+          const radR = rStart + yP;
+          const lx = cosT * radR - sinT * xR;
+          const ly = sinT * radR + cosT * xR;
+          const lz = zR;
+
+          positions.push(lx, ly, lz);
+          uvs.push(iu / segU, v);
+          colors.push(tintCol.r, tintCol.g, tintCol.b);
+        }
+      }
+
+      const stride = segU + 1;
+      for (let iv = 0; iv < segV; iv++) {
+        for (let iu = 0; iu < segU; iu++) {
+          const i00 = baseV + iv * stride + iu;
+          const i10 = i00 + 1;
+          const i01 = i00 + stride;
+          const i11 = i01 + 1;
+          indices.push(i00, i01, i10, i01, i11, i10);
+        }
+      }
+    };
+
+    const backBase = new THREE.Color(0xf4be3c);
+    const frontBase = new THREE.Color(0xfff8d2);
+    const workCol = new THREE.Color();
+
+    // Outer/back ring: 14 broad overlapping golden petals with relaxed arch & organic stagger
+    const nBack = 14;
+    for (let i = 0; i < nBack; i++) {
+      const th = (i / nBack) * Math.PI * 2 + (rnd() - 0.5) * 0.16;
+      const len = 0.195 + rnd() * 0.045;
+      const wid = 0.112 + rnd() * 0.022;
+      const pitch = -0.14 + rnd() * 0.24;
+      const roll = (rnd() - 0.5) * 0.30;
+      const curl = (rnd() - 0.5) * 0.024;
+      workCol.copy(backBase).multiplyScalar(0.95 + rnd() * 0.09);
+      addPetal(th, 0.104, len, wid, -0.004, pitch, roll, curl, workCol, 0.046);
+    }
+
+    // Inner/front ring: 12 plump staggered petals cupping forward around the pollen corona
+    const nFront = 12;
+    for (let i = 0; i < nFront; i++) {
+      const th = ((i + 0.5) / nFront) * Math.PI * 2 + (rnd() - 0.5) * 0.20;
+      const len = 0.174 + rnd() * 0.038;
+      const wid = 0.096 + rnd() * 0.020;
+      const pitch = 0.05 + rnd() * 0.19;
+      const roll = (rnd() - 0.5) * 0.28;
+      const curl = (rnd() - 0.5) * 0.020;
+      workCol.copy(frontBase).multiplyScalar(0.96 + rnd() * 0.06);
+      addPetal(th, 0.098, len, wid, 0.012, pitch, roll, curl, workCol, 0.032);
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geo.setIndex(indices);
+    geo.rotateX(HEAD_TILT_X);
+    geo.translate(HEAD_CENTER.x, HEAD_CENTER.y, HEAD_CENTER.z);
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  const petalGeoA = build3DPetalBlossomGeo(1703);
+  const petalGeoB = build3DPetalBlossomGeo(5381);
+  const petalMat = new THREE.MeshStandardMaterial({
+    map: petalTex,
+    vertexColors: true,
+    alphaTest: 0.38,
+    side: THREE.DoubleSide,
+    roughness: 0.62,
+    metalness: 0.0
+  });
+  injectBotanicalShader(petalMat, 'petal', 0.13);
+
+  // 4D. Paired Broad Arched Opposite Stem Leaves (Merged Left + Right in 1 Draw Call!)
   const leafTex = makeSunflowerLeafTexture();
   function buildSingleLeaf(attachY, rotY, tiltX) {
-    const g = new THREE.PlaneGeometry(0.38, 0.54, 4, 5);
-    g.translate(0, 0.27, 0); // pivot at bottom stem join
+    const g = new THREE.PlaneGeometry(0.36, 0.50, 4, 5);
+    g.translate(0, 0.25, 0);
     const lp = g.attributes.position;
     for (let i = 0; i < lp.count; i++) {
-      const u = lp.getY(i) / 0.54;
+      const u = lp.getY(i) / 0.50;
       const sideFold = Math.abs(lp.getX(i)) * 0.18;
       lp.setZ(i, lp.getZ(i) + Math.sin(u * Math.PI) * 0.08 + sideFold - u * u * 0.11);
     }
     g.rotateX(tiltX);
     g.rotateY(rotY);
     g.translate(0, attachY, 0);
+    g.computeVertexNormals();
     return g;
   }
-  const leafL = buildSingleLeaf(0.46, -1.35, 1.05);
-  const leafR = buildSingleLeaf(0.76, +1.42, 0.95);
-  const mergedLeafGeo = new THREE.BufferGeometry();
-  const lPosA = leafL.attributes.position.array;
-  const lPosB = leafR.attributes.position.array;
-  const lUvA = leafL.attributes.uv.array;
-  const lUvB = leafR.attributes.uv.array;
-  const lIdxA = leafL.index.array;
-  const lIdxB = leafR.index.array;
-  const posArr = new Float32Array(lPosA.length + lPosB.length);
-  posArr.set(lPosA, 0);
-  posArr.set(lPosB, lPosA.length);
-  const uvArr = new Float32Array(lUvA.length + lUvB.length);
-  uvArr.set(lUvA, 0);
-  uvArr.set(lUvB, lUvA.length);
-  const vCountA = leafL.attributes.position.count;
-  const idxArr = new Uint16Array(lIdxA.length + lIdxB.length);
-  idxArr.set(lIdxA, 0);
-  for (let k = 0; k < lIdxB.length; k++) idxArr[lIdxA.length + k] = lIdxB[k] + vCountA;
-  mergedLeafGeo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
-  mergedLeafGeo.setAttribute('uv', new THREE.BufferAttribute(uvArr, 2));
-  mergedLeafGeo.setIndex(new THREE.BufferAttribute(idxArr, 1));
-  mergedLeafGeo.computeVertexNormals();
-  leafL.dispose();
-  leafR.dispose();
+  const mergedLeafGeo = mergeIndexedGeos([
+    buildSingleLeaf(0.45, -1.35, 1.05),
+    buildSingleLeaf(0.75, +1.42, 0.95)
+  ]);
 
   const leafMat = new THREE.MeshStandardMaterial({
     map: leafTex,
@@ -387,50 +574,76 @@ export function buildSunflowerAct(dpr = 1) {
   });
   injectBotanicalShader(leafMat, 'leaf', 0.10);
 
-  // Scatter 1,650 sunflowers across the meadow leaving winding path & porch yard clear!
-  const transforms = [];
-  const flowerTints = [];
-  const tintPalette = [0xffffff, 0xfff0d0, 0xffe4b8, 0xffd8aa];
+  // Scatter ~1,450 sculpted 3D sunflowers split evenly across variants A & B along winding path
+  const transformsA = [];
+  const transformsB = [];
+  const tintsA = [];
+  const tintsB = [];
+  const allTransforms = [];
+  const tintPalette = [0xffffff, 0xfff8d8, 0xfff0b4, 0xffe99c, 0xfef5ca];
   const dummy = new THREE.Object3D();
-  for (let i = 0; i < 2600 && transforms.length < 1650; i++) {
+  for (let i = 0; i < 2600 && allTransforms.length < 1450; i++) {
     const z = 11.8 - Math.pow(rand(), 0.85) * 34.5;
     const x = (rand() - 0.5) * (25 + Math.max(0, -z) * 1.18);
     const dp = Math.abs(x - pathCenterX(z));
     if (dp < 1.32 + rand() * 0.32) continue;
     if (z < -13.2 && Math.abs(x) < 5.2) continue;
     const y = groundY(x, z);
-    const sc = 0.76 + rand() * 0.54;
+    const sc = 0.68 + rand() * 0.42;
     dummy.position.set(x, y - 0.05, z);
-    dummy.scale.set(sc, sc * (0.90 + rand() * 0.26), sc);
-    dummy.rotation.set(-0.14 + (rand() - 0.5) * 0.24, (rand() - 0.5) * 0.78, (rand() - 0.5) * 0.14);
+    dummy.scale.set(sc, sc * (0.90 + rand() * 0.24), sc);
+    dummy.rotation.set(-0.16 + (rand() - 0.5) * 0.30, -0.15 + (rand() - 0.5) * 1.35, (rand() - 0.5) * 0.24);
     dummy.updateMatrix();
-    transforms.push(dummy.matrix.clone());
-    flowerTints.push(new THREE.Color(tintPalette[i % tintPalette.length]));
+    const mat4 = dummy.matrix.clone();
+    const tint = new THREE.Color(tintPalette[i % tintPalette.length]);
+    allTransforms.push(mat4);
+    if ((allTransforms.length & 1) === 0) {
+      transformsA.push(mat4);
+      tintsA.push(tint);
+    } else {
+      transformsB.push(mat4);
+      tintsB.push(tint);
+    }
   }
 
-  const instCount = transforms.length;
-  const stems = new THREE.InstancedMesh(stemGeo, stemMat, instCount);
-  const heads = new THREE.InstancedMesh(headGeo, headMat, instCount);
+  const instCount = allTransforms.length;
+  const stems = new THREE.InstancedMesh(stemCalyxGeo, stemMat, instCount);
+  const discs = new THREE.InstancedMesh(discGeo, discMat, instCount);
   const leaves = new THREE.InstancedMesh(mergedLeafGeo, leafMat, instCount);
   for (let i = 0; i < instCount; i++) {
-    stems.setMatrixAt(i, transforms[i]);
-    heads.setMatrixAt(i, transforms[i]);
-    leaves.setMatrixAt(i, transforms[i]);
-    heads.setColorAt(i, flowerTints[i]);
+    stems.setMatrixAt(i, allTransforms[i]);
+    discs.setMatrixAt(i, allTransforms[i]);
+    leaves.setMatrixAt(i, allTransforms[i]);
   }
   stems.instanceMatrix.needsUpdate = true;
-  heads.instanceMatrix.needsUpdate = true;
+  discs.instanceMatrix.needsUpdate = true;
   leaves.instanceMatrix.needsUpdate = true;
-  if (heads.instanceColor) heads.instanceColor.needsUpdate = true;
-  group.add(stems, heads, leaves);
+
+  const petalsA = new THREE.InstancedMesh(petalGeoA, petalMat, transformsA.length);
+  for (let i = 0; i < transformsA.length; i++) {
+    petalsA.setMatrixAt(i, transformsA[i]);
+    petalsA.setColorAt(i, tintsA[i]);
+  }
+  petalsA.instanceMatrix.needsUpdate = true;
+  if (petalsA.instanceColor) petalsA.instanceColor.needsUpdate = true;
+
+  const petalsB = new THREE.InstancedMesh(petalGeoB, petalMat, transformsB.length);
+  for (let i = 0; i < transformsB.length; i++) {
+    petalsB.setMatrixAt(i, transformsB[i]);
+    petalsB.setColorAt(i, tintsB[i]);
+  }
+  petalsB.instanceMatrix.needsUpdate = true;
+  if (petalsB.instanceColor) petalsB.instanceColor.needsUpdate = true;
+
+  group.add(stems, discs, petalsA, petalsB, leaves);
 
   // 4D. 3,200 Wind-Swept Cross-Quad Meadow Grass Clumps (conceals ground seams!)
   const grassTex = makeMeadowGrassTexture();
   function makeGrassCrossGeo() {
-    const p1 = new THREE.PlaneGeometry(0.64, 0.58, 2, 3);
-    p1.translate(0, 0.29, 0);
-    const p2 = new THREE.PlaneGeometry(0.64, 0.58, 2, 3);
-    p2.translate(0, 0.29, 0);
+    const p1 = new THREE.PlaneGeometry(0.62, 0.50, 2, 3);
+    p1.translate(0, 0.25, 0);
+    const p2 = new THREE.PlaneGeometry(0.62, 0.50, 2, 3);
+    p2.translate(0, 0.25, 0);
     p2.rotateY(Math.PI * 0.42);
     const geo = new THREE.BufferGeometry();
     const pa = p1.attributes.position.array;
@@ -689,13 +902,17 @@ export function buildSunflowerAct(dpr = 1) {
   cottage.add(cottageHit);
 
   // =========================================================================
-  // 7. LIGHTING FOR GOLDEN-VIOLET SUNSET MEADOW
+  // 7. GOLDEN-HOUR SUNSET + WARM HORIZON BOUNCE FILL (vibrant sunflower golds)
   // =========================================================================
-  const sunsetSun = new THREE.DirectionalLight(0xffae5c, 2.35);
-  sunsetSun.position.set(-14, 7.5, -42);
+  const sunsetSun = new THREE.DirectionalLight(0xffc966, 2.25);
+  sunsetSun.position.set(-24, 14, -22);
   group.add(sunsetSun);
 
-  const twilightHemi = new THREE.HemisphereLight(0x8c68a8, 0x262118, 0.96);
+  const sunBounceFill = new THREE.DirectionalLight(0xffe0a3, 1.35);
+  sunBounceFill.position.set(-10, 12, 24);
+  group.add(sunBounceFill);
+
+  const twilightHemi = new THREE.HemisphereLight(0xdba8b8, 0x3b3d22, 1.15);
   group.add(twilightHemi);
 
   const porchLight = new THREE.PointLight(0xffb454, 11.5, 16.5, 1.65);
