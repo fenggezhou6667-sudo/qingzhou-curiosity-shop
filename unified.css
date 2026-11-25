@@ -2418,16 +2418,15 @@ body[data-act] .brand-titles {
   }
 
   .inspect-hint {
-    font-size: 11px;
-    padding: 3px 10px;
+    display: none !important;
   }
 
   body[data-act="room"]:not([data-inspect="none"]) #station-deck {
-    bottom: 68px;
+    bottom: 66px;
     left: 10px;
     right: 10px;
     width: auto;
-    max-height: 46vh;
+    max-height: 41vh;
   }
 }
 
@@ -2721,4 +2720,17 @@ body[data-act] .brand-titles {
   background: rgba(95, 226, 204, 0.18);
   border-color: rgba(95, 226, 204, 0.58);
   color: #e2fff9;
+}
+
+.region-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.region-tab.is-active {
+  background: rgba(95, 226, 204, 0.18);
+  border-color: rgba(95, 226, 204, 0.56);
+  color: #dffef7;
 }

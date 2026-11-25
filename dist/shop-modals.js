@@ -21,7 +21,7 @@ import {
 import { getExhibitById } from './room-act.js';
 
 export function createShopModals(ctx) {
-  const { state, onUpdateBookMoyan, onTriggerSealStamp, onSpawnWishLantern, onFocusExhibit, onSelectCity } = ctx;
+  const { state, onUpdateBookMoyan, onTriggerSealStamp, onSpawnWishLantern, onFocusExhibit, onSelectCity, onSelectAtlasRegion } = ctx;
 
   /* ---------- Toast ---------- */
   let toastTimer = null;
@@ -487,7 +487,7 @@ export function createShopModals(ctx) {
     eyebrow.textContent = ex.eyebrow;
     title.textContent = ex.title;
 
-    const deckKey = `${ex.id}|${state.selectedWorkSlug}|${state.selectedPoemSlug}|${state.selectedLabSlug}|${state.selectedSampleIdx}|${state.selectedCityName}`;
+    const deckKey = `${ex.id}|${state.selectedWorkSlug}|${state.selectedPoemSlug}|${state.selectedLabSlug}|${state.selectedSampleIdx}|${state.selectedCityName}|${state.selectedAtlasRegion}`;
     if (!force && deckKey === lastDeckKey) return;
     lastDeckKey = deckKey;
 
@@ -605,12 +605,18 @@ export function createShopModals(ctx) {
     }
 
     if (ex.id === 'atlas') {
+      const regionList = ['all', ...new Set(PLACES_22.map((p) => p.group))];
+      const activeRegion = state.selectedAtlasRegion || 'all';
       const city = PLACES_22.find((p) => p.name === state.selectedCityName) || PLACES_22[15];
       const mem = CITY_MEMORIES[city.name] || { hydro: '', desc: '' };
-      const notes = archive().notes || [];
-      const linkedPoem = notes.find((p) => p.place === city.name) || (mem.nearPoemCity ? notes.find((p) => p.place === mem.nearPoemCity) : null);
+      const shownPlaces = activeRegion === 'all' ? PLACES_22 : PLACES_22.filter((p) => p.group === activeRegion);
       body.innerHTML = `
-        <p class="deck-lead">中央八角木座上的宋元青绿山河微缩沙盘支持 <strong>360° 自由拖拽旋转与滚轮缩放</strong>，亦可直接点击沙盘中发光城标。</p>
+        <p class="deck-lead">中央八角木座上的宋元青绿山河沙盘支持 <strong>360° 自由拖拽与缩放</strong>。廿二城之间以淡淡金色光流相连，切换大区或点击城标可聚焦查看。</p>
+        <div class="region-tabs" role="tablist" aria-label="大区筛选">
+          ${regionList.map((r) => `
+            <button type="button" class="chip-btn region-tab${r === activeRegion ? ' is-active' : ''}" data-region="${esc(r)}" role="tab" aria-selected="${r === activeRegion}">${r === 'all' ? '全部廿二城' : esc(r)}</button>
+          `).join('')}
+        </div>
         <div class="city-card">
           <div class="city-head">
             <strong>${esc(city.name)}</strong>
@@ -620,24 +626,22 @@ export function createShopModals(ctx) {
           <p class="city-desc">${esc(mem.desc)}</p>
         </div>
         <div class="city-pills">
-          ${PLACES_22.map((p) => `
-            <button type="button" class="chip-btn${p.name === city.name ? ' is-active' : ''}${p.hasDirectPoem ? ' has-poem' : ''}" data-city="${esc(p.name)}">${esc(p.name)}</button>
+          ${shownPlaces.map((p) => `
+            <button type="button" class="chip-btn${p.name === city.name ? ' is-active' : ''}" data-city="${esc(p.name)}">${esc(p.name)}</button>
           `).join('')}
         </div>
-        ${linkedPoem ? `
-          <div class="deck-actions">
-            <button type="button" class="hud-btn hud-btn-primary" id="btn-city-poem">读关联诗篇《${esc(linkedPoem.title)}》↗</button>
-          </div>
-        ` : ''}
       `;
+      body.querySelectorAll('[data-region]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          playWoodTapSound();
+          onSelectAtlasRegion?.(btn.dataset.region);
+        });
+      });
       body.querySelectorAll('[data-city]').forEach((btn) => {
         btn.addEventListener('click', () => {
           playWoodTapSound();
           onSelectCity?.(btn.dataset.city);
         });
-      });
-      body.querySelector('#btn-city-poem')?.addEventListener('click', () => {
-        if (linkedPoem) openPoemDossier(linkedPoem.slug);
       });
       return;
     }

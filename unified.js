@@ -15,6 +15,12 @@ import {
   getExhibitById
 } from './room-act.js';
 import {
+  buildAtlasSeaShader,
+  buildAtlasRiverShader,
+  buildAtlasGoldenFilaments
+} from './atlas-fx.js';
+import { buildMiniRiverWaterMaterial } from './river-water.js';
+import {
   paintXuanPaperBase,
   makeWalnutTexture,
   makeBlueprintTexture,
@@ -77,6 +83,7 @@ const state = {
   selectedLabSlug: 'rongrong',
   selectedSampleIdx: 0,
   selectedCityName: '上海',
+  selectedAtlasRegion: 'all',
 
   // Darkroom modal state
   darkroomWorkSlug: 'still-water',
@@ -165,9 +172,19 @@ scene.add(roomAct.group);
 const namedObjects = new Map();
 const materialsByName = new Map();
 const roomInteractiveTargets = [];
+const atlasCityGroups = [];
 const atlasCityBeacons = [];
 const miniRiverBoats = [];
 const customShaderUniforms = [];
+
+let atlasFilaments = null;
+let miniWaterMat = null;
+let eaveCatObj = null;
+let catBaseScaleY = 1;
+let rippleCursor = 0;
+let simElapsed = 0;
+const RIVER_WRAP_SCALE = 0.068;
+const RIVER_WRAP_POS_Z = 79.5 * RIVER_WRAP_SCALE - 0.12;
 
 let bookCanvas = null;
 let bookTex = null;
@@ -239,83 +256,23 @@ function updateBookMoyanTexture() {
   bookTex.needsUpdate = true;
 }
 
-function makeFlowingRiverShader(baseHex, glowHex) {
-  const mat = new THREE.ShaderMaterial({
-    uniforms: {
-      uTime: { value: 0 },
-      uBase: { value: new THREE.Color(baseHex) },
-      uGlow: { value: new THREE.Color(glowHex) }
-    },
-    vertexShader: `
-      varying vec3 vPos;
-      void main() {
-        vPos = position;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform float uTime;
-      uniform vec3 uBase;
-      uniform vec3 uGlow;
-      varying vec3 vPos;
-      void main() {
-        float flow = 0.5 + 0.5 * sin(vPos.x * 1.65 - uTime * 2.4 + sin(vPos.z * 0.9) * 1.4);
-        float glint = pow(flow, 3.0);
-        vec3 col = mix(uBase, uGlow, 0.35 + 0.65 * glint);
-        gl_FragColor = vec4(col, 1.0);
-        #include <colorspace_fragment>
-      }
-    `
-  });
-  customShaderUniforms.push(mat.uniforms.uTime);
-  return mat;
+function mountToRiverLocal(mx, mz) {
+  return {
+    x: mx / RIVER_WRAP_SCALE,
+    z: (mz - RIVER_WRAP_POS_Z) / RIVER_WRAP_SCALE
+  };
 }
 
-function makeMiniRiverWaterShader(clipPlanes) {
-  const mat = new THREE.ShaderMaterial({
-    clipping: true,
-    clippingPlanes: clipPlanes,
-    uniforms: {
-      uTime: { value: 0 }
-    },
-    vertexShader: `
-      #include <clipping_planes_pars_vertex>
-      varying vec3 vWorldPos;
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        vec4 wp = modelMatrix * vec4(position, 1.0);
-        vWorldPos = wp.xyz;
-        vec4 mvPosition = viewMatrix * wp;
-        #include <clipping_planes_vertex>
-        gl_Position = projectionMatrix * mvPosition;
-      }
-    `,
-    fragmentShader: `
-      #include <clipping_planes_pars_fragment>
-      uniform float uTime;
-      varying vec3 vWorldPos;
-      varying vec2 vUv;
-      void main() {
-        #include <clipping_planes_fragment>
-        vec2 p = vWorldPos.xz * 7.5;
-        float w1 = sin(p.x * 1.4 + uTime * 1.8) * cos(p.y * 1.2 - uTime * 1.3);
-        float w2 = sin(p.x * 2.9 - p.y * 2.1 + uTime * 2.5) * 0.5;
-        float rip = (w1 + w2) * 0.5 + 0.5;
-        vec3 deep = vec3(0.03, 0.08, 0.14);
-        vec3 jade = vec3(0.08, 0.22, 0.28);
-        vec3 gold = vec3(1.00, 0.72, 0.34);
-        vec3 col = mix(deep, jade, 0.35 + 0.45 * rip);
-        // Warm shimmering lantern reflections along the miniature canal
-        float shimmer = pow(smoothstep(0.62, 1.0, rip), 2.4) * (0.45 + 0.55 * sin(vWorldPos.z * 8.0 + uTime * 2.0));
-        col += gold * max(0.0, shimmer) * 0.65;
-        gl_FragColor = vec4(col, 1.0);
-        #include <colorspace_fragment>
-      }
-    `
-  });
-  customShaderUniforms.push(mat.uniforms.uTime);
-  return mat;
+function triggerRiverRipple(mx, mz) {
+  if (!miniWaterMat) return;
+  const pt = mountToRiverLocal(mx, mz);
+  const slot = miniWaterMat.uniforms.uRipples.value[rippleCursor % 4];
+  slot.set(pt.x, pt.z, simElapsed, 1.0);
+  rippleCursor++;
+}
+
+function spawnWishWithSplash() {
+  return roomAct.spawnWishLantern((mx, mz) => triggerRiverRipple(mx, mz));
 }
 
 function buildRiverTerrariumClipPlanes() {
@@ -496,6 +453,7 @@ function ensureRoomLoaded() {
     atlasWrap.add(atlasGltf.scene);
     roomAct.miniAtlasMount.add(atlasWrap);
 
+    const cityLocalPositions = new Array(22);
     atlasGltf.scene.traverse((obj) => {
       if (obj.name) namedObjects.set(`Atlas_${obj.name}`, obj);
       if (obj.name === 'Atlas_Orbital_Ring') {
@@ -504,40 +462,87 @@ function ensureRoomLoaded() {
         obj.rotation.set(0.08, 0.0, 0.04);
         obj.scale.setScalar(0.95);
       }
+      const beaconGroupMatch = obj.name.match(/^City_Beacon_(\d+)$/);
+      if (beaconGroupMatch) {
+        const idx = parseInt(beaconGroupMatch[1], 10);
+        cityLocalPositions[idx] = obj.position.clone();
+        atlasCityGroups[idx] = obj;
+      }
       if (obj.isMesh) {
-        if (obj.name.includes('Yangtze')) {
-          obj.material = makeFlowingRiverShader(0x289088, 0x8efae8);
+        if (obj.name === 'Atlas_Sea_Basin') {
+          obj.material = buildAtlasSeaShader(customShaderUniforms);
+        } else if (obj.name.includes('Yangtze')) {
+          obj.material = buildAtlasRiverShader(0x289088, 0x8efae8, 2.2, customShaderUniforms);
         } else if (obj.name.includes('Yellow')) {
-          obj.material = makeFlowingRiverShader(0xb88230, 0xffe08a);
-        } else if (obj.name.includes('Pearl')) {
-          obj.material = makeFlowingRiverShader(0x2a7a96, 0x8ce2ff);
-        } else if (obj.name.startsWith('City_Beacon_')) {
-          const idx = parseInt(obj.name.replace('City_Beacon_', ''), 10);
-          if (Number.isFinite(idx)) {
+          obj.material = buildAtlasRiverShader(0xb88230, 0xffe08a, 2.5, customShaderUniforms);
+        } else if (obj.name.includes('Xijiang') || obj.name.includes('Pearl')) {
+          obj.material = buildAtlasRiverShader(0x2a7a96, 0x8ce2ff, 2.0, customShaderUniforms);
+        } else if (obj.name.startsWith('River_Spline_')) {
+          obj.material = buildAtlasRiverShader(0x2c7d76, 0x76e8d4, 1.8, customShaderUniforms);
+        } else {
+          const coreMatch = obj.name.match(/^City_Beacon_(Core|Base)_(\d+)$/);
+          if (coreMatch) {
+            const idx = parseInt(coreMatch[2], 10);
             if (obj.material && obj.material.clone) obj.material = obj.material.clone();
             obj.userData.__qzInteractiveName = obj.name;
             obj.userData.__qzRole = 'cityBeacon';
             obj.userData.__qzCityIndex = idx;
-            atlasCityBeacons[idx] = obj;
+            if (coreMatch[1] === 'Core') atlasCityBeacons[idx] = obj;
             roomInteractiveTargets.push(obj);
           }
         }
       }
     });
 
+    atlasFilaments = buildAtlasGoldenFilaments(cityLocalPositions, PLACES_22, customShaderUniforms);
+    atlasGltf.scene.add(atlasFilaments.group);
+
     // 3. Embed sculpted Jiangnan River into the Brass-Framed Glass Terrarium (clipped cleanly!)
     const clipPlanes = buildRiverTerrariumClipPlanes();
     const riverWrap = new THREE.Group();
     riverWrap.name = 'Mini_JiangnanRiver_Inner';
-    riverWrap.scale.setScalar(0.068);
+    riverWrap.scale.setScalar(RIVER_WRAP_SCALE);
     // Original hero bridge & canal centered around (0, -6.5, -79.5) — tucked cleanly inside brass glass box!
-    riverWrap.position.set(0.0, 6.55 * 0.068 + 0.02, 79.5 * 0.068 - 0.12);
+    riverWrap.position.set(0.0, 6.55 * RIVER_WRAP_SCALE + 0.02, RIVER_WRAP_POS_Z);
     riverWrap.add(riverGltf.scene);
     roomAct.miniRiverMount.add(riverWrap);
 
-    const miniWaterMat = makeMiniRiverWaterShader(clipPlanes);
+    miniWaterMat = buildMiniRiverWaterMaterial(clipPlanes);
+    customShaderUniforms.push(miniWaterMat.uniforms.uTime);
+
+    let boatCounter = 0;
+    const boatByIndex = new Map();
     riverGltf.scene.traverse((obj) => {
+      // Capture animated group nodes BEFORE mesh-only guard!
+      const boatMatch = obj.name.match(/^River_Boat_Lantern_(\d+)$/);
+      if (boatMatch) {
+        const bIdx = parseInt(boatMatch[1], 10);
+        const rec = {
+          obj,
+          index: bIdx,
+          baseY: obj.position.y,
+          phase: boatCounter * 1.18,
+          lanternOffset: new THREE.Vector3(0, 0.65, 1.54)
+        };
+        miniRiverBoats.push(rec);
+        boatByIndex.set(bIdx, rec);
+        boatCounter++;
+      }
+      if (obj.name === 'Roof_Cat_3D') {
+        eaveCatObj = obj;
+        catBaseScaleY = obj.scale.y || 1.0;
+      }
+
       if (!obj.isMesh) return;
+      const bowLampMatch = obj.name.match(/^Boat_Lantern_(\d+)$/);
+      if (bowLampMatch && obj.geometry) {
+        const bIdx = parseInt(bowLampMatch[1], 10);
+        const rec = boatByIndex.get(bIdx);
+        if (rec) {
+          obj.geometry.computeBoundingBox();
+          obj.geometry.boundingBox.getCenter(rec.lanternOffset);
+        }
+      }
       if (obj.name === 'River_Bed' || obj.name.includes('Water')) {
         obj.material = miniWaterMat;
       } else if (obj.material) {
@@ -548,20 +553,19 @@ function ensureRoomLoaded() {
           m.needsUpdate = true;
         });
       }
-      if (obj.name.startsWith('River_Boat_Lantern_')) {
-        miniRiverBoats.push({ obj, baseY: obj.position.y, phase: miniRiverBoats.length * 1.15 });
+      if (obj.name.startsWith('Boat_') || (obj.parent && obj.parent.name.startsWith('River_Boat_Lantern_'))) {
         obj.userData.__qzInteractiveName = obj.name;
         obj.userData.__qzRole = 'riverLantern';
         roomInteractiveTargets.push(obj);
       }
-      if (obj.name === 'Roof_Cat_3D') {
+      if (obj.parent && obj.parent.name === 'Roof_Cat_3D') {
         obj.userData.__qzInteractiveName = 'Roof_Cat_3D';
         obj.userData.__qzRole = 'riverCat';
         roomInteractiveTargets.push(obj);
       }
     });
 
-    // Update city beacon highlight for initial selected city
+    // Update city beacon highlight & golden filaments for initial state
     highlightSelectedCityBeacon();
     state.roomLoaded = true;
   }).catch((err) => {
@@ -576,15 +580,32 @@ function ensureRoomLoaded() {
 function highlightSelectedCityBeacon() {
   const sel = PLACES_22.find((p) => p.name === state.selectedCityName);
   const selIdx = sel ? sel.index : 15;
-  atlasCityBeacons.forEach((mesh, idx) => {
-    if (!mesh || !mesh.material) return;
+  const region = state.selectedAtlasRegion || 'all';
+
+  for (let idx = 0; idx < PLACES_22.length; idx++) {
+    const place = PLACES_22[idx];
+    const grp = atlasCityGroups[idx];
+    const core = atlasCityBeacons[idx];
     const isSel = idx === selIdx;
-    mesh.scale.setScalar(isSel ? 1.55 : 1.0);
-    if (mesh.material.emissive) {
-      mesh.material.emissive.setHex(isSel ? 0xff7b42 : 0x56d8c0);
-      mesh.material.emissiveIntensity = isSel ? 2.4 : 0.85;
+    const inRegion = region === 'all' || place.group === region;
+
+    if (grp) {
+      grp.scale.setScalar(isSel ? 1.48 : (inRegion ? 1.0 : 0.84));
     }
-  });
+    if (core && core.material && core.material.emissive) {
+      if (isSel) {
+        core.material.emissive.setHex(0xffc966);
+        core.material.emissiveIntensity = 2.2;
+      } else if (inRegion) {
+        core.material.emissive.setHex(place.hasDirectPoem ? 0xffd27d : 0x5fe2cc);
+        core.material.emissiveIntensity = 1.15;
+      } else {
+        core.material.emissive.setHex(0x3a645e);
+        core.material.emissiveIntensity = 0.25;
+      }
+    }
+  }
+  atlasFilaments?.updateEmphasis(selIdx, region);
 }
 
 /* =========================================================================
@@ -594,7 +615,7 @@ const modals = createShopModals({
   state,
   onUpdateBookMoyan: () => updateBookMoyanTexture(),
   onTriggerSealStamp: () => roomAct.triggerSealStamp(),
-  onSpawnWishLantern: () => roomAct.spawnWishLantern(),
+  onSpawnWishLantern: () => spawnWishWithSplash(),
   onFocusExhibit: (id) => {
     if (state.act !== 'room') {
       goAct('room', true).then(() => focusExhibit(id));
@@ -604,6 +625,18 @@ const modals = createShopModals({
   },
   onSelectCity: (cityName) => {
     state.selectedCityName = cityName;
+    highlightSelectedCityBeacon();
+    modals.renderExhibitDeck(true);
+  },
+  onSelectAtlasRegion: (region) => {
+    state.selectedAtlasRegion = region || 'all';
+    if (region !== 'all') {
+      const cur = PLACES_22.find((p) => p.name === state.selectedCityName);
+      if (!cur || cur.group !== region) {
+        const firstInRegion = PLACES_22.find((p) => p.group === region);
+        if (firstInRegion) state.selectedCityName = firstInRegion.name;
+      }
+    }
     highlightSelectedCityBeacon();
     modals.renderExhibitDeck(true);
   }
@@ -677,7 +710,11 @@ function syncHudUI() {
   if (inspectHint) inspectHint.hidden = !(state.act === 'room' && state.focusedExhibit);
 
   document.querySelectorAll('.exhibit-pill[data-exhibit]').forEach((btn) => {
-    btn.classList.toggle('is-active', btn.dataset.exhibit === state.focusedExhibit);
+    const isAct = btn.dataset.exhibit === state.focusedExhibit;
+    btn.classList.toggle('is-active', isAct);
+    if (isAct) {
+      btn.scrollIntoView?.({ behavior: 'auto', inline: 'center', block: 'nearest' });
+    }
   });
   const overviewBtn = document.getElementById('btn-room-overview');
   if (overviewBtn) overviewBtn.classList.toggle('is-active', state.act === 'room' && !state.focusedExhibit);
@@ -1223,6 +1260,7 @@ function animate() {
   requestAnimationFrame(animate);
   const dt = Math.min(0.05, clock.getDelta());
   const elapsed = clock.elapsedTime;
+  simElapsed = elapsed;
 
   state.smoothPtrX += (state.pointerNdcX - state.smoothPtrX) * Math.min(1, dt * 4.5);
   state.smoothPtrY += (state.pointerNdcY - state.smoothPtrY) * Math.min(1, dt * 4.5);
@@ -1398,10 +1436,40 @@ function animate() {
     for (const u of customShaderUniforms) u.value = elapsed;
     const ring = namedObjects.get('Atlas_Orbital_Ring');
     if (ring && !prefersReducedMotion) ring.rotation.y = elapsed * 0.14;
-    for (const b of miniRiverBoats) {
+
+    // Peaceful living buoyancy for all 6 Wupeng lantern boats + shader light tracking
+    for (let i = 0; i < miniRiverBoats.length; i++) {
+      const b = miniRiverBoats[i];
       if (!prefersReducedMotion) {
-        b.obj.position.y = b.baseY + Math.sin(elapsed * 1.9 + b.phase) * 0.08;
+        b.obj.position.y = b.baseY + Math.sin(elapsed * 1.45 + b.phase) * 0.06;
+        b.obj.rotation.z = Math.sin(elapsed * 1.15 + b.phase) * 0.032;
+        b.obj.rotation.x = Math.cos(elapsed * 1.32 + b.phase) * 0.020;
       }
+      if (miniWaterMat && i < 6) {
+        const bx = b.obj.position.x + b.lanternOffset.x;
+        const bz = b.obj.position.z + b.lanternOffset.z;
+        miniWaterMat.uniforms.uBoatLights.value[i].set(bx, -6.0, bz);
+      }
+    }
+    if (miniWaterMat) {
+      // Foreground eave palace lantern at index 6
+      miniWaterMat.uniforms.uBoatLights.value[6].set(-3.05, -4.15, -70.7);
+      // Dynamic Lotus Wish Lantern lights
+      const wlArr = miniWaterMat.uniforms.uWishLights.value;
+      const activeWish = roomAct.getSpawnedLanterns();
+      for (let j = 0; j < 8; j++) {
+        if (j < activeWish.length) {
+          const mp = activeWish[j].mesh.position;
+          const lp = mountToRiverLocal(mp.x, mp.z);
+          wlArr[j].set(lp.x, -6.4, lp.z, 1.0);
+        } else {
+          wlArr[j].set(0, 0, 0, 0.0);
+        }
+      }
+    }
+    if (eaveCatObj && !prefersReducedMotion) {
+      eaveCatObj.scale.y = catBaseScaleY * (1.0 + 0.025 * Math.sin(elapsed * 2.1));
+      eaveCatObj.rotation.y = Math.sin(elapsed * 0.52) * 0.055;
     }
   }
 
@@ -1471,6 +1539,15 @@ window.__qzTriggerSeal = () => {
   updateBookMoyanTexture();
   modals.renderExhibitDeck(true);
 };
-window.__qzSpawnLantern = () => roomAct.spawnWishLantern();
+window.__qzSetAtlasRegion = (region) => {
+  state.selectedAtlasRegion = region || 'all';
+  if (state.selectedAtlasRegion !== 'all') {
+    const first = PLACES_22.find((p) => p.group === state.selectedAtlasRegion);
+    if (first) state.selectedCityName = first.name;
+  }
+  highlightSelectedCityBeacon();
+  modals.renderExhibitDeck(true);
+};
+window.__qzSpawnLantern = () => spawnWishWithSplash();
 
 animate();

@@ -81,8 +81,8 @@ mat_brass = make_pigment_mat("ChinaGoldRim", metallic=0.86, roughness=0.28)
 mat_bronze = make_pigment_mat("AtlasDarkBronze", metallic=0.62, roughness=0.46)
 mat_river_main = make_named_mat("AtlasRiverFlowMat", "6cf2db", metallic=0.1, roughness=0.2, glow_hex="7ef7e4", glow=1.6)
 mat_river_trib = make_named_mat("AtlasRiverTribMat", "48bfa8", metallic=0.1, roughness=0.25, glow_hex="5adbc2", glow=1.1)
-mat_beacon_gold = make_pigment_mat("AtlasBeaconGoldGlow", metallic=0.2, roughness=0.22, glow_color=(1.0, 0.78, 0.36), glow=2.4)
-mat_beacon_jade = make_pigment_mat("AtlasBeaconJadeGlow", metallic=0.15, roughness=0.26, glow_color=(0.38, 0.94, 0.82), glow=1.7)
+mat_beacon_gold = make_pigment_mat("AtlasBeaconGoldGlow", metallic=0.22, roughness=0.24, glow_color=(1.0, 0.82, 0.44), glow=1.35)
+mat_beacon_jade = make_pigment_mat("AtlasBeaconJadeGlow", metallic=0.18, roughness=0.26, glow_color=(0.48, 0.94, 0.84), glow=1.15)
 
 # =============================================================================
 # PARSE EXACT NATURAL EARTH SILHOUETTES FROM china-map.js
@@ -147,7 +147,7 @@ def svg_to_xz(sx, sy):
     return (tx, tz)
 
 
-OUTLINE_XZ = [svg_to_xz(x, y) for x, y in sample_cubic_svg(extract_svg_path("OUTLINE"), 3)]
+OUTLINE_XZ = [svg_to_xz(x, y) for x, y in sample_cubic_svg(extract_svg_path("OUTLINE"), 5)]
 HAINAN_XZ = [svg_to_xz(x, y) for x, y in sample_cubic_svg(extract_svg_path("HAINAN"), 3)]
 TAIWAN_XZ = [svg_to_xz(x, y) for x, y in sample_cubic_svg(extract_svg_path("TAIWAN"), 3)]
 
@@ -194,6 +194,12 @@ MOUNTAIN_CHAINS = [
     # Changbai & Greater Khingan
     ([(120.5, 45.0), (121.8, 48.0), (123.5, 51.0)], 0.78, 1.6),
     ([(126.5, 41.8), (128.2, 42.5), (129.8, 44.2)], 0.82, 1.3),
+    # Altai (far northwest frontier)
+    ([(85.5, 48.8), (88.5, 47.6), (91.0, 46.2)], 1.15, 1.4),
+    # Dabie & Tianmu (lower Yangtze divides)
+    ([(114.6, 31.8), (116.5, 31.2), (119.2, 30.3)], 0.72, 1.15),
+    # Xuefeng & Wuyi (southern green ridges)
+    ([(109.8, 27.2), (111.0, 27.6), (117.5, 27.2), (118.8, 28.4)], 0.85, 1.25),
 ]
 
 CHAINS_XZ = [([project_lonlat(lon, lat) for lon, lat in pts], h, rad * 0.44) for pts, h, rad in MOUNTAIN_CHAINS]
@@ -283,21 +289,21 @@ def terrain_height(tx, tz, is_island=False):
 
 
 def mineral_color(h, tx, tz):
-    """Song-Dynasty 《千里江山图》 celadon -> malachite -> azurite -> frost summit."""
+    """Song-Dynasty 《千里江山图》 celadon -> malachite -> ochre -> azurite -> frost summit."""
     n = 0.5 + 0.5 * noise.noise(Vector((tx * 0.45, tz * 0.45, 7.2)))
-    if h < 0.32:
-        c = lerp_hex("357d72", "53a38d", h / 0.32)
+    if h < 0.30:
+        c = lerp_hex("3b8779", "59ac94", h / 0.30)
     elif h < 0.78:
-        t = (h - 0.32) / 0.46
-        c = lerp_hex("489c84", "246b73", t)
-        if n > 0.62:
-            c = lerp_hex(c, "7d8a64", (n - 0.62) * 0.85)  # subtle warm ochre mineral ridge
+        t = (h - 0.30) / 0.48
+        c = lerp_hex("4c9e86", "276f78", t)
+        if n > 0.58:
+            c = lerp_hex(c, "948a62", min(1.0, (n - 0.58) * 1.15))
     elif h < 1.38:
         t = (h - 0.78) / 0.60
-        c = lerp_hex("236378", "20446e", t)
+        c = lerp_hex("225c75", "1d3f68", t)
     else:
         t = min(1.0, (h - 1.38) / 0.75)
-        c = lerp_hex("386e8a", "dbeae6", t)
+        c = lerp_hex("487c96", "e2efeb", t)
     return c
 
 
@@ -502,7 +508,7 @@ def build_landmass(name, rim_name, poly_xz, grid_nx, grid_nz, is_island=False):
                 mz = sum(heights[v][2] for v in tri) / 3.0
                 cols.append(mineral_color(mh, mx, mz))
 
-    relief.mesh(pts, faces, cols, smooth=False)
+    relief.mesh(pts, faces, cols, smooth=True)
 
     # Solid 2-tier sculpted jade cliff skirt + flat solid base cap using Blender earcut/curve fill
     # Build crisp beveled jade cliff wall around exact coastline polygon
@@ -605,21 +611,26 @@ def build_plinth_and_armillary():
     bronze = Part("Atlas_Pedestal_Bronze", root, mat_bronze, origin=w(0.0, 0.0, ATLAS_CZ))
     brass = Part("Atlas_Compass_Brass", root, mat_brass, origin=w(0.0, 0.0, ATLAS_CZ))
 
-    # Concentric bathymetry sea disk (R = 16.0) at y = ATLAS_CY - 0.52
+    # Concentric bathymetry sea disk (R = 16.0) at y = ATLAS_CY - 0.52 with normalized planar UVs
     y_sea = ATLAS_CY - 0.52
     rings, segs = 12, 72
     pts = [w(0.0, y_sea, ATLAS_CZ)]
+    uv_list = [(0.5, 0.5)]
     for j in range(1, rings + 1):
         r = 16.0 * (j / rings)
         for i in range(segs):
             a = TAU * i / segs
-            pts.append(w(r * cos(a), y_sea, ATLAS_CZ + r * sin(a)))
+            rx, rz = r * cos(a), r * sin(a)
+            pts.append(w(rx, y_sea, ATLAS_CZ + rz))
+            uv_list.append((0.5 + rx / 32.0, 0.5 + rz / 32.0))
     faces = []
     cols = []
+    face_uvs = []
     for i in range(segs):
         k = (i + 1) % segs
         faces.append((0, 1 + k, 1 + i))
         cols.append("122c38")
+        face_uvs.append([uv_list[0], uv_list[1 + k], uv_list[1 + i]])
     for j in range(1, rings):
         lo = 1 + (j - 1) * segs
         hi = 1 + j * segs
@@ -629,7 +640,8 @@ def build_plinth_and_armillary():
             k = (i + 1) % segs
             faces.append((lo + i, lo + k, hi + k, hi + i))
             cols.append(col)
-    sea.mesh(pts, faces, cols, smooth=False)
+            face_uvs.append([uv_list[lo + i], uv_list[lo + k], uv_list[hi + k], uv_list[hi + i]])
+    sea.mesh(pts, faces, cols, face_uvs=face_uvs, smooth=False)
 
     # Dark bronze stepped outer rim & lower architectural plinth skirt
     bronze.ring_t((0.0, y_sea, ATLAS_CZ), 15.85, 16.95, -0.95, 0.28, 72, "1d2b34")
@@ -725,31 +737,26 @@ def build_rivers():
 # 4. 22 SCULPTED BRONZE & LANTERN CITY BEACONS (City_Beacon_0..21)
 # =============================================================================
 def build_city_beacons():
-    for idx, (cname, lon, lat, is_poem) in enumerate(PLACES):
+    for idx, (cname, lon, lat, is_major) in enumerate(PLACES):
         tx, tz = project_lonlat(lon, lat)
         h_val = terrain_height(tx, tz, False)
         by = ATLAS_CY + h_val + 0.02
         root = make_empty(f"City_Beacon_{idx}", (tx, by, tz))
-        make_empty(f"Anchor_City_Beacon_{idx}", (tx, by + (1.72 if is_poem else 1.05), tz))
+        make_empty(f"Anchor_City_Beacon_{idx}", (tx, by + 0.78, tz))
 
         base = Part(f"City_Beacon_Base_{idx}", root, mat_brass, origin=w(tx, by, tz))
-        glow = Part(f"City_Beacon_Core_{idx}", root, mat_beacon_gold if is_poem else mat_beacon_jade, origin=w(tx, by, tz))
+        glow = Part(f"City_Beacon_Core_{idx}", root, mat_beacon_gold if is_major else mat_beacon_jade, origin=w(tx, by, tz))
 
-        if is_poem:
-            # Ornate gilded miniature lantern spire + concentric floating halo ring
-            base.lathe_t((tx, by, tz), [(0, 0.28), (0.06, 0.24), (0.14, 0.14), (0.48, 0.07), (0.56, 0.16)], 16, "dfb569")
-            glow.lathe_t((tx, by + 0.56, tz), [(0, 0.12), (0.14, 0.17), (0.34, 0.14), (0.46, 0.03)], 14, "ffd884")
-            base.lathe_t((tx, by + 1.02, tz), [(0, 0.18), (0.08, 0.07), (0.22, 0.02)], 12, "e6be72")
-            base.ring_t((tx, by + 0.72, tz), 0.34, 0.40, -0.025, 0.025, 28, "f0cc7e", tilt_x=0.22)
-        else:
-            # Sleek faceted bronze-and-jade obelisk drop-pin
-            base.lathe_t((tx, by, tz), [(0, 0.16), (0.05, 0.13), (0.28, 0.055)], 8, "c29a58", smooth=False)
-            glow.lathe_t((tx, by + 0.28, tz), [(0, 0.055), (0.14, 0.115), (0.34, 0.02)], 8, "64e8d2", smooth=False)
+        # Harmonized jewelry-scale bronze & crystal drop-pins (refined proportions, zero giant halo!)
+        h_stem = 0.28 if is_major else 0.22
+        r_base = 0.16 if is_major else 0.13
+        base.lathe_t((tx, by, tz), [(0, r_base), (0.045, r_base * 0.85), (0.10, 0.08), (h_stem, 0.052)], 12, "dfb569" if is_major else "c8a160", smooth=True)
+        glow.lathe_t((tx, by + h_stem, tz), [(0, 0.052), (0.11, 0.105 if is_major else 0.088), (0.28, 0.018)], 8, "ffd68a" if is_major else "8ae8d2", smooth=False)
 
 
-build_landmass("China_Mainland_Relief_0", "China_Mainland_Relief_0_Rim", OUTLINE_XZ, 128, 88, is_island=False)
-build_landmass("China_Hainan_Relief_0", "China_Hainan_Relief_0_Rim", HAINAN_XZ, 14, 12, is_island=True)
-build_landmass("China_Taiwan_Relief_0", "China_Taiwan_Relief_0_Rim", TAIWAN_XZ, 14, 20, is_island=True)
+build_landmass("China_Mainland_Relief_0", "China_Mainland_Relief_0_Rim", OUTLINE_XZ, 192, 136, is_island=False)
+build_landmass("China_Hainan_Relief_0", "China_Hainan_Relief_0_Rim", HAINAN_XZ, 20, 16, is_island=True)
+build_landmass("China_Taiwan_Relief_0", "China_Taiwan_Relief_0_Rim", TAIWAN_XZ, 18, 26, is_island=True)
 build_plinth_and_armillary()
 build_rivers()
 build_city_beacons()

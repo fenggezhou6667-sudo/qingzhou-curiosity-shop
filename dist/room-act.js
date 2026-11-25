@@ -1,4 +1,5 @@
 import * as THREE from './vendor/three/three.module.js';
+import { createMiniWishLanternMesh } from './river-water.js';
 
 /**
  * 5 Interactive Miniature Worlds arranged inside the Single Curiosity Shop Room.
@@ -75,16 +76,16 @@ export const ROOM_EXHIBITS = [
     idx: '04',
     name: '青绿山河盘',
     eyebrow: 'MINIATURE 04 · MINERAL CHINA ATLAS',
-    title: '宋元青绿沙盘 · 廿二城行迹',
+    title: '宋元青绿沙盘 · 山河行迹',
     target: new THREE.Vector3(0.0, 1.12, 0.65),
-    defaultYaw: 0.16,
-    defaultPitch: 0.62,
-    defaultDist: 2.75,
+    defaultYaw: 0.14,
+    defaultPitch: 0.64,
+    defaultDist: 2.55,
     minYaw: -Infinity,
     maxYaw: Infinity,
     minPitch: 0.22,
     maxPitch: 1.18,
-    minDist: 1.65,
+    minDist: 1.55,
     maxDist: 4.1,
     spotPos: new THREE.Vector3(-0.8, 3.6, 1.2),
     spotColor: 0x8ef2de
@@ -96,17 +97,17 @@ export const ROOM_EXHIBITS = [
     name: '江南夜河箱',
     eyebrow: 'MINIATURE 05 · NIGHT CANAL TERRARIUM',
     title: '微缩夜河景箱 · 归舟放灯',
-    target: new THREE.Vector3(4.52, 1.34, 1.32),
+    target: new THREE.Vector3(4.52, 1.32, 1.32),
     defaultYaw: -0.06,
-    defaultPitch: 0.46,
-    defaultDist: 2.55,
+    defaultPitch: 0.56,
+    defaultDist: 2.52,
     minYaw: -1.55,
     maxYaw: 0.85,
     minPitch: 0.16,
     maxPitch: 1.05,
-    minDist: 1.55,
+    minDist: 1.48,
     maxDist: 3.7,
-    spotPos: new THREE.Vector3(4.2, 3.3, 1.8),
+    spotPos: new THREE.Vector3(3.85, 3.45, 2.25),
     spotColor: 0xffbc64
   }
 ];
@@ -351,22 +352,30 @@ export function buildRoomAct(dpr = 1) {
   miniCloud.position.set(0.0, 1.18, 0.65);
   group.add(miniCloud);
 
-  // Dynamic spawned wish lanterns inside the miniature Jiangnan river terrarium!
+  // Dynamic spawned lotus wish lanterns inside the miniature Jiangnan river terrarium!
   const spawnedLanterns = [];
-  function spawnWishLantern() {
-    const lan = new THREE.Mesh(
-      new THREE.SphereGeometry(0.042, 10, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffdf8c })
-    );
-    lan.position.set((Math.random() - 0.5) * 0.65, 0.06, 0.95);
+  function disposeGroupRecursive(obj) {
+    obj.traverse((ch) => {
+      if (ch.isMesh) {
+        ch.geometry?.dispose?.();
+        ch.material?.dispose?.();
+      }
+    });
+  }
+  function spawnWishLantern(onSplash) {
+    const lan = createMiniWishLanternMesh();
+    const xBase = (Math.random() - 0.5) * 0.46;
+    const zStart = 0.72;
+    lan.position.set(xBase, 0.048, zStart);
     miniRiverMount.add(lan);
-    spawnedLanterns.push({ mesh: lan, z: 0.95, xBase: lan.position.x, phase: Math.random() * Math.PI * 2 });
-    if (spawnedLanterns.length > 10) {
+    spawnedLanterns.push({ mesh: lan, z: zStart, xBase, phase: Math.random() * Math.PI * 2 });
+    onSplash?.(xBase, zStart);
+    if (spawnedLanterns.length > 8) {
       const old = spawnedLanterns.shift();
       miniRiverMount.remove(old.mesh);
-      old.mesh.geometry.dispose();
-      old.mesh.material.dispose();
+      disposeGroupRecursive(old.mesh);
     }
+    return { x: xBase, z: zStart };
   }
 
   // Awakening animation states
@@ -466,16 +475,17 @@ export function buildRoomAct(dpr = 1) {
       }
     }
 
-    // 5. Floating Spawned Wish Lanterns inside the Miniature Jiangnan Glass Canal
+    // 5. Floating Spawned Lotus Wish Lanterns inside the Miniature Jiangnan Glass Canal
     for (const ln of spawnedLanterns) {
       if (!prefersReducedMotion) {
-        ln.z -= dt * 0.11;
-        if (ln.z < -0.95) ln.z = 0.95;
+        ln.z -= dt * 0.095;
+        if (ln.z < -0.90) ln.z = 0.78;
         ln.mesh.position.set(
-          ln.xBase + Math.sin(elapsed * 1.2 + ln.phase) * 0.04,
-          0.055 + Math.sin(elapsed * 2.2 + ln.phase) * 0.012,
+          ln.xBase + Math.sin(elapsed * 1.15 + ln.phase) * 0.036,
+          0.046 + Math.sin(elapsed * 2.1 + ln.phase) * 0.008,
           ln.z
         );
+        ln.mesh.rotation.y = elapsed * 0.35 + ln.phase;
       }
     }
   }
@@ -486,6 +496,7 @@ export function buildRoomAct(dpr = 1) {
     miniAtlasMount,
     miniRiverMount,
     spawnWishLantern,
+    getSpawnedLanterns: () => spawnedLanterns,
     triggerSealStamp,
     update
   };
