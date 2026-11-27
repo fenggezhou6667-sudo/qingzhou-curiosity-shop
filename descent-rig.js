@@ -240,10 +240,13 @@ export function createDescentRig(dpr = 1) {
   horizonGroup.add(outerHalo);
 
   // =========================================================================
-  // 2. OVERLAY SCENE (3D Warp Streaks + Arrival Corona + 20-Layer Cloud Tunnel)
+  // 2. OVERLAY SCENE + FULLSCREEN OPAQUE BLINDSPOT PASS
   // =========================================================================
   const overlayScene = new THREE.Scene();
   const overlayCam = new THREE.PerspectiveCamera(44, 1.6, 0.1, 220);
+
+  const blindspotScene = new THREE.Scene();
+  const blindspotCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
   // 2A. 420 Radial 3D Interstellar Warp Streaks (LineSegments streaming -Z -> +Z)
   const streakCount = 420;
@@ -342,39 +345,135 @@ export function createDescentRig(dpr = 1) {
   warpLines.visible = false;
   overlayScene.add(warpLines);
 
-  // 2B. Soft Celestial Arrival Star Corona (Bridges star-core into orbital horizon at p=0.28..0.42)
-  const arrivalMat = new THREE.ShaderMaterial({
+  // 2B. Full-Screen 100% Opaque Star-Core Overexposure Flash (bridges Galaxy -> Orbital Horizon at p=0.34)
+  const starFlashMat = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
-    blending: THREE.AdditiveBlending,
+    depthTest: false,
     toneMapped: true,
-    uniforms: { uIntensity: { value: 0 } },
+    uniforms: { uFlash: { value: 0 }, uAspect: { value: 1.6 } },
     vertexShader: `
       varying vec2 vUv;
       void main() {
         vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        gl_Position = vec4(position.xy, 0.0, 1.0);
       }
     `,
     fragmentShader: `
+      uniform float uFlash;
+      uniform float uAspect;
       varying vec2 vUv;
-      uniform float uIntensity;
       void main() {
-        vec2 p = vUv - 0.5;
+        float fl = clamp(uFlash, 0.0, 1.0);
+        if (fl <= 0.002) discard;
+
+        vec2 p = (vUv - 0.5) * vec2(uAspect, 1.0);
         float d = length(p);
-        float core = exp(-d * d * 26.0);
-        float bloom = exp(-d * d * 4.8) * 0.65;
-        vec3 col = mix(vec3(0.45, 0.72, 1.0), vec3(1.0, 0.94, 0.80), clamp(core * 1.4, 0.0, 1.0));
-        gl_FragColor = vec4(col, (core + bloom) * uIntensity);
+        float rFront = -0.35 + fl * 2.05;
+        float iris = smoothstep(rFront + 0.36, rFront - 0.52, d);
+        float core = exp(-d * d * mix(18.0, 1.8, fl));
+        float solid = max(iris, smoothstep(0.84, 0.995, fl));
+        float alpha = clamp(mix(core * fl * 0.92, 1.0, solid), 0.0, 1.0);
+        if (alpha <= 0.002) discard;
+
+        vec3 coreCol = vec3(1.38, 1.26, 1.04); // warm champagne-ivory incandescent starlight
+        vec3 rimCol = mix(vec3(0.68, 0.82, 1.02), vec3(1.18, 1.06, 0.88), smoothstep(0.45, 0.98, fl));
+        vec3 col = mix(rimCol, coreCol, clamp(core * 1.15 + smoothstep(0.65, 1.0, fl) * 0.5, 0.0, 1.0));
+
+        gl_FragColor = vec4(col, alpha);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }
     `
   });
-  const arrivalQuad = new THREE.Mesh(new THREE.PlaneGeometry(18, 18), arrivalMat);
-  arrivalQuad.position.set(0, 0, -8);
-  arrivalQuad.visible = false;
-  overlayScene.add(arrivalQuad);
+  const starFlashQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), starFlashMat);
+  starFlashQuad.visible = false;
+  blindspotScene.add(starFlashQuad);
+
+  // 2B-2. Full-Screen 100% Opaque Twilight Purple-Gold Cloud Blindspot (bridges Horizon -> Meadow at p=0.72)
+  const cloudBlindspotMat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    depthTest: false,
+    toneMapped: true,
+    uniforms: {
+      uMist: { value: 0 },
+      uPart: { value: 0 },
+      uTime: { value: 0 },
+      uAspect: { value: 1.6 }
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = vec4(position.xy, 0.0, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float uMist;
+      uniform float uPart;
+      uniform float uTime;
+      uniform float uAspect;
+      varying vec2 vUv;
+
+      float hash21(vec2 p) {
+        p = fract(p * vec2(123.34, 456.21));
+        p += dot(p, p + 45.32);
+        return fract(p.x * p.y);
+      }
+      float n2(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        return mix(
+          mix(hash21(i), hash21(i + vec2(1.0, 0.0)), f.x),
+          mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), f.x),
+          f.y
+        );
+      }
+      float fbm(vec2 p) {
+        float v = 0.0;
+        float a = 0.52;
+        for (int i = 0; i < 3; i++) {
+          v += a * n2(p);
+          p = p * 2.08 + vec2(1.9, -1.4);
+          a *= 0.5;
+        }
+        return v;
+      }
+
+      void main() {
+        float m = clamp(uMist, 0.0, 1.0);
+        if (m <= 0.002) discard;
+
+        vec2 p = (vUv - 0.5) * vec2(uAspect, 1.0);
+        float d = length(p);
+        float f = fbm(p * 2.4 + vec2(uTime * 0.04, -uPart * 0.35));
+
+        float partRadius = uPart * 1.18;
+        float holeMask = uPart <= 0.001
+          ? 1.0
+          : smoothstep(partRadius - 0.28, partRadius + 0.16, d + (f - 0.5) * 0.26);
+        float alpha = clamp(m * holeMask, 0.0, 1.0);
+        if (alpha <= 0.002) discard;
+
+        // Twilight purple-rose to sunlit apricot-gold matching 3D clouds 1:1
+        float sunCore = clamp(1.0 - d * 0.85, 0.0, 1.0);
+        vec3 edgeViolet = vec3(0.24, 0.16, 0.36);
+        vec3 midRose = vec3(0.54, 0.28, 0.42);
+        vec3 warmGold = vec3(1.04, 0.74, 0.48);
+        vec3 col = mix(edgeViolet, midRose, clamp(f * 1.1 + sunCore * 0.35, 0.0, 1.0));
+        col = mix(col, warmGold, smoothstep(0.32, 0.88, f * 0.65 + sunCore * 0.55));
+
+        gl_FragColor = vec4(col, alpha);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }
+    `
+  });
+  const cloudBlindspotQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), cloudBlindspotMat);
+  cloudBlindspotQuad.visible = false;
+  blindspotScene.add(cloudBlindspotQuad);
 
   // 2C. 20-Layer 3D Volumetric Backlit Cloud Tunnel (True Multi-Plane Perspective Parallax!)
   const cloudGroup = new THREE.Group();
@@ -498,8 +597,11 @@ export function createDescentRig(dpr = 1) {
   }
 
   function setAspect(aspect) {
-    overlayCam.aspect = Math.max(0.25, aspect);
+    const a = Math.max(0.25, aspect);
+    overlayCam.aspect = a;
     overlayCam.updateProjectionMatrix();
+    starFlashMat.uniforms.uAspect.value = a;
+    cloudBlindspotMat.uniforms.uAspect.value = a;
   }
 
   function smoothstep(e0, e1, x) {
@@ -515,39 +617,68 @@ export function createDescentRig(dpr = 1) {
       overlayCam.fov = mainCam.fov;
       overlayCam.aspect = mainCam.aspect;
       overlayCam.updateProjectionMatrix();
+      starFlashMat.uniforms.uAspect.value = mainCam.aspect;
+      cloudBlindspotMat.uniforms.uAspect.value = mainCam.aspect;
     }
 
-    // Interstellar Warp Streaks (active p in [0.02, 0.41])
-    const warpEnv = smoothstep(0.02, 0.16, diveP) * (1.0 - smoothstep(0.32, 0.42, diveP));
+    // Interstellar Warp Streaks accelerate continuously up to the star-core pierce at p ~ 0.34
+    const warpRamp = Math.pow(smoothstep(0.02, 0.30, diveP), 1.35);
+    const warpOut = 1.0 - smoothstep(0.32, 0.40, diveP);
+    const warpEnv = warpRamp * warpOut;
     warpLines.visible = warpEnv > 0.005;
     if (warpLines.visible) {
       const flowDir = isRise ? 1.0 - diveP : diveP;
-      warpMat.uniforms.uFlow.value = flowDir * 1.45 + elapsed * 0.08;
+      warpMat.uniforms.uFlow.value = flowDir * 1.75 + elapsed * 0.08;
       warpMat.uniforms.uStretch.value = warpEnv;
-      warpMat.uniforms.uOpacity.value = warpEnv * 0.88;
+      warpMat.uniforms.uOpacity.value = warpEnv * 0.92;
     }
 
-    // Arrival Star Corona bridge (peaks smoothly right around galaxy -> horizon swap p = 0.35)
-    const arrivalEnv = Math.exp(-Math.pow((diveP - 0.35) / 0.055, 2.0));
-    arrivalQuad.visible = arrivalEnv > 0.01;
-    if (arrivalQuad.visible) {
-      arrivalMat.uniforms.uIntensity.value = arrivalEnv * 0.76;
+    // 100% Opaque Star-Core Flash Blindspot plateau across [0.325, 0.355] (hides Galaxy <-> Horizon swap at 0.34)
+    let starFlash = 0;
+    if (diveP > 0.23 && diveP < 0.44) {
+      if (diveP < 0.325) starFlash = smoothstep(0.24, 0.325, diveP);
+      else if (diveP <= 0.355) starFlash = 1.0;
+      else starFlash = 1.0 - smoothstep(0.355, 0.43, diveP);
+    }
+    starFlashQuad.visible = starFlash > 0.004;
+    if (starFlashQuad.visible) {
+      starFlashMat.uniforms.uFlash.value = starFlash;
     }
 
-    // 20-Layer 3D Cloud Tunnel (active p in [0.56, 0.995])
-    const cloudMaster = smoothstep(0.56, 0.64, diveP) * (1.0 - smoothstep(0.91, 0.995, diveP));
+    // 100% Opaque Purple-Gold Cloud Blindspot plateau across [0.695, 0.745] (hides Horizon <-> Sunflower swap at 0.72)
+    let mistAlpha = 0;
+    let mistPart = 0;
+    if (diveP > 0.61 && diveP < 0.86) {
+      if (diveP < 0.695) {
+        mistAlpha = smoothstep(0.62, 0.695, diveP);
+      } else if (diveP <= 0.745) {
+        mistAlpha = 1.0;
+      } else {
+        mistPart = smoothstep(0.745, 0.85, diveP);
+        mistAlpha = 1.0 - smoothstep(0.755, 0.85, diveP);
+      }
+    }
+    cloudBlindspotQuad.visible = mistAlpha > 0.004;
+    if (cloudBlindspotQuad.visible) {
+      cloudBlindspotMat.uniforms.uMist.value = mistAlpha;
+      cloudBlindspotMat.uniforms.uPart.value = mistPart;
+      cloudBlindspotMat.uniforms.uTime.value = elapsed;
+    }
+
+    // 20-Layer 3D Cloud Tunnel (active p in [0.54, 0.97], parting around meadow after 0.745)
+    const cloudMaster = smoothstep(0.54, 0.62, diveP) * (1.0 - smoothstep(0.89, 0.97, diveP));
     cloudGroup.visible = cloudMaster > 0.005;
     if (cloudGroup.visible) {
-      const norm = Math.max(0, Math.min(1, (diveP - 0.58) / 0.38));
-      const hole = smoothstep(0.77, 0.92, diveP) * 0.34;
-      const centerVeilBoost = Math.exp(-Math.pow((diveP - 0.76) / 0.055, 2.0));
+      const norm = Math.max(0, Math.min(1, (diveP - 0.55) / 0.38));
+      const hole = smoothstep(0.745, 0.91, diveP) * 0.36;
+      const centerVeilBoost = Math.exp(-Math.pow((diveP - 0.72) / 0.06, 2.0));
       for (const layer of cloudLayers) {
         const z = -4.0 - layer.t * 32.0 + norm * 32.0;
         const depthFade = smoothstep(1.2, -3.2, z) * smoothstep(-38.0, -22.0, z);
-        const layerOp = Math.min(0.94, cloudMaster * depthFade * (0.76 + centerVeilBoost * 0.24));
+        const layerOp = Math.min(0.92, cloudMaster * depthFade * (0.72 + centerVeilBoost * 0.24));
         layer.mesh.visible = layerOp > 0.006;
         if (!layer.mesh.visible) continue;
-        const lateralPart = smoothstep(0.78, 0.96, diveP) * (0.28 + layer.t * 0.38);
+        const lateralPart = smoothstep(0.75, 0.94, diveP) * (0.28 + layer.t * 0.38);
         layer.mesh.position.set(layer.ox * (1.0 + lateralPart), layer.oy * (1.0 + lateralPart * 0.55), z);
         layer.mat.uniforms.uTime.value = elapsed;
         layer.mat.uniforms.uOpacity.value = layerOp;
@@ -557,10 +688,18 @@ export function createDescentRig(dpr = 1) {
   }
 
   function renderOverlay(renderer) {
-    if (!warpLines.visible && !arrivalQuad.visible && !cloudGroup.visible) return;
+    const hasPersp = warpLines.visible || cloudGroup.visible;
+    const hasBlind = starFlashQuad.visible || cloudBlindspotQuad.visible;
+    if (!hasPersp && !hasBlind) return;
     renderer.autoClear = false;
-    renderer.clearDepth();
-    renderer.render(overlayScene, overlayCam);
+    if (hasPersp) {
+      renderer.clearDepth();
+      renderer.render(overlayScene, overlayCam);
+    }
+    if (hasBlind) {
+      renderer.clearDepth();
+      renderer.render(blindspotScene, blindspotCam);
+    }
     renderer.autoClear = true;
   }
 
@@ -569,105 +708,5 @@ export function createDescentRig(dpr = 1) {
     setAspect,
     update,
     renderOverlay
-  };
-}
-
-/**
- * Dual-Pass Real Doorway Frame-Wipe Composite:
- * Captures the sunlit cottage porch & 85° open door into an HDR render target,
- * then cuts open ONLY the exact projected doorframe rectangle over Act III.
- */
-export function createDoorPortalPass() {
-  let portalRT = new THREE.WebGLRenderTarget(1440, 900, {
-    type: THREE.HalfFloatType,
-    minFilter: THREE.LinearFilter,
-    magFilter: THREE.LinearFilter,
-    depthBuffer: true
-  });
-
-  const portalScene = new THREE.Scene();
-  const portalCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-
-  const doorWipeMat = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    depthTest: false,
-    toneMapped: true,
-    uniforms: {
-      tDoorway: { value: portalRT.texture },
-      uRect: { value: new THREE.Vector4(0.35, 0.25, 0.65, 0.78) },
-      uOpen: { value: 0 },
-      uFadeOut: { value: 1 }
-    },
-    vertexShader: `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = vec4(position.xy, 0.0, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform sampler2D tDoorway;
-      uniform vec4 uRect; // xMin, yMin, xMax, yMax in screen UV [0..1]
-      uniform float uOpen;
-      uniform float uFadeOut;
-      varying vec2 vUv;
-
-      void main() {
-        vec4 src = texture2D(tDoorway, vUv);
-        vec2 center = 0.5 * (uRect.xy + uRect.zw);
-        vec2 halfSz = max(vec2(0.01), 0.5 * (uRect.zw - uRect.xy));
-        vec2 q = abs(vUv - center) - halfSz;
-        float sdf = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0);
-
-        // Inside doorway opening (sdf < 0) fades smoothly transparent -> exposes live Act III room!
-        float inside = 1.0 - smoothstep(-0.003, 0.002, sdf);
-        float alpha = mix(1.0, 1.0 - uOpen, inside) * uFadeOut;
-        if (alpha <= 0.002) discard;
-
-        // Delicate warm doorway threshold rim
-        float rim = exp(-abs(sdf) * 140.0) * 0.06 * uOpen * uFadeOut;
-        vec3 col = src.rgb + vec3(1.0, 0.82, 0.48) * rim;
-
-        gl_FragColor = vec4(col, alpha);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-      }
-    `
-  });
-
-  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), doorWipeMat);
-  portalScene.add(quad);
-
-  function resize(pixelW, pixelH) {
-    const w = Math.max(2, Math.floor(pixelW));
-    const h = Math.max(2, Math.floor(pixelH));
-    if (portalRT.width !== w || portalRT.height !== h) {
-      portalRT.setSize(w, h);
-    }
-  }
-
-  function setPortalRect(uMin, vMin, uMax, vMax) {
-    doorWipeMat.uniforms.uRect.value.set(uMin, vMin, uMax, vMax);
-  }
-
-  function setMix(open, fadeOut) {
-    doorWipeMat.uniforms.uOpen.value = open;
-    doorWipeMat.uniforms.uFadeOut.value = fadeOut;
-  }
-
-  function renderComposite(renderer) {
-    renderer.autoClear = false;
-    renderer.clearDepth();
-    renderer.render(portalScene, portalCam);
-    renderer.autoClear = true;
-  }
-
-  return {
-    get captureTarget() { return portalRT; },
-    resize,
-    setPortalRect,
-    setMix,
-    renderComposite
   };
 }

@@ -173,6 +173,25 @@ body[data-portal="skylight"] #aperture-vignette.is-portal {
   );
 }
 
+#matchcut-veil[data-veil="warm-door"] {
+  background: radial-gradient(
+    circle at 50% 48%,
+    #fff6dc 0%,
+    #f4c882 34%,
+    #a8642d 70%,
+    #2a160c 100%
+  );
+}
+
+#matchcut-veil[data-veil="ink-gold"] {
+  background: radial-gradient(
+    circle at 50% 46%,
+    #261e16 0%,
+    #101018 44%,
+    #05070c 100%
+  );
+}
+
 #matchcut-veil[data-veil="cosmos"] {
   background: radial-gradient(
     circle at 50% 48%,
@@ -2435,8 +2454,7 @@ body[data-act] .brand-titles {
    3-Act Spatial Floating Pins & Exhibit Inspection Deck Polish
    ========================================================================= */
 #matchcut-veil {
-  background: radial-gradient(circle at 50% 50%, rgba(255, 224, 158, 0.96) 0%, rgba(214, 128, 62, 0.92) 55%, rgba(28, 16, 12, 0.98) 100%) !important;
-  transition: opacity 0.12s linear;
+  transition: none;
 }
 
 .spatial-pin {
